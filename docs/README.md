@@ -87,12 +87,12 @@ Ubicación: `04-base-de-datos/`
 
 Ubicación: `05-desarrollo/`
 
-| Documento                   | Descripción                                                                                                | Estado                                                                 |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `instalacion-local.md`      | Explica cómo preparar el entorno, instalar dependencias, configurar la aplicación y ejecutarla localmente. | Redactado; pendiente de incorporar al repositorio y validar PostgreSQL |
-| `convenciones-de-codigo.md` | Establece criterios de nomenclatura, organización y estilo de programación.                                | Pendiente                                                              |
-| `git-y-flujo-de-trabajo.md` | Define las ramas, los commits, las revisiones y el procedimiento para integrar cambios.                    | Pendiente                                                              |
-| `estrategia-de-pruebas.md`  | Establece los tipos de pruebas y los criterios mínimos de verificación.                                    | Pendiente                                                              |
+| Documento                                                    | Descripción                                                                                                | Estado                       |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| [`instalacion-local.md`](05-desarrollo/instalacion-local.md) | Explica cómo preparar el entorno, instalar dependencias, configurar la aplicación y ejecutarla localmente. | v1.2.1, publicado y validado |
+| `convenciones-de-codigo.md`                                  | Establece criterios de nomenclatura, organización y estilo de programación.                                | Pendiente                    |
+| `git-y-flujo-de-trabajo.md`                                  | Define las ramas, los commits, las revisiones y el procedimiento para integrar cambios.                    | Pendiente                    |
+| `estrategia-de-pruebas.md`                                   | Establece los tipos de pruebas y los criterios mínimos de verificación.                                    | Pendiente                    |
 
 ### 4.6. Seguridad
 
