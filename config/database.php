@@ -85,18 +85,59 @@ return [
         ],
 
         'pgsql' => [
-            'driver' => 'pgsql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
+            'driver'         => 'pgsql',
+            'url'            => env('DB_URL'),
+            'host'           => env('DB_HOST', '127.0.0.1'),
+            'port'           => env('DB_PORT', '5432'),
+            'database'       => env('DB_DATABASE', 'ewiflor_db'),
+            'username'       => env('DB_USERNAME', 'ewiflor_app'),
+            'password'       => env('DB_PASSWORD', ''),
+            'charset'        => env('DB_CHARSET', 'utf8'),
+            'prefix'         => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'search_path'    => 'public',
+            'sslmode'        => 'prefer',
+        ],
+
+        'pgsql_migrator' => [
+            'driver'         => 'pgsql',
+            'url'            => env('DB_MIGRATOR_URL'),
+            'host'           => env('DB_MIGRATOR_HOST', '127.0.0.1'),
+            'port'           => env('DB_MIGRATOR_PORT', '5432'),
+            'database'       => env('DB_MIGRATOR_DATABASE', 'Ewiflor_DB_MVP'),
+            'username'       => env('DB_MIGRATOR_USERNAME', 'ewiflor_migrator'),
+            'password'       => env('DB_MIGRATOR_PASSWORD', ''),
+            'charset'        => env('DB_CHARSET', 'utf8'),
+            'prefix'         => '',
+            'prefix_indexes' => true,
+            'search_path'    => 'public',
+            'sslmode'        => 'prefer',
+        ],
+        'pgsql_auth' => [
+            'driver'         => 'pgsql',
+            'host'           => env('DB_HOST', '127.0.0.1'),
+            'port'           => env('DB_PORT', '5432'),
+            'database'       => env('DB_DATABASE', 'Ewiflor_DB_MVP'),
+            'username'       => env('DB_AUTH_USERNAME', 'ewiflor_auth'),   // <- cambiado
+            'password'       => env('DB_AUTH_PASSWORD', ''),                // <- cambiado
+            'charset'        => env('DB_CHARSET', 'utf8'),
+            'prefix'         => '',
+            'prefix_indexes' => true,
+            'search_path'    => 'public',
+            'sslmode'        => env('DB_SSLMODE', 'prefer'),
+        ],
+        'pgsql_backup' => [
+            'driver'         => 'pgsql',
+            'host'           => env('DB_HOST', '127.0.0.1'),
+            'port'           => env('DB_PORT', '5432'),
+            'database'       => env('DB_DATABASE', 'Ewiflor_DB_MVP'),
+            'username'       => env('DB_BACKUP_USERNAME', 'ewiflor_backup'), // <- cambiado
+            'password'       => env('DB_BACKUP_PASSWORD', ''),
+            'charset'        => env('DB_CHARSET', 'utf8'),
+            'prefix'         => '',
+            'prefix_indexes' => true,
+            'search_path'    => 'public',
+            'sslmode'        => env('DB_SSLMODE', 'prefer'),
         ],
 
         'sqlsrv' => [
@@ -149,7 +190,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
