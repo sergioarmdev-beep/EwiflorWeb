@@ -52,13 +52,13 @@ Ubicación: `01-proyecto/`
 
 Ubicación: `02-requisitos/`
 
-| Documento                      | Descripción                                                                                                  | Estado    |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------ | --------- |
-| `SRS.md`                       | Especificación general de requisitos de software.                                                            | Pendiente |
-| `requisitos-funcionales.md`    | Describe las capacidades y operaciones que deberá proporcionar el sistema.                                   | Pendiente |
-| `requisitos-no-funcionales.md` | Define requisitos de seguridad, rendimiento, disponibilidad, usabilidad y mantenibilidad, según corresponda. | Pendiente |
-| `reglas-de-negocio.md`         | Documenta las reglas que condicionan las operaciones empresariales.                                          | Pendiente |
-| `trazabilidad.md`              | Relaciona requisitos con diseño, implementación y pruebas.                                                   | Pendiente |
+| Documento                         | Descripción                                                                                                  | Estado    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------- |
+| [SRS.md](02-requisitos.md/SRS.md) | Especificación general de requisitos de software.                                                            | Aprobado  |
+| `requisitos-funcionales.md`       | Describe las capacidades y operaciones que deberá proporcionar el sistema.                                   | Pendiente |
+| `requisitos-no-funcionales.md`    | Define requisitos de seguridad, rendimiento, disponibilidad, usabilidad y mantenibilidad, según corresponda. | Pendiente |
+| `reglas-de-negocio.md`            | Documenta las reglas que condicionan las operaciones empresariales.                                          | Pendiente |
+| `trazabilidad.md`                 | Relaciona requisitos con diseño, implementación y pruebas.                                                   | Pendiente |
 
 ### 4.3. Arquitectura
 
