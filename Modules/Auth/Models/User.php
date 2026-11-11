@@ -5,6 +5,8 @@ namespace Modules\Auth\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Inventario\Models\Sucursal;
 
 class User extends Authenticatable
 {
@@ -71,5 +73,22 @@ class User extends Authenticatable
     public function esGerente(): bool
     {
         return $this->nombre_rol === 'GERENTE';
+    }
+    public function getRouteKeyName(): string
+    {
+        return 'id_usuario';
+    }
+    public function esAdministrador(): bool
+    {
+        return $this->nombre_rol === 'ADMINISTRADOR';
+    }
+
+    public function puedeGestionarUsuarios(): bool
+    {
+        return in_array($this->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true);
+    }
+    public function sucursal(): BelongsTo
+    {
+        return $this->belongsTo(Sucursal::class, 'id_sucursal', 'id_sucursal');
     }
 }
