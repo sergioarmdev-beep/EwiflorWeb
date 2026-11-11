@@ -23,6 +23,13 @@
 
                 <a href="#" class="block px-4 py-2 rounded hover:bg-gray-800 text-gray-500">Clientes (Próximamente)</a>
                 <a href="#" class="block px-4 py-2 rounded hover:bg-gray-800 text-gray-500">Ventas (Próximamente)</a>
+                @if (auth()->user()?->puedeGestionarUsuarios())
+                <a href="{{ route('usuarios.index') }}"
+                    class="block px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100
+              {{ request()->routeIs('usuarios.*') ? 'bg-gray-200 text-gray-900' : 'text-gray-700' }}">
+                    Usuarios
+                </a>
+                @endif
             </nav>
             <div class="p-4 border-t border-gray-800">
                 <form method="POST" action="{{ route('logout') }}">
