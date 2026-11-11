@@ -18,6 +18,8 @@
             <nav class="flex-1 px-4 py-6 space-y-2">
                 <a href="{{ route('dashboard') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Dashboard</a>
                 <a href="{{ route('catalogo.productos.index') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Productos</a>
+                <!-- Enlace a Marcas Añadido -->
+                <a href="{{ route('catalogo.marcas.index') }}" class="block px-4 py-2 rounded hover:bg-gray-800">Marcas</a>
 
                 <a href="#" class="block px-4 py-2 rounded hover:bg-gray-800 text-gray-500">Clientes (Próximamente)</a>
                 <a href="#" class="block px-4 py-2 rounded hover:bg-gray-800 text-gray-500">Ventas (Próximamente)</a>
@@ -41,6 +43,11 @@
                 @if(session('success'))
                 <div class="bg-green-100 text-green-700 p-4 rounded mb-4">
                     {{ session('success') }}
+                </div>
+                @endif
+                @if(session('error'))
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 shadow-sm" role="alert">
+                    <p>{{ session('error') }}</p>
                 </div>
                 @endif
                 @yield('content')

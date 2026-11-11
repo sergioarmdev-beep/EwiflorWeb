@@ -8,6 +8,10 @@ class Producto extends Model
 {
     protected $table = 'producto';
     protected $primaryKey = 'id_producto';
+    public function getRouteKeyName()
+    {
+        return 'id_producto';
+    }
     public $timestamps = false;
 
     protected $fillable = [
@@ -33,5 +37,14 @@ class Producto extends Model
     public function variantes()
     {
         return $this->hasMany(VarianteProducto::class, 'id_producto', 'id_producto');
+    }
+    public function imagenes()
+    {
+        return $this->hasMany(ProductoImagen::class, 'id_producto', 'id_producto')->orderBy('orden');
+    }
+
+    public function imagenPrincipal()
+    {
+        return $this->hasOne(ProductoImagen::class, 'id_producto', 'id_producto')->where('es_principal', true);
     }
 }

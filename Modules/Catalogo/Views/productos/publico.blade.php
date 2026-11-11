@@ -29,10 +29,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             @forelse($productos as $producto)
             <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-                <div class="h-48 bg-gray-200 flex items-center justify-center">
-                    <!-- Aquí iría una imagen si tuvieras el campo -->
+                <!-- Contenedor Dinámico de Imagen -->
+                <div class="h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    @if($producto->imagenPrincipal)
+                    <img src="{{ asset('storage/' . $producto->imagenPrincipal->ruta_imagen) }}" class="object-cover w-full h-full">
+                    @else
                     <span class="text-gray-400 text-sm">Sin imagen</span>
+                    @endif
                 </div>
+
                 <div class="p-4">
                     <span class="text-xs font-semibold text-blue-600 uppercase tracking-wide">{{ $producto->marca->nombre ?? 'Genérico' }}</span>
                     <h3 class="text-lg font-bold text-gray-800 mt-1 truncate">{{ $producto->nombre }}</h3>
