@@ -976,6 +976,348 @@
                 grid-column: auto;
             }
         }
+
+        /* =====================================
+           DETALLE DE PRODUCTO (MODAL)
+        ===================================== */
+
+        .product-card {
+            cursor: pointer;
+        }
+
+        .product-card:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+        }
+
+        .product-photos {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--bg) 82%, transparent);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: var(--text);
+            font-size: .68rem;
+            font-weight: 700;
+        }
+
+        .product-more {
+            color: var(--accent);
+            font-weight: 700;
+            transition: transform .25s ease;
+        }
+
+        .product-card:hover .product-more {
+            transform: translateX(3px);
+        }
+
+        .pm {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .pm.open {
+            display: flex;
+        }
+
+        .pm-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, .72);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            animation: pm-fade .25s ease both;
+        }
+
+        .pm-dialog {
+            position: relative;
+            z-index: 1;
+            width: min(980px, 100%);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: var(--surface);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, .45);
+            outline: none;
+            animation: pm-rise .3s ease both;
+        }
+
+        .pm-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 3;
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--bg) 80%, transparent);
+            color: var(--text);
+            cursor: pointer;
+            transition: border-color .25s ease, color .25s ease;
+        }
+
+        .pm-close:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .pm-gallery {
+            padding: 22px;
+            background: var(--surface-soft);
+        }
+
+        .pm-main {
+            position: relative;
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--bg);
+        }
+
+        .pm-main img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .pm-placeholder {
+            position: absolute;
+            inset: 0;
+            display: none;
+            place-items: center;
+            color: var(--muted);
+            font-size: 3rem;
+        }
+
+        .pm-nav {
+            position: absolute;
+            top: 50%;
+            z-index: 2;
+            width: 38px;
+            height: 38px;
+            display: none;
+            place-items: center;
+            transform: translateY(-50%);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--bg) 82%, transparent);
+            color: var(--text);
+            font-size: 1.3rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: border-color .25s ease, color .25s ease;
+        }
+
+        .pm-nav:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .pm-prev {
+            left: 10px;
+        }
+
+        .pm-next {
+            right: 10px;
+        }
+
+        .pm-thumbs {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .pm-thumb {
+            flex: 0 0 68px;
+            width: 68px;
+            height: 68px;
+            padding: 0;
+            overflow: hidden;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            background: var(--bg);
+            cursor: pointer;
+            opacity: .65;
+            transition: opacity .25s ease, border-color .25s ease;
+        }
+
+        .pm-thumb img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .pm-thumb:hover,
+        .pm-thumb.active {
+            opacity: 1;
+        }
+
+        .pm-thumb.active {
+            border-color: var(--accent);
+        }
+
+        .pm-info {
+            padding: 34px 30px 30px;
+        }
+
+        .pm-title {
+            margin: 4px 0 14px;
+            font-size: 1.55rem;
+            font-weight: 800;
+            line-height: 1.25;
+            letter-spacing: -.02em;
+        }
+
+        .pm-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .pm-tag {
+            padding: 5px 11px;
+            border: 1px solid rgba(56, 189, 248, .25);
+            border-radius: 999px;
+            background: rgba(14, 165, 233, .08);
+            color: var(--accent);
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .pm-desc {
+            margin: 0 0 22px;
+            color: var(--muted);
+            font-size: .9rem;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .pm-specs {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin: 0 0 22px;
+        }
+
+        .pm-spec {
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface-soft);
+        }
+
+        .pm-spec dt {
+            color: var(--muted);
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .pm-spec dd {
+            margin: 4px 0 0;
+            font-size: .88rem;
+            font-weight: 700;
+        }
+
+        .pm-subtitle {
+            margin: 0 0 10px;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .pm-variants {
+            display: grid;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .pm-variant {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: .82rem;
+        }
+
+        .pm-variant strong {
+            display: block;
+            font-weight: 700;
+        }
+
+        .pm-variant span {
+            display: block;
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: .76rem;
+            line-height: 1.6;
+        }
+
+        @keyframes pm-fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pm-rise {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to { opacity: 1; transform: none; }
+        }
+
+        @media (max-width: 820px) {
+            .pm {
+                align-items: flex-end;
+                padding: 0;
+            }
+
+            .pm-dialog {
+                grid-template-columns: 1fr;
+                max-height: 92vh;
+                border-radius: 22px 22px 0 0;
+            }
+
+            .pm-info {
+                padding: 24px 20px 28px;
+            }
+
+            .pm-gallery {
+                padding: 16px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pm-backdrop,
+            .pm-dialog {
+                animation: none;
+            }
+        }
     </style>
 </head>
 
@@ -1202,15 +1544,31 @@
                 <div id="product-grid" class="product-grid">
 
                     @foreach($productos as $producto)
+                    @php
+                    $principal = $producto->imagenes->firstWhere('es_principal', true) ?? $producto->imagenes->first();
+                    $textoBusqueda = mb_strtolower(implode(' ', array_filter([
+                        $producto->nombre,
+                        $producto->marca?->nombre,
+                        $producto->modelo,
+                        $producto->categoria,
+                        $producto->descripcion,
+                    ])));
+                    @endphp
 
-                    <article class="product-card reveal">
+                    <article class="product-card reveal"
+                        data-product-id="{{ $producto->id_producto }}"
+                        data-search="{{ $textoBusqueda }}"
+                        role="button"
+                        tabindex="0"
+                        aria-haspopup="dialog"
+                        aria-label="Ver detalle de {{ $producto->nombre }}">
 
                         <div class="product-image">
 
-                            @if($producto->imagenPrincipal)
+                            @if($principal)
                             <img
-                                src="{{ $producto->imagenPrincipal }}"
-                                alt="{{ $producto->nombre }}"
+                                src="{{ $principal->url }}"
+                                alt="{{ $principal->texto_alternativo ?: $producto->nombre }}"
                                 loading="lazy"
                                 decoding="async"
                                 onerror="this.style.display='none'">
@@ -1218,6 +1576,10 @@
                             <div class="product-image-placeholder" aria-hidden="true">
                                 ⚙
                             </div>
+                            @endif
+
+                            @if($producto->imagenes->count() > 1)
+                            <span class="product-photos" aria-hidden="true">{{ $producto->imagenes->count() }} fotos</span>
                             @endif
 
                         </div>
@@ -1249,7 +1611,7 @@
                                     @endif
                                 </span>
 
-                                <span>EWIFLOR</span>
+                                <span class="product-more">Ver detalle →</span>
 
                             </div>
 
@@ -1459,6 +1821,48 @@
     </footer>
 
 
+
+    <!-- DETALLE DE PRODUCTO (MODAL) -->
+    <div id="product-modal" class="pm" aria-hidden="true">
+        <div class="pm-backdrop" data-pm-close></div>
+
+        <div class="pm-dialog" role="dialog" aria-modal="true" aria-labelledby="pm-title" tabindex="-1">
+
+            <button type="button" class="pm-close" data-pm-close aria-label="Cerrar detalle">✕</button>
+
+            <div class="pm-gallery">
+                <div class="pm-main">
+                    <img id="pm-image" alt="" hidden>
+                    <div id="pm-placeholder" class="pm-placeholder" aria-hidden="true">⚙</div>
+
+                    <button type="button" id="pm-prev" class="pm-nav pm-prev" aria-label="Imagen anterior">‹</button>
+                    <button type="button" id="pm-next" class="pm-nav pm-next" aria-label="Imagen siguiente">›</button>
+                </div>
+
+                <div id="pm-thumbs" class="pm-thumbs" aria-label="Miniaturas"></div>
+            </div>
+
+            <div class="pm-info">
+                <span id="pm-brand" class="product-brand"></span>
+                <h3 id="pm-title" class="pm-title"></h3>
+
+                <div id="pm-tags" class="pm-tags"></div>
+
+                <p id="pm-desc" class="pm-desc"></p>
+
+                <dl id="pm-specs" class="pm-specs"></dl>
+
+                <div id="pm-variants-wrap" hidden>
+                    <h4 class="pm-subtitle">Variantes disponibles</h4>
+                    <ul id="pm-variants" class="pm-variants"></ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script id="product-data" type="application/json">{!! json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+
     <!-- JAVASCRIPT -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -1545,7 +1949,7 @@
                     let visibleProducts = 0;
 
                     productCards.forEach(card => {
-                        const content = card.textContent
+                        const content = (card.dataset.search || card.textContent)
                             .toLocaleLowerCase('es');
 
                         const matches = content.includes(query);
@@ -1570,6 +1974,176 @@
                 searchInput.addEventListener('input', filterProducts);
             }
 
+
+
+            /* =====================================
+               DETALLE DE PRODUCTO (MODAL)
+            ===================================== */
+
+            const dataEl = document.getElementById('product-data');
+            const modal = document.getElementById('product-modal');
+
+            if (dataEl && modal) {
+                const productos = JSON.parse(dataEl.textContent || '{}');
+                const dialog = modal.querySelector('.pm-dialog');
+                const mainImg = document.getElementById('pm-image');
+                const placeholder = document.getElementById('pm-placeholder');
+                const thumbs = document.getElementById('pm-thumbs');
+                const btnPrev = document.getElementById('pm-prev');
+                const btnNext = document.getElementById('pm-next');
+
+                let galeria = [];
+                let indice = 0;
+                let ultimoFoco = null;
+
+                const el = (tag, className, text) => {
+                    const node = document.createElement(tag);
+                    if (className) node.className = className;
+                    if (text !== undefined && text !== null) node.textContent = text;
+                    return node;
+                };
+
+                function mostrarImagen(i) {
+                    if (!galeria.length) {
+                        mainImg.hidden = true;
+                        placeholder.style.display = 'grid';
+                        return;
+                    }
+
+                    indice = (i + galeria.length) % galeria.length;
+                    mainImg.hidden = false;
+                    mainImg.src = galeria[indice].url;
+                    mainImg.alt = galeria[indice].alt;
+                    placeholder.style.display = 'none';
+
+                    thumbs.querySelectorAll('.pm-thumb').forEach((t, n) => {
+                        t.classList.toggle('active', n === indice);
+                        t.setAttribute('aria-current', n === indice ? 'true' : 'false');
+                    });
+                }
+
+                function llenar(p) {
+                    document.getElementById('pm-brand').textContent = p.marca || '';
+                    document.getElementById('pm-title').textContent = p.nombre;
+                    document.getElementById('pm-desc').textContent =
+                        p.descripcion || 'Consulta las características de este producto.';
+
+                    const tags = document.getElementById('pm-tags');
+                    tags.replaceChildren();
+                    [p.categoria, p.tipo].filter(Boolean).forEach(t => tags.appendChild(el('span', 'pm-tag', t)));
+
+                    const specs = document.getElementById('pm-specs');
+                    specs.replaceChildren();
+                    const filas = [
+                        ['Marca', p.marca],
+                        ['Origen', p.pais],
+                        ['Modelo', p.modelo],
+                        ['Garantía', p.garantia ? `${p.garantia} meses` : 'Según producto'],
+                    ].filter(([, v]) => v);
+
+                    filas.forEach(([k, v]) => {
+                        const box = el('div', 'pm-spec');
+                        box.appendChild(el('dt', null, k));
+                        box.appendChild(el('dd', null, v));
+                        specs.appendChild(box);
+                    });
+
+                    const wrap = document.getElementById('pm-variants-wrap');
+                    const lista = document.getElementById('pm-variants');
+                    lista.replaceChildren();
+                    wrap.hidden = !p.variantes.length;
+
+                    p.variantes.forEach(v => {
+                        const li = el('li', 'pm-variant');
+                        li.appendChild(el('strong', null, v.color || v.sku));
+                        const detalle = [v.color ? v.sku : null, v.caracteristicas].filter(Boolean).join(' · ');
+                        if (detalle) li.appendChild(el('span', null, detalle));
+                        lista.appendChild(li);
+                    });
+
+                    galeria = p.imagenes;
+                    thumbs.replaceChildren();
+                    const varias = galeria.length > 1;
+                    btnPrev.style.display = btnNext.style.display = varias ? 'grid' : 'none';
+                    thumbs.style.display = varias ? 'flex' : 'none';
+
+                    if (varias) {
+                        galeria.forEach((img, n) => {
+                            const b = el('button', 'pm-thumb');
+                            b.type = 'button';
+                            b.setAttribute('aria-label', `Ver imagen ${n + 1}`);
+                            const im = el('img');
+                            im.src = img.url;
+                            im.alt = '';
+                            im.loading = 'lazy';
+                            b.appendChild(im);
+                            b.addEventListener('click', () => mostrarImagen(n));
+                            thumbs.appendChild(b);
+                        });
+                    }
+
+                    mostrarImagen(0);
+                }
+
+                function abrir(id) {
+                    const p = productos[id];
+                    if (!p) return;
+
+                    ultimoFoco = document.activeElement;
+                    llenar(p);
+                    dialog.scrollTop = 0;
+                    modal.classList.add('open');
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                    dialog.focus();
+                }
+
+                function cerrar() {
+                    modal.classList.remove('open');
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                    ultimoFoco?.focus?.();
+                }
+
+                document.querySelectorAll('.product-card[data-product-id]').forEach(card => {
+                    card.addEventListener('click', () => abrir(card.dataset.productId));
+                    card.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            abrir(card.dataset.productId);
+                        }
+                    });
+                });
+
+                modal.querySelectorAll('[data-pm-close]').forEach(b => b.addEventListener('click', cerrar));
+                btnPrev.addEventListener('click', () => mostrarImagen(indice - 1));
+                btnNext.addEventListener('click', () => mostrarImagen(indice + 1));
+
+                document.addEventListener('keydown', (e) => {
+                    if (!modal.classList.contains('open')) return;
+
+                    if (e.key === 'Escape') cerrar();
+                    if (e.key === 'ArrowLeft' && galeria.length > 1) mostrarImagen(indice - 1);
+                    if (e.key === 'ArrowRight' && galeria.length > 1) mostrarImagen(indice + 1);
+
+                    // Mantiene el foco dentro del diálogo mientras está abierto
+                    if (e.key === 'Tab') {
+                        const foco = Array.from(dialog.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])'))
+                            .filter(n => n.offsetParent !== null);
+                        if (!foco.length) return;
+                        const primero = foco[0];
+                        const ultimo = foco[foco.length - 1];
+
+                        if (e.shiftKey && (document.activeElement === primero || document.activeElement === dialog)) {
+                            e.preventDefault();
+                            ultimo.focus();
+                        } else if (!e.shiftKey && document.activeElement === ultimo) {
+                            e.preventDefault();
+                            primero.focus();
+                        }
+                    }
+                });
+            }
 
             /* =====================================
                ANIMACIONES DE APARICIÓN

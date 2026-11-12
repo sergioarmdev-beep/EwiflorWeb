@@ -11,6 +11,17 @@
         <p class="text-xs text-slate-300 mt-0.5">Registra, edita y administra los fabricantes y marcas del catálogo</p>
     </div>
 
+    <!-- Errores de validación -->
+    @if($errors->any())
+    <div class="mb-6 rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-xs text-red-300">
+        <ul class="list-disc list-inside space-y-0.5">
+            @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
 
         <!-- Formulario de Creación (Tarjeta Elevada) -->
@@ -66,30 +77,24 @@
                     <tbody class="divide-y divide-slate-800/60 text-slate-300 text-xs">
                         @forelse($marcas as $marca)
                         <tr class="hover:bg-slate-800/40 transition-colors">
-                            <!-- Formulario de Actualización en Línea -->
-                            <form id="update-form-{{ $marca->id_marca }}" action="{{ route('catalogo.marcas.update', $marca->id_marca) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-
-                                <td class="py-3 px-5">
-                                    <input type="text" name="nombre" value="{{ $marca->nombre }}" required
-                                        class="w-full px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-500 transition-all">
-                                </td>
-                                <td class="py-3 px-5">
-                                    <input type="text" name="pais_origen" value="{{ $marca->pais_origen }}"
-                                        class="w-full px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-500 transition-all" placeholder="—">
-                                </td>
-                            </form>
+                            <td class="py-3 px-5">
+                                <input type="text" name="nombre" value="{{ $marca->nombre }}" required maxlength="60"
+                                    form="update-form-{{ $marca->id_marca }}"
+                                    class="w-full px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-500 transition-all">
+                            </td>
+                            <td class="py-3 px-5">
+                                <input type="text" name="pais_origen" value="{{ $marca->pais_origen }}" maxlength="50"
+                                    form="update-form-{{ $marca->id_marca }}"
+                                    class="w-full px-3 py-1.5 bg-slate-800 border border-slate-600 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-500 transition-all" placeholder="—">
+                            </td>
 
                             <td class="py-3 px-5 text-center">
                                 <div class="flex items-center justify-center space-x-3">
-                                    <!-- Botón Actualizar (Dispara el formulario de arriba mediante form="id") -->
                                     <button type="submit" form="update-form-{{ $marca->id_marca }}"
                                         class="text-blue-400 hover:text-blue-300 font-semibold text-xs transition-colors cursor-pointer">
                                         Actualizar
                                     </button>
 
-                                    <!-- Botón Eliminar (Fuera de formularios anidados) -->
                                     <form action="{{ route('catalogo.marcas.destroy', $marca->id_marca) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar esta marca?');">
                                         @csrf
                                         @method('DELETE')
@@ -115,6 +120,14 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- Formularios de actualización (fuera de la tabla: un <form> no puede ir dentro de <tr>) --}}
+            @foreach($marcas as $marca)
+            <form id="update-form-{{ $marca->id_marca }}" action="{{ route('catalogo.marcas.update', $marca->id_marca) }}" method="POST" class="hidden">
+                @csrf
+                @method('PUT')
+            </form>
+            @endforeach
         </div>
     </div>
 </div>
