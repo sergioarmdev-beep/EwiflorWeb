@@ -30,7 +30,7 @@
     </div>
 
     <!-- Resumen -->
-    <div class="grid grid-cols-2 {{ $stockHabilitado ? 'lg:grid-cols-3' : 'lg:grid-cols-2' }} gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="bg-slate-900 border border-sky-500/40 rounded-2xl px-5 py-4 shadow-xl">
             <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Productos registrados</p>
             <p class="mt-1 text-2xl font-bold text-white font-mono">{{ $resumen['total'] }}</p>
@@ -41,13 +41,11 @@
             <p class="mt-1 text-2xl font-bold text-emerald-300 font-mono">{{ $resumen['activos'] }}</p>
         </div>
 
-        @if($stockHabilitado)
         <a href="{{ route('catalogo.productos.index', ['stock_bajo' => 1]) }}"
             class="col-span-2 lg:col-span-1 bg-slate-900 border {{ $resumen['stock_bajo'] ? 'border-amber-500/50' : 'border-sky-500/40' }} rounded-2xl px-5 py-4 shadow-xl hover:bg-slate-800/60 transition-colors">
             <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Con stock bajo</p>
             <p class="mt-1 text-2xl font-bold font-mono {{ $resumen['stock_bajo'] ? 'text-amber-300' : 'text-slate-200' }}">{{ $resumen['stock_bajo'] }}</p>
         </a>
-        @endif
     </div>
 
     <!-- Búsqueda y filtros -->
@@ -104,15 +102,11 @@
 
         <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
-            @if($stockHabilitado)
             <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                 <input type="checkbox" name="stock_bajo" value="1" {{ !empty($filtros['stock_bajo']) ? 'checked' : '' }}
                     class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900">
                 Solo productos con stock bajo
             </label>
-            @else
-            <span></span>
-            @endif
 
             <div class="flex items-center gap-3">
                 @if($hayFiltros)
@@ -141,9 +135,7 @@
                         <th class="py-3.5 px-5 font-semibold">Marca</th>
                         <th class="py-3.5 px-5 font-semibold">Categoría</th>
                         <th class="py-3.5 px-5 font-semibold">Tipo</th>
-                        @if($stockHabilitado)
                         <th class="py-3.5 px-5 text-center font-semibold">Stock</th>
-                        @endif
                         <th class="py-3.5 px-5 text-center font-semibold">Stock Mín.</th>
                         <th class="py-3.5 px-5 text-center font-semibold">Estado</th>
                         <th class="py-3.5 px-5 text-center font-semibold">Acciones</th>
@@ -179,11 +171,16 @@
                         <td class="py-3.5 px-5 text-slate-300">{{ $producto->categoria }}</td>
                         <td class="py-3.5 px-5 text-slate-300">{{ $producto->tipo_producto }}</td>
 
-                        @if($stockHabilitado)
                         <td class="py-3.5 px-5 text-center font-mono font-medium {{ $producto->stock_bajo ? 'text-amber-300' : 'text-slate-200' }}">
-                            {{ $producto->modalidad === 'INVENTARIABLE' ? $producto->stock_actual : '—' }}
+                            @if($producto->modalidad === 'INVENTARIABLE')
+                            {{ (int) $producto->stock_actual }}
+                            @if((int) $producto->stock_total !== (int) $producto->stock_actual)
+                            <span class="block text-[10px] font-normal text-slate-500">de {{ (int) $producto->stock_total }} en total</span>
+                            @endif
+                            @else
+                            <span class="text-slate-500" title="Producto bajo pedido: no maneja stock">—</span>
+                            @endif
                         </td>
-                        @endif
 
                         <td class="py-3.5 px-5 text-center font-mono text-slate-200 font-medium">{{ $producto->stock_minimo }}</td>
 
@@ -202,6 +199,10 @@
                             <div class="flex items-center justify-center space-x-3">
                                 <a href="{{ route('catalogo.productos.edit', $producto->id_producto) }}" class="text-blue-400 hover:text-blue-300 font-semibold text-xs transition-colors">Editar</a>
 
+                                @if($producto->modalidad === 'INVENTARIABLE')
+                                <a href="{{ route('catalogo.stock.show', $producto->id_producto) }}" class="text-emerald-400 hover:text-emerald-300 font-semibold text-xs transition-colors">Stock</a>
+                                @endif
+
                                 <form action="{{ route('catalogo.productos.toggle', $producto->id_producto) }}" method="POST" class="inline">
                                     @csrf
                                     @method('PATCH')
@@ -216,6 +217,8 @@
                                     <button type="submit" class="text-red-400 hover:text-red-300 font-semibold text-xs transition-colors cursor-pointer">Eliminar</button>
                                 </form>
                             </div>
+                            @elseif($producto->modalidad === 'INVENTARIABLE')
+                            <a href="{{ route('catalogo.stock.show', $producto->id_producto) }}" class="text-emerald-400 hover:text-emerald-300 font-semibold text-xs transition-colors">Ver stock</a>
                             @else
                             <span class="text-slate-600">—</span>
                             @endif
@@ -223,7 +226,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ $stockHabilitado ? 10 : 9 }}" class="py-12 px-6 text-center text-slate-500">
+                        <td colspan="10" class="py-12 px-6 text-center text-slate-500">
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

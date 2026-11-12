@@ -7,7 +7,7 @@
 
         <div class="md:col-span-4">
             <label class="block text-xs font-medium text-slate-300 mb-1.5">SKU *</label>
-            <input type="text" name="variantes[{{ $i }}][sku]" maxlength="60" required
+            <input type="text" name="variantes[{{ $i }}][sku]" maxlength="40" required
                 value="{{ $fila['sku'] ?? '' }}" placeholder="Ej. EQ-001-ROJO"
                 class="form-input font-mono">
             @if($i !== '__I__')
@@ -19,7 +19,7 @@
 
         <div class="md:col-span-3">
             <label class="block text-xs font-medium text-slate-300 mb-1.5">Color</label>
-            <input type="text" name="variantes[{{ $i }}][color]" maxlength="40"
+            <input type="text" name="variantes[{{ $i }}][color]" maxlength="30"
                 value="{{ $fila['color'] ?? '' }}" placeholder="Ej. Acero inoxidable"
                 class="form-input">
         </div>
@@ -46,7 +46,7 @@
 
         <div class="md:col-span-12">
             <label class="block text-xs font-medium text-slate-300 mb-1.5">Características</label>
-            <input type="text" name="variantes[{{ $i }}][caracteristicas]" maxlength="500"
+            <input type="text" name="variantes[{{ $i }}][caracteristicas]" maxlength="200"
                 value="{{ $fila['caracteristicas'] ?? '' }}"
                 placeholder="Ej. 220V, 3 bandejas, capacidad 40 L"
                 class="form-input">

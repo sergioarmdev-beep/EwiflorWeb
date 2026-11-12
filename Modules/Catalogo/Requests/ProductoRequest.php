@@ -41,8 +41,8 @@ class ProductoRequest extends FormRequest
             // Variantes
             'variantes' => ['nullable', 'array', 'max:50'],
             'variantes.*.id_variante' => ['nullable', 'integer'],
-            'variantes.*.color' => ['nullable', 'string', 'max:40'],
-            'variantes.*.caracteristicas' => ['nullable', 'string', 'max:500'],
+            'variantes.*.color' => ['nullable', 'string', 'max:30'],
+            'variantes.*.caracteristicas' => ['nullable', 'string', 'max:200'],
             'variantes.*.estado' => ['nullable', Rule::in(['ACTIVO', 'INACTIVO'])],
         ];
 
@@ -50,7 +50,7 @@ class ProductoRequest extends FormRequest
         // (se ignora la propia variante cuando se está editando).
         foreach ((array) $this->input('variantes', []) as $i => $variante) {
             $reglas["variantes.$i.sku"] = [
-                'required', 'string', 'max:60', 'distinct',
+                'required', 'string', 'max:40', 'distinct',
                 Rule::unique('variante_producto', 'sku')->ignore($variante['id_variante'] ?? null, 'id_variante'),
             ];
         }

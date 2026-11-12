@@ -16,20 +16,13 @@ use Throwable;
 class ProductoController extends Controller
 {
     /**
-     * Configuración opcional para la ALERTA DE STOCK BAJO.
-     *
-     * El módulo de catálogo no conoce dónde guarda el sistema las existencias,
-     * así que se configura aquí. Mientras 'tabla' sea null la alerta queda
-     * desactivada (no se muestra nada y no se hace ninguna consulta extra).
-     *
-     * Ejemplo si tuviera una tabla `inventario(id_producto, cantidad)`:
-     *   'tabla' => 'inventario', 'columna_producto' => 'id_producto', 'columna_cantidad' => 'cantidad'
+     * Stock por producto, calculado desde `existencia` (que se guarda por variante y almacén).
+     * - total:      suma de cantidad_total
+     * - disponible: total - reservado (es lo que se puede vender; es el mismo criterio
+     *               que usa la vista v_reporte_existencias para la alerta REPONER)
      */
-    private const STOCK = [
-        'tabla' => null,
-        'columna_producto' => 'id_producto',
-        'columna_cantidad' => 'cantidad',
-    ];
+    private const SQL_STOCK_TOTAL = '(select COALESCE(SUM(e.cantidad_total), 0) from existencia e join variante_producto vp on vp.id_variante = e.id_variante where vp.id_producto = producto.id_producto)';
+    private const SQL_STOCK_DISPONIBLE = '(select COALESCE(SUM(e.cantidad_total - e.cantidad_reservada), 0) from existencia e join variante_producto vp on vp.id_variante = e.id_variante where vp.id_producto = producto.id_producto)';
 
     private const POR_PAGINA = 15;
 
@@ -48,8 +41,6 @@ class ProductoController extends Controller
             'stock_bajo' => 'nullable|boolean',
         ]);
 
-        $stockExpr = $this->stockExpr();
-
         $query = Producto::query()
             ->select('producto.*')
             ->with(['marca', 'imagenPrincipal'])
@@ -58,15 +49,13 @@ class ProductoController extends Controller
             ->when($filtros['categoria'] ?? null, fn ($q, $v) => $q->where('producto.categoria', $v))
             ->when($filtros['tipo'] ?? null, fn ($q, $v) => $q->where('producto.tipo_producto', $v))
             ->when($filtros['estado'] ?? null, fn ($q, $v) => $q->where('producto.estado', $v))
-            ->orderBy('producto.nombre');
+            ->orderBy('producto.nombre')
+            ->selectRaw(self::SQL_STOCK_TOTAL . ' as stock_total')
+            ->selectRaw(self::SQL_STOCK_DISPONIBLE . ' as stock_actual');
 
-        if ($stockExpr) {
-            $query->selectRaw("$stockExpr as stock_actual");
-
-            if (!empty($filtros['stock_bajo'])) {
-                $query->where('producto.modalidad', 'INVENTARIABLE')
-                    ->whereRaw("$stockExpr <= producto.stock_minimo");
-            }
+        if (!empty($filtros['stock_bajo'])) {
+            $query->where('producto.modalidad', 'INVENTARIABLE')
+                ->whereRaw(self::SQL_STOCK_DISPONIBLE . ' <= producto.stock_minimo');
         }
 
         $productos = $query->paginate(self::POR_PAGINA)->withQueryString();
@@ -74,12 +63,10 @@ class ProductoController extends Controller
         $resumen = [
             'total' => Producto::count(),
             'activos' => Producto::where('estado', 'ACTIVO')->count(),
-            'stock_bajo' => $stockExpr
-                ? Producto::where('estado', 'ACTIVO')
-                    ->where('modalidad', 'INVENTARIABLE')
-                    ->whereRaw("$stockExpr <= producto.stock_minimo")
-                    ->count()
-                : null,
+            'stock_bajo' => Producto::where('estado', 'ACTIVO')
+                ->where('modalidad', 'INVENTARIABLE')
+                ->whereRaw(self::SQL_STOCK_DISPONIBLE . ' <= producto.stock_minimo')
+                ->count(),
         ];
 
         return view('catalogo::productos.index', [
@@ -89,7 +76,6 @@ class ProductoController extends Controller
             'tipos' => Producto::TIPOS,
             'filtros' => $filtros,
             'resumen' => $resumen,
-            'stockHabilitado' => (bool) $stockExpr,
         ]);
     }
 
@@ -269,21 +255,6 @@ class ProductoController extends Controller
     /* =========================================================
      |  HELPERS PRIVADOS
      * ========================================================= */
-
-    /** Subconsulta SQL con el stock actual, o null si no está configurado. */
-    private function stockExpr(): ?string
-    {
-        $tabla = self::STOCK['tabla'];
-        if (!$tabla) {
-            return null;
-        }
-
-        $fk = self::STOCK['columna_producto'];
-        $cant = self::STOCK['columna_cantidad'];
-
-        // Los identificadores vienen de la constante de arriba, nunca del usuario.
-        return "(select COALESCE(SUM({$tabla}.{$cant}), 0) from {$tabla} where {$tabla}.{$fk} = producto.id_producto)";
-    }
 
     /**
      * Guarda las imágenes subidas. La primera pasa a ser la principal solo si
