@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetDatabaseUser::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\SessionTimeout::class,
+        ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
