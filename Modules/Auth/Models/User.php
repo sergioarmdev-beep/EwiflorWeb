@@ -28,6 +28,7 @@ class User extends Authenticatable
         'id_sucursal',
         'porcentaje_comision_pct',
         'estado',
+        'debe_cambiar_contrasena',
     ];
 
     protected $hidden = [
@@ -37,6 +38,7 @@ class User extends Authenticatable
     protected $casts = [
         'porcentaje_comision_pct' => 'decimal:2',
         'fecha_creacion'          => 'datetime',
+        'debe_cambiar_contrasena' => 'boolean',
     ];
 
     public function username(): string
@@ -81,6 +83,16 @@ class User extends Authenticatable
     public function esAdministrador(): bool
     {
         return $this->nombre_rol === 'ADMINISTRADOR';
+    }
+
+    /**
+     * Roles que este usuario puede asignar a otros: solo un Gerente puede crear/ascender Gerentes.
+     */
+    public function rolesAsignables(): array
+    {
+        $roles = ['ADMINISTRADOR', 'VENDEDOR', 'SERVICIO_TECNICO'];
+
+        return $this->esGerente() ? array_merge(['GERENTE'], $roles) : $roles;
     }
 
     public function puedeGestionarUsuarios(): bool

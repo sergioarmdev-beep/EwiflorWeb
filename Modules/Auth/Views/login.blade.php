@@ -29,8 +29,25 @@
             <div class="w-10 h-1 bg-blue-500 rounded-full opacity-80"></div>
         </div>
 
-        <!-- SECCIÓN SUPERIOR: Solicitud de Cuenta (Desplegable sin funcionalidad activa) -->
-        <details class="group mb-8 bg-slate-950/60 border border-slate-800 rounded-xl overflow-hidden transition-all duration-200">
+        <!-- Aviso de solicitud enviada -->
+        @if (session('solicitud_ok'))
+        <div class="mb-6 p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-sm animate-[fade-in_0.2s_ease-in]" role="status">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <span class="font-semibold block text-xs uppercase tracking-wider text-emerald-400">Solicitud enviada</span>
+                    <p class="mt-0.5 text-xs text-emerald-200/90">{{ session('solicitud_ok') }}</p>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- SECCIÓN SUPERIOR: Solicitud de Cuenta (se abre sola si hay errores) -->
+        @php($errSol = $errors->getBag('solicitud'))
+        @php($campoSol = 'w-full px-3 py-2 bg-slate-900 border border-slate-700/60 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500')
+        <details class="group mb-8 bg-slate-950/60 border border-slate-800 rounded-xl overflow-hidden transition-all duration-200" @if ($errSol->any()) open @endif>
             <summary class="flex items-center justify-between p-3.5 cursor-pointer list-none select-none hover:bg-slate-800/40 transition-colors">
                 <div class="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider text-slate-300">
                     <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,33 +60,44 @@
                 </svg>
             </summary>
 
-            <!-- Formulario de Petición de Cuenta (Inactivo de momento) -->
-            <form onsubmit="event.preventDefault();" class="p-4 pt-2 border-t border-slate-800 space-y-3.5">
-                <div>
-                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre Completo</label>
-                    <input type="text" placeholder="Ej. Carlos Mendoza"
-                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700/60 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            <!-- Formulario de Petición de Cuenta -->
+            <form method="POST" action="{{ route('solicitudes.store') }}" class="p-4 pt-2 border-t border-slate-800 space-y-3.5" novalidate>
+                @csrf
+
+                <!-- Honeypot anti-bots: debe quedar vacío (oculto para personas) -->
+                <div class="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+                    <label>Sitio web <input type="text" name="sitio_web" tabindex="-1" autocomplete="off"></label>
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Correo Electrónico</label>
-                    <input type="email" placeholder="correo@empresa.com"
-                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700/60 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <label for="sol_nombre" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre Completo</label>
+                    <input id="sol_nombre" type="text" name="nombre_completo" value="{{ old('nombre_completo') }}" maxlength="100" required
+                        placeholder="Ej. Carlos Mendoza" class="{{ $campoSol }}">
+                    @if ($errSol->has('nombre_completo')) <p class="text-[11px] text-red-400 mt-1">{{ $errSol->first('nombre_completo') }}</p> @endif
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Número de Celular</label>
-                    <input type="tel" placeholder="+591 70000000"
-                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700/60 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <label for="sol_correo" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Correo Electrónico</label>
+                    <input id="sol_correo" type="email" name="correo" value="{{ old('correo') }}" maxlength="100" required
+                        placeholder="correo@empresa.com" class="{{ $campoSol }}">
+                    @if ($errSol->has('correo')) <p class="text-[11px] text-red-400 mt-1">{{ $errSol->first('correo') }}</p> @endif
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Motivo de la Solicitud</label>
-                    <textarea rows="2" placeholder="Especifica el área o rol requerido..."
-                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700/60 rounded-lg text-slate-100 placeholder-slate-600 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
+                    <label for="sol_celular" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Número de Celular</label>
+                    <input id="sol_celular" type="tel" name="celular" value="{{ old('celular') }}" maxlength="20" required
+                        placeholder="+591 70000000" class="{{ $campoSol }}">
+                    @if ($errSol->has('celular')) <p class="text-[11px] text-red-400 mt-1">{{ $errSol->first('celular') }}</p> @endif
                 </div>
 
-                <button type="button"
+                <div>
+                    <label for="sol_motivo" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Motivo de la Solicitud</label>
+                    <textarea id="sol_motivo" name="motivo" rows="2" maxlength="500" required
+                        placeholder="Especifica el área o rol requerido..." class="{{ $campoSol }} resize-none">{{ old('motivo') }}</textarea>
+                    @if ($errSol->has('motivo')) <p class="text-[11px] text-red-400 mt-1">{{ $errSol->first('motivo') }}</p> @endif
+                </div>
+
+                <button type="submit"
                     class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs rounded-lg border border-slate-700/80 transition-colors duration-150 cursor-pointer">
                     Enviar Solicitud
                 </button>
