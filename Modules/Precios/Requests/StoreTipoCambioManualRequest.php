@@ -7,6 +7,9 @@ use Illuminate\Validation\Rule;
 
 class StoreTipoCambioManualRequest extends FormRequest
 {
+    // Bolsa de errores propia: así no se mezcla con los errores del filtro del historial.
+    protected $errorBag = 'manual';
+
     public function authorize(): bool
     {
         $user = $this->user();

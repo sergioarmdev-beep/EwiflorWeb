@@ -8,6 +8,7 @@ Route::middleware(['auth'])
     ->name('precios.tipo-cambio.')
     ->group(function () {
         Route::get('/', [TipoCambioController::class, 'index'])->name('index');
+        Route::get('/exportar', [TipoCambioController::class, 'exportar'])->name('export');
 
         Route::middleware(['role:GERENTE,ADMINISTRADOR'])->group(function () {
             Route::post('/refresh', [TipoCambioController::class, 'refresh'])->name('refresh');

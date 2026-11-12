@@ -18,6 +18,7 @@ class TipoCambio extends Model
         'fecha',
         'tipo',
         'valor',
+        'valor_compra',
         'origen',
         'id_usuario',
         'fecha_referencia_api',
@@ -26,6 +27,7 @@ class TipoCambio extends Model
     protected $casts = [
         'fecha'                => 'date',
         'valor'                => 'decimal:4',
+        'valor_compra'         => 'decimal:4',
         'fecha_registro'       => 'datetime',
         'fecha_referencia_api' => 'datetime',
     ];

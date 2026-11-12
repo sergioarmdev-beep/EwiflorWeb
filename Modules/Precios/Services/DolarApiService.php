@@ -8,6 +8,10 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Cliente de DolarAPI (https://bo.dolarapi.com), usado SOLO para el tipo de cambio PARALELO (Binance).
+ * El oficial viene de BcbApiService.
+ */
 class DolarApiService
 {
     private const BASE_URL = 'https://bo.dolarapi.com';
@@ -18,9 +22,9 @@ class DolarApiService
      * - force_ip_resolve => v4 evita timeouts por IPv6 en Windows.
      * - withoutVerifying() solo si DOLARAPI_SKIP_SSL_VERIFY=true (desarrollo).
      */
-    private function httpClient(): PendingRequest
+    private function httpClient(int $timeout = self::TIMEOUT): PendingRequest
     {
-        $client = Http::timeout(self::TIMEOUT)
+        $client = Http::timeout($timeout)
             ->acceptJson()
             ->withOptions([
                 'force_ip_resolve' => 'v4',
@@ -42,10 +46,10 @@ class DolarApiService
      *   error?: string
      * }
      */
-    public function verificarEstado(): array
+    public function verificarEstado(int $timeout = self::TIMEOUT): array
     {
         try {
-            $response = $this->httpClient()->get(self::BASE_URL . '/v1/estado');
+            $response = $this->httpClient($timeout)->get(self::BASE_URL . '/v1/estado');
 
             if (!$response->successful()) {
                 return [
@@ -94,11 +98,6 @@ class DolarApiService
     public function obtenerParalelo(): ?array
     {
         return $this->obtener('binance', 'PARALELO');
-    }
-
-    public function obtenerOficial(): ?array
-    {
-        return $this->obtener('oficial', 'OFICIAL');
     }
 
     private function obtener(string $casa, string $tipo): ?array
