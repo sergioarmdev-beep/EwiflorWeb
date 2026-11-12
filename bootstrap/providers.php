@@ -7,4 +7,5 @@ return [
     Modules\Auth\Providers\AuthServiceProvider::class,
     Modules\Catalogo\Providers\CatalogoServiceProvider::class,
     Modules\Inventario\Providers\InventarioServiceProvider::class,
+    Modules\Precios\Providers\PreciosServiceProvider::class,
 ];
