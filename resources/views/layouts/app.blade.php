@@ -109,6 +109,13 @@
           {{ request()->routeIs('inventario.movimientos.*') ? 'bg-gray-200 text-gray-900' : 'text-gray-700' }}">
                     Movimientos
                 </a>
+                @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR','VENDEDOR']))
+                <a href="{{ route('clientes.index') }}"
+                    class="block px-4 py-2 rounded hover:bg-gray-100
+              {{ request()->routeIs('clientes.*') ? 'bg-gray-100 font-medium' : '' }}">
+                    Clientes
+                </a>
+                @endif
             </nav>
 
             <!-- Pie de Sidebar (Botón Regresar al Inicio y Logout) -->

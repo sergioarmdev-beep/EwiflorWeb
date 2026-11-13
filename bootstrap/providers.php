@@ -9,4 +9,5 @@ return [
     Modules\Inventario\Providers\InventarioServiceProvider::class,
     Modules\Precios\Providers\PreciosServiceProvider::class,
     Modules\Sistema\Providers\SistemaServiceProvider::class,
+    Modules\Clientes\Providers\ClientesServiceProvider::class,
 ];

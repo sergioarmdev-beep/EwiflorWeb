@@ -176,7 +176,9 @@ CREATE TABLE cliente (
                        'DISTRIBUIDOR','PANADERIA','PASTELERIA',
                        'COMIDA_RAPIDA','RESTAURANTE','PERSONA_NATURAL')),
     es_mayorista   BOOLEAN NOT NULL DEFAULT false,
-    fecha_registro TIMESTAMPTZ NOT NULL DEFAULT now()
+    fecha_registro TIMESTAMPTZ NOT NULL DEFAULT now(),
+    estado VARCHAR(10) NOT NULL DEFAULT 'ACTIVO'
+       CHECK (estado IN ('ACTIVO','INACTIVO'))
 );
 
 -- ---------------------------------------------------------------------

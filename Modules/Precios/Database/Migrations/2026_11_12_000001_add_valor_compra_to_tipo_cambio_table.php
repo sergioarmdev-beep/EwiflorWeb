@@ -25,5 +25,8 @@ return new class extends Migration
                 $table->dropColumn('valor_compra');
             });
         }
+        // Deliberadamente no se elimina: `valor_compra` ya se usa en TipoCambioService.
+        // Si en el futuro se requiere quitarla, hacerlo con una migración explícita
+        // que primero migre los datos.
     }
 };
