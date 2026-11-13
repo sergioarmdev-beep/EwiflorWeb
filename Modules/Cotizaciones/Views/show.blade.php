@@ -112,7 +112,7 @@ $rol = auth()->user()->nombre_rol;
         @elseif ($cond === 'VENCIDA')
         <p class="text-sm text-red-700">Cotización vencida. Extiende la vigencia editándola o emite una nueva.</p>
         @elseif (Route::has('ventas.create'))
-        <a href="{{ route('ventas.create', ['cotizacion' => $cotizacion->id_cotizacion]) }}"
+        <a href="{{ route('ventas.create', ['desde_cotizacion' => 1, 'cotizacion' => $cotizacion->id_cotizacion]) }}"
             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded inline-block">
             Convertir a venta
         </a>

@@ -45,4 +45,15 @@ class DbFunction
         }
         return array_values((array) $row)[0] ?? null;
     }
+    public static function query(string $sql, array $bindings = []): array
+    {
+        try {
+            return DB::select($sql, $bindings);
+        } catch (QueryException $e) {
+            if ($e->getCode() === 'P0001') {
+                throw new BusinessRuleException($e->getMessage(), 0, $e);
+            }
+            throw $e;
+        }
+    }
 }

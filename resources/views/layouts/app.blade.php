@@ -123,6 +123,13 @@
                     Cotizaciones
                 </a>
                 @endif
+                @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR','VENDEDOR']))
+                <a href="{{ route('ventas.index') }}"
+                    class="block px-4 py-2 rounded hover:bg-gray-100
+              {{ request()->routeIs('ventas.*') ? 'bg-gray-100 font-medium' : '' }}">
+                    Ventas
+                </a>
+                @endif
             </nav>
 
             <!-- Pie de Sidebar (Botón Regresar al Inicio y Logout) -->
