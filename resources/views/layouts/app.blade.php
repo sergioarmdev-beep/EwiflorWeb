@@ -116,6 +116,13 @@
                     Clientes
                 </a>
                 @endif
+                @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR','VENDEDOR']))
+                <a href="{{ route('cotizaciones.index') }}"
+                    class="block px-4 py-2 rounded hover:bg-gray-100
+              {{ request()->routeIs('cotizaciones.*') ? 'bg-gray-100 font-medium' : '' }}">
+                    Cotizaciones
+                </a>
+                @endif
             </nav>
 
             <!-- Pie de Sidebar (Botón Regresar al Inicio y Logout) -->
@@ -251,6 +258,7 @@
             }
         }
     </script>
+    @stack('scripts')
 </body>
 
 </html>

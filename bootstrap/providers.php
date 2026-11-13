@@ -10,4 +10,5 @@ return [
     Modules\Precios\Providers\PreciosServiceProvider::class,
     Modules\Sistema\Providers\SistemaServiceProvider::class,
     Modules\Clientes\Providers\ClientesServiceProvider::class,
+    Modules\Cotizaciones\Providers\CotizacionesServiceProvider::class,
 ];
