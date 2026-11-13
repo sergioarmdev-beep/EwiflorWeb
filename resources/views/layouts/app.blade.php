@@ -99,6 +99,16 @@
                     Tipo de cambio
                 </a>
                 @endif
+                <a href="{{ route('inventario.existencias.index') }}"
+                    class="block px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100
+          {{ request()->routeIs('inventario.existencias.*') ? 'bg-gray-200 text-gray-900' : 'text-gray-700' }}">
+                    Existencias
+                </a>
+                <a href="{{ route('inventario.movimientos.index') }}"
+                    class="block px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100
+          {{ request()->routeIs('inventario.movimientos.*') ? 'bg-gray-200 text-gray-900' : 'text-gray-700' }}">
+                    Movimientos
+                </a>
             </nav>
 
             <!-- Pie de Sidebar (Botón Regresar al Inicio y Logout) -->
