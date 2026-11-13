@@ -57,6 +57,18 @@ class ClienteController extends Controller
 
     public function show(Cliente $cliente)
     {
+        $cliente->load([
+            'cotizaciones' => fn($query) => $query
+                ->with(['tipoCambio', 'detalles'])
+                ->orderByDesc('id_cotizacion')
+                ->limit(10),
+
+            'ventas' => fn($query) => $query
+                ->with(['pagos'])
+                ->orderByDesc('id_venta')
+                ->limit(10),
+        ]);
+
         return view('clientes::show', compact('cliente'));
     }
 

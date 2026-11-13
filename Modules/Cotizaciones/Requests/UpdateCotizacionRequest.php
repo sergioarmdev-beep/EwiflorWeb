@@ -4,7 +4,7 @@ namespace Modules\Cotizaciones\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCotizacionRequest extends FormRequest
+class UpdateCotizacionRequest extends FormRequest
 {
     public function authorize(): bool
     {

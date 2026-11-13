@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Clientes\Models\Cliente;
 
-class StoreClienteRequest extends FormRequest
+class UpdateClienteRequest extends FormRequest
 {
     public function authorize(): bool
     {

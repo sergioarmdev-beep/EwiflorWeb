@@ -4,6 +4,9 @@ namespace Modules\Clientes\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Cotizaciones\Models\Cotizacion;
+use Modules\Ventas\Models\Venta;
 
 class Cliente extends Model
 {
@@ -55,5 +58,28 @@ class Cliente extends Model
         $this->attributes['correo'] = ($value !== null && trim($value) !== '')
             ? strtolower(trim($value))
             : null;
+    }
+    /**
+     * Cotizaciones registradas para este cliente.
+     */
+    public function cotizaciones(): HasMany
+    {
+        return $this->hasMany(
+            Cotizacion::class,
+            'id_cliente',
+            'id_cliente'
+        );
+    }
+
+    /**
+     * Ventas registradas para este cliente.
+     */
+    public function ventas(): HasMany
+    {
+        return $this->hasMany(
+            Venta::class,
+            'id_cliente',
+            'id_cliente'
+        );
     }
 }
