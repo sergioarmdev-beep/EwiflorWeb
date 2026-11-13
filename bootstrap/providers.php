@@ -8,4 +8,5 @@ return [
     Modules\Catalogo\Providers\CatalogoServiceProvider::class,
     Modules\Inventario\Providers\InventarioServiceProvider::class,
     Modules\Precios\Providers\PreciosServiceProvider::class,
+    Modules\Sistema\Providers\SistemaServiceProvider::class,
 ];
