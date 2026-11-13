@@ -1,305 +1,653 @@
 @extends('layouts.app')
 
-@section('title', $cliente->nombre)
+@section('title', 'Detalle del cliente')
 
 @section('content')
-<div class="max-w-4xl mx-auto p-6 space-y-6">
+@php
+$puedeGestionarClientes = in_array(
+auth()->user()->nombre_rol,
+['GERENTE', 'ADMINISTRADOR', 'VENDEDOR'],
+true
+);
+@endphp
+
+<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     {{-- Encabezado --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-        <div class="flex items-center gap-3">
-            <div class="flex items-center justify-center w-11 h-11 rounded-xl
-                        bg-sky-100 text-sky-700
-                        dark:bg-sky-500/10 dark:text-sky-400">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="w-6 h-6" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        stroke-width="1.8"
-                        d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m12-13a4 4 0 11-8 0 4 4 0 018 0zm2 4h6m-3-3v6" />
-                </svg>
-            </div>
-
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight
-                           text-slate-800 dark:text-slate-100">
-                    {{ $cliente->nombre }}
-                </h1>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Información y actividad del cliente.
-                </p>
-            </div>
-        </div>
-
-        {{-- Acciones --}}
-        <div class="flex flex-wrap items-center gap-2">
-
-            @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR','VENDEDOR']))
-            <a href="{{ route('clientes.edit', $cliente) }}"
-                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg
-                          bg-sky-600 hover:bg-sky-700
-                          text-white text-sm font-medium
-                          transition-colors">
-
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="w-4 h-4" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7.5 1.5L19 6a2.12 2.12 0 00-3-3l-9.5 9.5L6 16l3.5-.5z" />
-                </svg>
-
-                Editar
-            </a>
-            @endif
-
-            @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR']))
-            <form method="POST" action="{{ route('clientes.toggleEstado', $cliente) }}">
-                @csrf
-                @method('PATCH')
-
-                <button type="submit"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg
-                                   border text-sm font-medium transition-colors
-                                   {{ $cliente->estado === 'ACTIVO'
-                                       ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10'
-                                       : 'border-green-200 text-green-700 hover:bg-green-50 dark:border-green-500/30 dark:text-green-400 dark:hover:bg-green-500/10' }}">
-
-                    @if ($cliente->estado === 'ACTIVO')
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-4 h-4" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728" />
-                    </svg>
-                    Desactivar
-                    @else
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-4 h-4" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M5 13l4 4L19 7" />
-                    </svg>
-                    Reactivar
-                    @endif
-                </button>
-            </form>
-            @endif
-
+        <div>
             <a href="{{ route('clientes.index') }}"
-                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg
-                      border border-slate-300 dark:border-slate-700
-                      text-sm font-medium text-slate-700 dark:text-slate-300
-                      hover:bg-slate-100 dark:hover:bg-slate-800
-                      transition-colors">
-
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="w-4 h-4" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
+                class="inline-flex items-center gap-2 text-sm font-medium
+                       text-slate-500 hover:text-sky-700
+                       dark:text-slate-400 dark:hover:text-sky-400 transition mb-3">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 19l-7-7 7-7" />
+                        stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-
-                Volver
+                Volver a clientes
             </a>
-        </div>
-    </div>
 
-    {{-- Mensaje de confirmación --}}
-    @if (session('ok'))
-    <div class="flex items-center gap-3 px-4 py-3 rounded-xl
-                    bg-green-50 border border-green-200 text-green-800
-                    dark:bg-green-500/10 dark:border-green-500/20 dark:text-green-400">
-
-        <svg xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5 shrink-0" fill="none"
-            viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7" />
-        </svg>
-
-        <p class="text-sm font-medium">
-            {{ session('ok') }}
-        </p>
-    </div>
-    @endif
-
-    {{-- Información del cliente --}}
-    <div class="bg-white dark:bg-slate-900
-                border border-slate-200 dark:border-slate-800
-                rounded-2xl shadow-sm overflow-hidden">
-
-        {{-- Cabecera --}}
-        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800
-                    flex items-center justify-between gap-3">
-
-            <div>
-                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">
-                    Información del cliente
-                </h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Datos generales y características del registro.
-                </p>
-            </div>
-
-            {{-- Estado --}}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
-                         text-xs font-semibold
-                         {{ $cliente->estado === 'ACTIVO'
-                             ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400'
-                             : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' }}">
-
-                <span class="w-1.5 h-1.5 rounded-full
-                             {{ $cliente->estado === 'ACTIVO' ? 'bg-green-500' : 'bg-red-500' }}">
+            <div class="flex items-center gap-3">
+                <span class="w-10 h-10 flex items-center justify-center rounded-xl
+                             bg-sky-100 text-sky-700
+                             dark:bg-sky-500/10 dark:text-sky-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="1.8"
+                            d="M17 20h5v-2a4 4 0 0 0-5.5-3.7M9 20H2v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2H9Zm0-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6" />
+                    </svg>
                 </span>
 
-                {{ $cliente->estado }}
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                        {{ $cliente->nombre }}
+                    </h1>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                        Detalle e historial comercial del cliente
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        @if ($puedeGestionarClientes)
+        <a href="{{ route('clientes.edit', $cliente) }}"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2.5
+                       rounded-lg bg-sky-600 hover:bg-sky-700
+                       dark:bg-sky-600 dark:hover:bg-sky-500
+                       text-white text-sm font-semibold shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="2"
+                    d="m16.862 4.487 1.687-1.688a2.121 2.121 0 0 1 3 3l-1.688 1.687m-3-3L7.5 13.85a4 4 0 0 0-1 1.7L6 18l2.45-.5a4 4 0 0 0 1.7-1l9.712-9.713" />
+            </svg>
+            Editar cliente
+        </a>
+        @endif
+    </div>
+
+    {{-- Información general --}}
+    <section class="bg-white dark:bg-slate-900
+                    border border-slate-200 dark:border-slate-800
+                    rounded-xl shadow-sm overflow-hidden">
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+                    gap-3 px-5 py-4
+                    border-b border-slate-200 dark:border-slate-800">
+
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1.8"
+                        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m16-10a4 4 0 0 0 0-8m4 18v-2a4 4 0 0 0-3-3.87M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+                </svg>
+
+                <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                    Información del cliente
+                </h2>
+            </div>
+
+            <span class="text-xs text-slate-500 dark:text-slate-400">
+                Código: #{{ $cliente->id_cliente }}
             </span>
         </div>
 
-        {{-- Datos --}}
-        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+        <div class="p-5">
+            <div class="flex flex-wrap items-center gap-2 mb-5">
 
-            {{-- Teléfono --}}
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider
-                          text-slate-500 dark:text-slate-400 mb-2">
-                    Teléfono
-                </p>
-                <div class="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-4 h-4 text-sky-600 dark:text-sky-400"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            stroke-width="1.8"
-                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.1 3.3a1 1 0 01-.5 1.21l-2.12 1.06a11.04 11.04 0 005.29 5.29l1.06-2.12a1 1 0 011.21-.5l3.3 1.1a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.27 21 3 14.73 3 7V5z" />
-                    </svg>
-                    {{ $cliente->telefono }}
-                </div>
-            </div>
-
-            {{-- Correo --}}
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider
-                          text-slate-500 dark:text-slate-400 mb-2">
-                    Correo electrónico
-                </p>
-                <div class="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-4 h-4 text-sky-600 dark:text-sky-400"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            stroke-width="1.8"
-                            d="M3 8l9 6 9-6M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
-                    </svg>
-                    {{ $cliente->correo ?? '—' }}
-                </div>
-            </div>
-
-            {{-- Tipo --}}
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider
-                          text-slate-500 dark:text-slate-400 mb-2">
-                    Tipo de cliente
-                </p>
-                <p class="text-sm font-medium text-slate-800 dark:text-slate-200">
-                    {{ $cliente->tipo_cliente ?? '—' }}
-                </p>
-            </div>
-
-            {{-- Mayorista --}}
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider
-                          text-slate-500 dark:text-slate-400 mb-2">
-                    Clasificación comercial
-                </p>
-                <span class="inline-flex items-center gap-2 text-sm font-medium
-                             text-slate-800 dark:text-slate-200">
-                    <span class="w-2 h-2 rounded-full
-                                 {{ $cliente->es_mayorista ? 'bg-sky-500' : 'bg-slate-400' }}">
-                    </span>
-                    {{ $cliente->es_mayorista ? 'Mayorista' : 'Minorista' }}
+                @if ($cliente->estado === 'ACTIVO')
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1
+                                 rounded-full text-xs font-semibold
+                                 bg-emerald-100 text-emerald-800
+                                 border border-emerald-200
+                                 dark:bg-emerald-500/10 dark:text-emerald-400
+                                 dark:border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Activo
                 </span>
+                @else
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1
+                                 rounded-full text-xs font-semibold
+                                 bg-red-100 text-red-800
+                                 border border-red-200
+                                 dark:bg-red-500/10 dark:text-red-400
+                                 dark:border-red-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                    Inactivo
+                </span>
+                @endif
+
+                @if ($cliente->es_mayorista)
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                                 text-xs font-semibold
+                                 bg-violet-100 text-violet-800
+                                 border border-violet-200
+                                 dark:bg-violet-500/10 dark:text-violet-400
+                                 dark:border-violet-500/20">
+                    Mayorista
+                </span>
+                @else
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                                 text-xs font-semibold
+                                 bg-slate-100 text-slate-700
+                                 border border-slate-200
+                                 dark:bg-slate-700/50 dark:text-slate-300
+                                 dark:border-slate-600">
+                    Minorista
+                </span>
+                @endif
             </div>
 
-            {{-- Fecha de registro --}}
-            <div class="sm:col-span-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <p class="text-xs font-medium uppercase tracking-wider
-                          text-slate-500 dark:text-slate-400 mb-2">
-                    Fecha de registro
-                </p>
-                <div class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-4 h-4 text-sky-600 dark:text-sky-400"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            stroke-width="1.8"
-                            d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                    </svg>
-                    {{ $cliente->fecha_registro?->format('d/m/Y H:i') ?? '—' }}
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider
+                              text-slate-500 dark:text-slate-400 mb-1.5">
+                        Nombre completo
+                    </p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        {{ $cliente->nombre }}
+                    </p>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider
+                              text-slate-500 dark:text-slate-400 mb-1.5">
+                        Teléfono
+                    </p>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {{ $cliente->telefono ?: 'No registrado' }}
+                    </p>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider
+                              text-slate-500 dark:text-slate-400 mb-1.5">
+                        Correo electrónico
+                    </p>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300 break-all">
+                        {{ $cliente->correo ?: 'No registrado' }}
+                    </p>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider
+                              text-slate-500 dark:text-slate-400 mb-1.5">
+                        Tipo de cliente
+                    </p>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {{ str_replace('_', ' ', $cliente->tipo_cliente) }}
+                    </p>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider
+                              text-slate-500 dark:text-slate-400 mb-1.5">
+                        Fecha de registro
+                    </p>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {{ $cliente->fecha_registro?->format('d/m/Y') ?? 'No disponible' }}
+                    </p>
                 </div>
             </div>
-
         </div>
-    </div>
+    </section>
 
-    {{-- Historial --}}
-    <div class="bg-white dark:bg-slate-900
-                border border-slate-200 dark:border-slate-800
-                rounded-2xl shadow-sm overflow-hidden">
+    {{-- Resumen comercial --}}
+    <section class="space-y-4">
 
-        <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
-            <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="w-5 h-5 text-sky-600 dark:text-sky-400"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        stroke-width="1.8"
-                        d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    stroke-width="1.8"
+                    d="M3 3v18h18M18 17V9m-5 8V5m-5 12v-5" />
+            </svg>
 
-                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">
-                    Historial del cliente
+            <div>
+                <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                    Resumen comercial
                 </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Indicadores acumulados de la actividad del cliente
+                </p>
             </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            {{-- Cotizaciones emitidas --}}
+            <div class="bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800
+                        rounded-xl p-5 shadow-sm">
+
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        Cotizaciones emitidas
+                    </p>
+
+                    <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                                 bg-sky-100 text-sky-700
+                                 dark:bg-sky-500/10 dark:text-sky-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="1.8"
+                                d="M8 7h8m-8 4h8m-8 4h5M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+                        </svg>
+                    </span>
+                </div>
+
+                <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-3 tabular-nums">
+                    {{ $resumenCotizaciones->emitidas ?? 0 }}
+                </p>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    Total: {{ $resumenCotizaciones->total ?? 0 }}
+                </p>
+            </div>
+
+            {{-- Cotizaciones convertidas --}}
+            <div class="bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800
+                        rounded-xl p-5 shadow-sm">
+
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        Cotizaciones convertidas
+                    </p>
+
+                    <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                                 bg-emerald-100 text-emerald-700
+                                 dark:bg-emerald-500/10 dark:text-emerald-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="1.8"
+                                d="m5 12 4 4L19 6" />
+                        </svg>
+                    </span>
+                </div>
+
+                <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-3 tabular-nums">
+                    {{ $resumenCotizaciones->convertidas ?? 0 }}
+                </p>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    Anuladas: {{ $resumenCotizaciones->anuladas ?? 0 }}
+                </p>
+            </div>
+
+            {{-- Ventas registradas --}}
+            <div class="bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800
+                        rounded-xl p-5 shadow-sm">
+
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        Ventas registradas
+                    </p>
+
+                    <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                                 bg-violet-100 text-violet-700
+                                 dark:bg-violet-500/10 dark:text-violet-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="1.8"
+                                d="M3 3h2l2.4 12.5a2 2 0 0 0 2 1.5h8.8a2 2 0 0 0 2-1.6L22 8H6m4 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+                        </svg>
+                    </span>
+                </div>
+
+                <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-3 tabular-nums">
+                    {{ $resumenVentas->total ?? 0 }}
+                </p>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    Operaciones efectivas
+                </p>
+            </div>
+
+            {{-- Saldo pendiente --}}
+            <div class="bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800
+                        rounded-xl p-5 shadow-sm">
+
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        Saldo pendiente
+                    </p>
+
+                    <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                                 bg-amber-100 text-amber-700
+                                 dark:bg-amber-500/10 dark:text-amber-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="1.8"
+                                d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </span>
+                </div>
+
+                <p class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-3 tabular-nums">
+                    Bs {{ number_format((float) ($resumenVentas->saldo_bs ?? 0), 2, ',', '.') }}
+                </p>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    Por cobrar
+                </p>
+            </div>
+        </div>
+
+        {{-- Resumen financiero --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div class="bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800
+                        rounded-xl p-5 shadow-sm">
+
+                <p class="text-xs font-semibold uppercase tracking-wider
+                          text-slate-500 dark:text-slate-400">
+                    Importe total vendido
+                </p>
+
+                <p class="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2 tabular-nums">
+                    Bs {{ number_format((float) ($resumenVentas->total_bs ?? 0), 2, ',', '.') }}
+                </p>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800
+                        rounded-xl p-5 shadow-sm">
+
+                <p class="text-xs font-semibold uppercase tracking-wider
+                          text-slate-500 dark:text-slate-400">
+                    Importe pagado
+                </p>
+
+                <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-2 tabular-nums">
+                    Bs {{ number_format((float) ($resumenVentas->pagado_bs ?? 0), 2, ',', '.') }}
+                </p>
+            </div>
+        </div>
+    </section>
+
+    {{-- Historial de cotizaciones --}}
+    <section class="bg-white dark:bg-slate-900
+                    border border-slate-200 dark:border-slate-800
+                    rounded-xl shadow-sm overflow-hidden">
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+                    gap-3 px-5 py-4
+                    border-b border-slate-200 dark:border-slate-800">
+
+            <div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="1.8"
+                            d="M8 7h8m-8 4h8m-8 4h5M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+                    </svg>
+
+                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                        Historial de cotizaciones
+                    </h2>
+                </div>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Últimas 10 cotizaciones del cliente
+                </p>
+            </div>
+
+            <a href="{{ route('cotizaciones.index', ['id_cliente' => $cliente->id_cliente]) }}"
+                class="text-sm font-semibold text-sky-700 hover:text-sky-900
+                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                Ver todas las cotizaciones →
+            </a>
+        </div>
+
+        @if ($cotizaciones->isEmpty())
+        <div class="px-6 py-14 text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
+                            bg-slate-100 dark:bg-slate-800
+                            text-slate-500 dark:text-slate-400
+                            flex items-center justify-center">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1.6"
+                        d="M8 7h8m-8 4h8m-8 4h5M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+                </svg>
+            </div>
+
+            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+                No hay cotizaciones registradas
+            </h3>
 
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Registro de las operaciones y actividades relacionadas.
+                Las cotizaciones de este cliente aparecerán aquí.
             </p>
         </div>
+        @else
+        <div class="overflow-x-auto">
+            <table class="min-w-[900px] w-full text-sm text-left">
+                <thead class="bg-slate-100 dark:bg-slate-800/80
+                                  text-xs uppercase tracking-wider
+                                  text-slate-600 dark:text-slate-400">
+                    <tr>
+                        <th class="px-4 py-4 font-semibold">N.º</th>
+                        <th class="px-4 py-4 font-semibold">Fecha</th>
+                        <th class="px-4 py-4 font-semibold">Estado</th>
+                        <th class="px-4 py-4 font-semibold">Vigencia</th>
+                        <th class="px-4 py-4 text-right font-semibold">Total USD</th>
+                        <th class="px-4 py-4 text-right font-semibold">Total Bs</th>
+                        <th class="px-4 py-4 text-right font-semibold">Acción</th>
+                    </tr>
+                </thead>
 
-        <div class="p-6">
-            <div class="flex flex-col items-center justify-center text-center py-6">
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                    @foreach ($cotizaciones as $cotizacion)
+                    @php
+                    $condicion = $cotizacion->condicionTemporal();
 
-                <div class="flex items-center justify-center w-12 h-12 rounded-full
-                            bg-slate-100 text-slate-500
-                            dark:bg-slate-800 dark:text-slate-400 mb-3">
+                    $condicionClases = match ($condicion) {
+                    'VIGENTE' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+                    'VENCIDA' => 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
+                    default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                    };
 
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-6 h-6" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
+                    $estadoClases = match ($cotizacion->estado) {
+                    'EMITIDA' => 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
+                    'CONVERTIDA' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+                    'ANULADA' => 'bg-red-100 text-red-800 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20',
+                    default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                    };
+                    @endphp
+
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                            #{{ $cotizacion->id_cotizacion }}
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            {{ $cotizacion->fecha_emision?->format('d/m/Y') ?? '—' }}
+                        </td>
+
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                                                 text-xs font-semibold border {{ $estadoClases }}">
+                                {{ $cotizacion->estado }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                                                 text-xs font-semibold border {{ $condicionClases }}">
+                                {{ $condicion }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap">
+                            $ {{ number_format($cotizacion->totalUsd(), 2, ',', '.') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap">
+                            Bs {{ number_format($cotizacion->totalBs(), 2, ',', '.') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-right">
+                            <a href="{{ route('cotizaciones.show', $cotizacion) }}"
+                                class="text-sm font-semibold text-sky-700 hover:text-sky-900
+                                               dark:text-sky-400 dark:hover:text-sky-300 transition">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </section>
+
+    {{-- Historial de ventas --}}
+    <section class="bg-white dark:bg-slate-900
+                    border border-slate-200 dark:border-slate-800
+                    rounded-xl shadow-sm overflow-hidden">
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+                    gap-3 px-5 py-4
+                    border-b border-slate-200 dark:border-slate-800">
+
+            <div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             stroke-width="1.8"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            d="M3 3h2l2.4 12.5a2 2 0 0 0 2 1.5h8.8a2 2 0 0 0 2-1.6L22 8H6m4 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
                     </svg>
+
+                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                        Historial de ventas
+                    </h2>
                 </div>
 
-                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    Sin actividad registrada
-                </h3>
-
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-                    Aquí aparecerán las cotizaciones, ventas y garantías
-                    asociadas a este cliente cuando esos módulos estén implementados.
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Últimas 10 operaciones comerciales
                 </p>
             </div>
+
+            <a href="{{ route('ventas.index', ['buscar' => $cliente->nombre]) }}"
+                class="text-sm font-semibold text-sky-700 hover:text-sky-900
+                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                Ver todas las ventas →
+            </a>
         </div>
-    </div>
+
+        @if ($ventas->isEmpty())
+        <div class="px-6 py-14 text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
+                            bg-slate-100 dark:bg-slate-800
+                            text-slate-500 dark:text-slate-400
+                            flex items-center justify-center">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1.6"
+                        d="M3 3h2l2.4 12.5a2 2 0 0 0 2 1.5h8.8a2 2 0 0 0 2-1.6L22 8" />
+                </svg>
+            </div>
+
+            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+                No hay ventas registradas
+            </h3>
+
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Las operaciones comerciales de este cliente aparecerán aquí.
+            </p>
+        </div>
+        @else
+        <div class="overflow-x-auto">
+            <table class="min-w-[950px] w-full text-sm text-left">
+                <thead class="bg-slate-100 dark:bg-slate-800/80
+                                  text-xs uppercase tracking-wider
+                                  text-slate-600 dark:text-slate-400">
+                    <tr>
+                        <th class="px-4 py-4 font-semibold">N.º</th>
+                        <th class="px-4 py-4 font-semibold">Fecha</th>
+                        <th class="px-4 py-4 font-semibold">Estado</th>
+                        <th class="px-4 py-4 text-right font-semibold">Total Bs</th>
+                        <th class="px-4 py-4 text-right font-semibold">Pagado Bs</th>
+                        <th class="px-4 py-4 text-right font-semibold">Saldo Bs</th>
+                        <th class="px-4 py-4 text-right font-semibold">Acción</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                    @foreach ($ventas as $venta)
+                    @php
+                    $estadoVentaClases = match ($venta->estado) {
+                    'REGISTRADA' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+                    'EN_PROCESO' => 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
+                    'CANCELADA' => 'bg-red-100 text-red-800 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20',
+                    default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                    };
+
+                    $totalVenta = (float) ($venta->total_bs ?? 0);
+                    $pagadoVenta = (float) ($venta->total_pagado_bs ?? 0);
+                    $saldoVenta = $totalVenta - $pagadoVenta;
+                    @endphp
+
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                            #{{ $venta->id_venta }}
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            {{ $venta->fecha_hora?->format('d/m/Y H:i') ?? '—' }}
+                        </td>
+
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                                                 text-xs font-semibold border {{ $estadoVentaClases }}">
+                                {{ $venta->estado }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap">
+                            Bs {{ number_format($totalVenta, 2, ',', '.') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-right text-emerald-700 dark:text-emerald-400 tabular-nums whitespace-nowrap">
+                            Bs {{ number_format($pagadoVenta, 2, ',', '.') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-right font-semibold tabular-nums whitespace-nowrap
+                                    {{ $saldoVenta > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300' }}">
+                            Bs {{ number_format($saldoVenta, 2, ',', '.') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-right">
+                            <a href="{{ route('ventas.show', $venta) }}"
+                                class="text-sm font-semibold text-sky-700 hover:text-sky-900
+                                               dark:text-sky-400 dark:hover:text-sky-300 transition">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </section>
 
 </div>
 @endsection

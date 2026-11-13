@@ -1,203 +1,242 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-950 text-slate-100" id="html-root">
+<html lang="es" class="h-full dark" id="html-root">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EwiflorWeb - Sistema de Gestión</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Dashboard') | EwiflorWeb</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <!-- Script inicial para prevenir parpadeo de tema -->
+
     <script>
-        if (localStorage.theme === 'light') {
-            document.documentElement.classList.remove('dark', 'bg-slate-950', 'text-slate-100');
-            document.documentElement.classList.add('bg-gray-100', 'text-gray-900');
-        } else {
-            document.documentElement.classList.add('dark', 'bg-slate-950', 'text-slate-100');
-        }
+        (() => {
+            let theme = 'dark';
+            try {
+                theme = localStorage.getItem('theme') || 'dark';
+            } catch (error) {
+                /* Oscuro por defecto. */ }
+            document.documentElement.classList.toggle('dark', theme !== 'light');
+        })();
     </script>
 </head>
 
-<body class="h-full font-sans antialiased overflow-hidden bg-slate-950 dark:bg-slate-950 text-slate-100 transition-colors duration-200">
-    <div class="flex h-screen bg-transparent relative overflow-hidden">
+<body class="h-full overflow-hidden bg-slate-50 text-slate-900 antialiased transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+    @php
+    $usuarioActual = auth()->user();
+    $rolActual = $usuarioActual?->nombre_rol;
+    $puedeVender = in_array($rolActual, ['GERENTE', 'ADMINISTRADOR', 'VENDEDOR'], true);
+    $puedeGestionarUsuarios = $usuarioActual?->puedeGestionarUsuarios() ?? false;
+    // Preparado para cuando se incorpore la columna foto_perfil al usuario.
+    $fotoPerfil = $usuarioActual?->foto_perfil;
+    $nombreAvatar = trim((string) ($usuarioActual?->nombre_usuario ?? 'U'));
+    $inicialAvatar = strtoupper(substr($nombreAvatar, 0, 1));
+    @endphp
 
-        <!-- Overlay para móviles cuando el sidebar esté abierto -->
-        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-30 lg:hidden hidden transition-opacity duration-300"></div>
+    <div id="app-shell" class="relative flex h-screen overflow-hidden bg-slate-950">
+        <div id="sidebar-overlay" class="fixed inset-0 z-30 hidden bg-slate-950/60 backdrop-blur-sm lg:hidden" data-sidebar-close></div>
 
-        <!-- Sidebar Colapsable, Semitransparente y Animado -->
-        <aside id="sidebar" class="fixed lg:relative inset-y-0 left-0 z-40 w-64 bg-slate-900/90 dark:bg-slate-900/90 bg-white/90 backdrop-blur-xl border-r border-slate-800/80 dark:border-slate-800/80 border-gray-200 flex flex-col transition-all duration-300 ease-in-out shadow-2xl shrink-0">
-
-            <!-- Logo / Cabecera Sidebar -->
-            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/80 dark:border-slate-800/80 border-gray-200">
-                <span class="text-lg font-bold tracking-tight flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                    Ewiflor
-                </span>
-                <!-- Botón de cerrar sidebar en móvil -->
-                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-white p-1 rounded-xl focus:outline-none">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-white shadow-2xl transition-all duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-900 lg:relative lg:translate-x-0 lg:shadow-none">
+            <div class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-5 dark:border-slate-800">
+                <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 7.8 7.5 4.4 7.5-4.4M12 12.2V21" />
+                        </svg>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block truncate text-base font-bold tracking-tight text-slate-900 dark:text-white">EwiflorWeb</span>
+                        <span class="block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Gestión empresarial</span>
+                    </span>
+                </a>
+                <button type="button" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white lg:hidden" data-sidebar-close aria-label="Cerrar menú">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="m6 6 12 12M18 6 6 18" />
                     </svg>
                 </button>
             </div>
 
-            <!-- Navegación con Botones Ovalados (rounded-xl) -->
-            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-                <a href="{{ route('dashboard') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium transition-colors {{ request()->routeIs('dashboard') ? 'bg-blue-600/20 text-blue-500 border border-blue-500/30 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                    </svg>
-                    Dashboard
-                </a>
+            <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Navegación principal">
+                <div>
+                    <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Principal</p>
+                    <a href="{{ route('dashboard') }}" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ request()->routeIs('dashboard') ? 'bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white' }}">
+                        <svg class="h-5 w-5 shrink-0 {{ request()->routeIs('dashboard') ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="8" height="8" rx="2" />
+                            <rect x="13" y="3" width="8" height="5" rx="2" />
+                            <rect x="13" y="10" width="8" height="11" rx="2" />
+                            <rect x="3" y="13" width="8" height="8" rx="2" />
+                        </svg>
+                        Dashboard
+                    </a>
+                </div>
 
-                <a href="{{ route('catalogo.productos.index') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium transition-colors {{ request()->routeIs('catalogo.productos.*') ? 'bg-blue-600/20 text-blue-500 border border-blue-500/30 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    Productos
-                </a>
+                <div>
+                    <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Operaciones</p>
 
-                <a href="{{ route('catalogo.marcas.index') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium transition-colors {{ request()->routeIs('catalogo.marcas.*') ? 'bg-blue-600/20 text-blue-500 border border-blue-500/30 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    Marcas
-                </a>
+                    <details class="nav-group group" {{ request()->routeIs('catalogo.productos.*', 'catalogo.marcas.*') ? 'open' : '' }}>
+                        <summary class="flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80 [&::-webkit-details-marker]:hidden">
+                            <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m12 3 9 4.5v9L12 21l-9-4.5v-9L12 3Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m3.5 7.7 8.5 4.5 8.5-4.5M12 12.2V21" />
+                            </svg>
+                            <span class="flex-1">Catálogo</span>
+                            <svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                            </svg>
+                        </summary>
+                        <div class="ml-5 mt-1 space-y-1 border-l border-slate-200 pl-4 dark:border-slate-700">
+                            <a href="{{ route('catalogo.productos.index') }}" class="nav-link {{ request()->routeIs('catalogo.productos.*') ? 'nav-link-active' : '' }}">Productos</a>
+                            <a href="{{ route('catalogo.marcas.index') }}" class="nav-link {{ request()->routeIs('catalogo.marcas.*') ? 'nav-link-active' : '' }}">Marcas</a>
+                        </div>
+                    </details>
 
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium text-slate-500 hover:bg-slate-800/30 cursor-not-allowed">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    Clientes (Próximamente)
-                </a>
+                    <details class="nav-group group mt-1" {{ request()->routeIs('inventario.existencias.*', 'inventario.movimientos.*') ? 'open' : '' }}>
+                        <summary class="flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80 [&::-webkit-details-marker]:hidden">
+                            <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.5 7.8 12 12l8.5-4.2M12 12v9" />
+                            </svg>
+                            <span class="flex-1">Inventario</span>
+                            <svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                            </svg>
+                        </summary>
+                        <div class="ml-5 mt-1 space-y-1 border-l border-slate-200 pl-4 dark:border-slate-700">
+                            <a href="{{ route('inventario.existencias.index') }}" class="nav-link {{ request()->routeIs('inventario.existencias.*') ? 'nav-link-active' : '' }}">Existencias</a>
+                            <a href="{{ route('inventario.movimientos.index') }}" class="nav-link {{ request()->routeIs('inventario.movimientos.*') ? 'nav-link-active' : '' }}">Movimientos</a>
+                        </div>
+                    </details>
 
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium text-slate-500 hover:bg-slate-800/30 cursor-not-allowed">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    Ventas (Próximamente)
-                </a>
+                    @if ($puedeVender)
+                    <details class="nav-group group mt-1" {{ request()->routeIs('clientes.*', 'cotizaciones.*', 'ventas.*') ? 'open' : '' }}>
+                        <summary class="flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80 [&::-webkit-details-marker]:hidden">
+                            <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l2.2 11.2a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 8H6" />
+                                <circle cx="10" cy="20" r="1" />
+                                <circle cx="18" cy="20" r="1" />
+                            </svg>
+                            <span class="flex-1">Comercial</span>
+                            <svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                            </svg>
+                        </summary>
+                        <div class="ml-5 mt-1 space-y-1 border-l border-slate-200 pl-4 dark:border-slate-700">
+                            <a href="{{ route('clientes.index') }}" class="nav-link {{ request()->routeIs('clientes.*') ? 'nav-link-active' : '' }}">Clientes</a>
+                            <a href="{{ route('cotizaciones.index') }}" class="nav-link {{ request()->routeIs('cotizaciones.*') ? 'nav-link-active' : '' }}">Cotizaciones</a>
+                            <a href="{{ route('ventas.index') }}" class="nav-link {{ request()->routeIs('ventas.*') ? 'nav-link-active' : '' }}">Ventas</a>
+                        </div>
+                    </details>
+                    @endif
+                </div>
 
-                @if (auth()->user()?->puedeGestionarUsuarios())
-                <a href="{{ route('usuarios.index') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium transition-colors {{ request()->routeIs('usuarios.*') ? 'bg-blue-600/20 text-blue-500 border border-blue-500/30 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    Usuarios
-                </a>
-                @endif
-
-                @if (in_array(auth()->user()?->nombre_rol, ['GERENTE', 'ADMINISTRADOR', 'VENDEDOR'], true))
-                <a href="{{ route('precios.tipo-cambio.index') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-medium transition-colors {{ request()->routeIs('precios.tipo-cambio.*') ? 'bg-blue-600/20 text-blue-500 border border-blue-500/30 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    Tipo de cambio
-                </a>
-                @endif
-                <a href="{{ route('inventario.existencias.index') }}"
-                    class="block px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100
-          {{ request()->routeIs('inventario.existencias.*') ? 'bg-gray-200 text-gray-900' : 'text-gray-700' }}">
-                    Existencias
-                </a>
-                <a href="{{ route('inventario.movimientos.index') }}"
-                    class="block px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100
-          {{ request()->routeIs('inventario.movimientos.*') ? 'bg-gray-200 text-gray-900' : 'text-gray-700' }}">
-                    Movimientos
-                </a>
-                @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR','VENDEDOR']))
-                <a href="{{ route('clientes.index') }}"
-                    class="block px-4 py-2 rounded hover:bg-gray-100
-              {{ request()->routeIs('clientes.*') ? 'bg-gray-100 font-medium' : '' }}">
-                    Clientes
-                </a>
-                @endif
-                @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR','VENDEDOR']))
-                <a href="{{ route('cotizaciones.index') }}"
-                    class="block px-4 py-2 rounded hover:bg-gray-100
-              {{ request()->routeIs('cotizaciones.*') ? 'bg-gray-100 font-medium' : '' }}">
-                    Cotizaciones
-                </a>
-                @endif
-                @if (in_array(auth()->user()->nombre_rol, ['GERENTE','ADMINISTRADOR','VENDEDOR']))
-                <a href="{{ route('ventas.index') }}"
-                    class="block px-4 py-2 rounded hover:bg-gray-100
-              {{ request()->routeIs('ventas.*') ? 'bg-gray-100 font-medium' : '' }}">
-                    Ventas
-                </a>
+                @if ($puedeGestionarUsuarios || in_array($rolActual, ['GERENTE', 'ADMINISTRADOR', 'VENDEDOR'], true))
+                <div>
+                    <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Administración</p>
+                    @if ($puedeGestionarUsuarios)
+                    <a href="{{ route('usuarios.index') }}" class="group mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ request()->routeIs('usuarios.*') ? 'bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white' }}">
+                        <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6m3-3h-6" />
+                        </svg>
+                        Usuarios
+                    </a>
+                    @endif
+                    @if (in_array($rolActual, ['GERENTE', 'ADMINISTRADOR', 'VENDEDOR'], true))
+                    <a href="{{ route('precios.tipo-cambio.index') }}" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ request()->routeIs('precios.tipo-cambio.*') ? 'bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white' }}">
+                        <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h14m0 0-3-3m3 3-3 3M17 17H3m0 0 3 3m-3-3 3-3" />
+                        </svg>
+                        Tipo de cambio
+                    </a>
+                    @endif
+                </div>
                 @endif
             </nav>
 
-            <!-- Pie de Sidebar (Botón Regresar al Inicio y Logout) -->
-            <div class="p-4 border-t border-slate-800/80 dark:border-slate-800/80 border-gray-200 bg-slate-950/30 space-y-2">
-                <!-- Botón de Regresar a la Página Principal -->
-                <a href="/"
-                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition-colors">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <div class="shrink-0 border-t border-slate-200 p-3 dark:border-slate-800">
+                <a href="/" class="mb-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">
+                    <svg class="h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" />
                     </svg>
-                    <span>Página Principal</span>
+                    Página principal
                 </a>
 
-                <!-- Botón de Cerrar Sesión -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-medium text-red-400 hover:bg-red-950/30 hover:text-red-300 border border-red-500/20 transition-colors cursor-pointer">
-                        <span class="truncate">Cerrar Sesión</span>
-                        <span class="text-[10px] text-slate-400 font-mono">({{ Auth::user()->nombre_usuario }})</span>
-                    </button>
-                </form>
+                <div class="flex items-center gap-3 rounded-xl bg-slate-100 p-2.5 dark:bg-slate-800/70">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sky-100 text-sm font-bold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/20">
+                        @if ($fotoPerfil)
+                        <img src="{{ \Illuminate\Support\Facades\Storage::url($fotoPerfil) }}" alt="Foto de perfil" class="h-full w-full object-cover">
+                        @else
+                        {{ $inicialAvatar }}
+                        @endif
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">{{ $usuarioActual?->nombre_usuario ?? 'Usuario' }}</p>
+                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $rolActual ?? 'Sin rol' }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-500/10 dark:hover:text-red-300" title="Cerrar sesión" aria-label="Cerrar sesión">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 17l5-5-5-5m5 5H3m9-9h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
             </div>
         </aside>
 
-        <!-- Main Content Area (Se expande fluidamente al ocultar el aside) -->
-        <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-transparent transition-all duration-300 ease-in-out">
-            <!-- Header Superior con Botón Hamburguesa y Selector de Tema -->
-            <header class="bg-slate-900/60 dark:bg-slate-900/60 bg-white/60 backdrop-blur-md border-b border-slate-800/80 dark:border-slate-800/80 border-gray-200 h-16 flex items-center justify-between px-6 shrink-0 z-20 transition-colors">
-                <div class="flex items-center gap-4">
-                    <!-- Botón Hamburguesa (Oculta/Muestra el aside con animación y expande el contenido) -->
-                    <button onclick="toggleSidebar()" class="p-2 rounded-xl bg-slate-800/80 dark:bg-slate-800/80 bg-gray-200 text-slate-300 dark:text-slate-300 text-gray-700 hover:text-white dark:hover:text-white hover:bg-slate-800 border border-slate-700/60 dark:border-slate-700/60 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all cursor-pointer" title="Alternar menú lateral">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        <main class="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <header class="z-20 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/85 px-4 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/75 sm:px-6">
+                <div class="flex min-w-0 items-center gap-3">
+                    <button id="sidebar-toggle" type="button" class="rounded-xl border border-slate-700 bg-slate-800 p-2 text-slate-300 transition hover:bg-slate-700" aria-label="Alternar menú" aria-controls="sidebar" aria-expanded="true">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
-                    <h1 class="text-lg font-semibold tracking-tight">@yield('title', 'Dashboard')</h1>
+                    <div class="min-w-0">
+                        <h1 class="truncate text-base font-semibold tracking-tight text-slate-900 dark:text-white">@yield('title', 'Dashboard')</h1>
+                        @hasSection('subtitle')
+                        <p class="hidden truncate text-xs text-slate-500 dark:text-slate-400 sm:block">@yield('subtitle')</p>
+                        @endif
+                    </div>
                 </div>
 
-                <!-- Botón de Modo Oscuro / Claro Ovalado -->
-                <button onclick="toggleTheme()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/80 dark:bg-slate-800/80 bg-gray-200 border border-slate-700/60 dark:border-slate-700/60 border-gray-300 text-xs font-medium hover:bg-slate-800 dark:hover:bg-slate-800 hover:text-white transition-all cursor-pointer" title="Cambiar Tema">
-                    <!-- Icono Sol (Visible en modo oscuro) -->
-                    <svg id="theme-icon-light" class="w-4 h-4 text-amber-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <!-- Icono Luna (Visible en modo claro) -->
-                    <svg id="theme-icon-dark" class="w-4 h-4 text-blue-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                    <span id="theme-text" class="hidden sm:inline">Tema</span>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="theme-toggle" type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-700" title="Cambiar tema" aria-label="Cambiar tema">
+                        <svg id="theme-sun" class="hidden h-4 w-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="4" />
+                            <path stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
+                        </svg>
+                        <svg id="theme-moon" class="h-4 w-4 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z" />
+                        </svg>
+                        <span class="hidden sm:inline">Tema</span>
+                    </button>
+                    <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-sky-100 text-sm font-bold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/20" title="{{ $usuarioActual?->nombre_usuario }}">
+                        @if ($fotoPerfil)
+                        <img src="{{ \Illuminate\Support\Facades\Storage::url($fotoPerfil) }}" alt="Foto de perfil" class="h-full w-full object-cover">
+                        @else
+                        {{ $inicialAvatar }}
+                        @endif
+                    </div>
+                </div>
             </header>
 
-            <!-- Contenido Dinámico de la Página Centrado y Autocompletable -->
-            <div class="flex-1 overflow-y-auto p-6 bg-transparent flex justify-center">
-                <div class="w-full max-w-7xl transition-all duration-300">
-                    @if(session('success'))
-                    <div class="mb-4 p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-sm flex items-center gap-3">
-                        <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <div class="flex-1 overflow-y-auto bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 sm:py-6">
+                <div class="mx-auto w-full max-w-7xl">
+                    @if (session('success'))
+                    <div class="mb-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200" role="status">
+                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" />
                         </svg>
                         <span>{{ session('success') }}</span>
                     </div>
                     @endif
 
-                    @if(session('error'))
-                    <div class="mb-4 p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-red-200 text-sm flex items-center gap-3">
-                        <svg class="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    @if (session('error'))
+                    <div class="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200" role="alert">
+                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="9" />
+                            <path stroke-linecap="round" d="M12 8v5m0 3h.01" />
                         </svg>
                         <span>{{ session('error') }}</span>
                     </div>
@@ -209,61 +248,273 @@
         </main>
     </div>
 
-    <!-- Scripts de Control (Sidebar Colapsable, Expansión de Contenido y Tema) -->
+    <style>
+        /* El tema oscuro es el aspecto predeterminado de la aplicación. */
+        html,
+        body {
+            background: #020617;
+            color: #f1f5f9;
+        }
+
+        #app-shell {
+            background: #020617;
+        }
+
+        /* Sidebar: cierre real en escritorio y desplazamiento en móvil. */
+        #sidebar {
+            flex: 0 0 16rem;
+            width: 16rem;
+            min-width: 16rem;
+        }
+
+        /* El estado colapsado se aplica al contenedor; el botón permanece accesible. */
+        #app-shell #sidebar {
+            flex: 0 0 16rem;
+            width: 16rem;
+            min-width: 16rem;
+            transition: flex-basis .25s ease, width .25s ease, min-width .25s ease, opacity .2s ease;
+        }
+
+        #app-shell.is-sidebar-collapsed #sidebar {
+            flex: 0 0 0;
+            width: 0;
+            min-width: 0;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            border-right-width: 0;
+        }
+
+        #sidebar.is-mobile-open {
+            transform: translateX(0);
+        }
+
+        /* Base oscura de elementos estructurales; el tema claro los sobrescribe. */
+        #sidebar {
+            background: #0f172a;
+            border-color: #1e293b;
+        }
+
+        #sidebar .border-b,
+        #sidebar .border-t {
+            border-color: #1e293b;
+        }
+
+        #sidebar .text-slate-900,
+        #sidebar .text-slate-700 {
+            color: #f1f5f9;
+        }
+
+        #sidebar .text-slate-600,
+        #sidebar .text-slate-500 {
+            color: #cbd5e1;
+        }
+
+        #sidebar .hover\:bg-slate-100:hover {
+            background: #1e293b;
+        }
+
+        #sidebar .bg-slate-100 {
+            background: #1e293b;
+        }
+
+        main>header {
+            background: rgba(15, 23, 42, .92);
+            border-color: #1e293b;
+        }
+
+        main>header .bg-white {
+            background: #1e293b;
+        }
+
+        main>header .text-slate-600 {
+            color: #cbd5e1;
+        }
+
+        main>div {
+            background: #020617;
+        }
+
+        /* Cuando se selecciona el tema claro, se recuperan superficies claras. */
+        html:not(.dark),
+        html:not(.dark) body,
+        html:not(.dark) #app-shell {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        html:not(.dark) #sidebar {
+            background: #fff;
+            border-color: #e2e8f0;
+        }
+
+        html:not(.dark) #sidebar .border-b,
+        html:not(.dark) #sidebar .border-t {
+            border-color: #e2e8f0;
+        }
+
+        html:not(.dark) #sidebar .text-slate-900,
+        html:not(.dark) #sidebar .text-slate-700 {
+            color: #0f172a;
+        }
+
+        html:not(.dark) #sidebar .text-slate-600,
+        html:not(.dark) #sidebar .text-slate-500 {
+            color: #475569;
+        }
+
+        html:not(.dark) #sidebar .bg-slate-100 {
+            background: #f1f5f9;
+        }
+
+        html:not(.dark) main>header {
+            background: rgba(255, 255, 255, .92);
+            border-color: #e2e8f0;
+        }
+
+        html:not(.dark) main>header .bg-slate-800 {
+            background: #fff;
+        }
+
+        html:not(.dark) main>header .text-slate-300 {
+            color: #475569;
+        }
+
+        html:not(.dark) main>div {
+            background: #f8fafc;
+        }
+
+        .nav-link {
+            display: block;
+            border-radius: .65rem;
+            padding: .55rem .75rem;
+            color: #94a3b8;
+            font-size: .8125rem;
+            font-weight: 500;
+            transition: background-color .15s, color .15s;
+        }
+
+        .nav-link:hover {
+            background: rgba(51, 65, 85, .55);
+            color: #f8fafc;
+        }
+
+        .nav-link-active {
+            background: rgba(14, 165, 233, .10);
+            color: #7dd3fc;
+            font-weight: 650;
+        }
+
+        .nav-group[open]>summary {
+            color: #7dd3fc;
+        }
+
+        html:not(.dark) .nav-link {
+            color: #64748b;
+        }
+
+        html:not(.dark) .nav-link:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        html:not(.dark) .nav-link-active {
+            background: #eff6ff;
+            color: #0369a1;
+        }
+
+        html:not(.dark) .nav-group[open]>summary {
+            color: #0284c7;
+        }
+
+        @media (max-width: 1023px) {
+
+            #app-shell #sidebar,
+            #app-shell.is-sidebar-collapsed #sidebar {
+                flex: 0 0 16rem;
+                width: 16rem;
+                min-width: 16rem;
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+    </style>
+
     <script>
-        // Control del menú lateral (Hamburguesa) con desplazamiento de contenido
-        function toggleSidebar() {
+        (() => {
+            const root = document.documentElement;
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
+            const shell = document.getElementById('app-shell');
+            const toggle = document.getElementById('sidebar-toggle');
+            const themeToggle = document.getElementById('theme-toggle');
+            const sun = document.getElementById('theme-sun');
+            const moon = document.getElementById('theme-moon');
+            const isMobile = () => window.matchMedia('(max-width: 1023px)').matches;
 
-            // En pantallas grandes oculta/muestra el ancho traduciéndolo hacia la izquierda
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
+            const setExpanded = (expanded) => toggle?.setAttribute('aria-expanded', String(expanded));
+            const closeMobileSidebar = () => {
+                sidebar?.classList.remove('is-mobile-open');
+                sidebar?.classList.add('-translate-x-full');
+                overlay?.classList.add('hidden');
+                setExpanded(false);
+            };
+
+            toggle?.addEventListener('click', () => {
+                if (isMobile()) {
+                    const opening = !sidebar.classList.contains('is-mobile-open');
+                    sidebar.classList.toggle('is-mobile-open', opening);
+                    sidebar.classList.toggle('-translate-x-full', !opening);
+                    overlay?.classList.toggle('hidden', !opening);
+                    setExpanded(opening);
+                    return;
+                }
+
+                const collapsed = shell.classList.toggle('is-sidebar-collapsed');
+                setExpanded(!collapsed);
+            });
+
+            overlay?.addEventListener('click', closeMobileSidebar);
+            document.querySelectorAll('[data-sidebar-close]').forEach((element) => {
+                element.addEventListener('click', closeMobileSidebar);
+            });
+
+            const updateThemeButton = () => {
+                const dark = root.classList.contains('dark');
+                sun?.classList.toggle('hidden', !dark);
+                moon?.classList.toggle('hidden', dark);
+                themeToggle?.setAttribute('aria-pressed', String(dark));
+                themeToggle?.setAttribute('title', dark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+            };
+
+            themeToggle?.addEventListener('click', () => {
+                const dark = root.classList.toggle('dark');
+                try {
+                    localStorage.setItem('theme', dark ? 'dark' : 'light');
+                } catch (error) {
+                    /* El tema seguirá funcionando durante esta sesión. */ }
+                updateThemeButton();
+            });
+
+            window.addEventListener('resize', () => {
+                if (isMobile()) {
+                    shell?.classList.remove('is-sidebar-collapsed');
+                    closeMobileSidebar();
+                } else {
+                    sidebar?.classList.remove('is-mobile-open', '-translate-x-full');
+                    overlay?.classList.add('hidden');
+                    setExpanded(!shell?.classList.contains('is-sidebar-collapsed'));
+                }
+            });
+
+            // En escritorio se muestra abierto; en móvil permanece cerrado hasta pulsar el botón.
+            if (isMobile()) closeMobileSidebar();
+            else {
+                shell?.classList.remove('is-sidebar-collapsed');
+                setExpanded(true);
             }
-        }
-
-        // Inicializar iconos del tema según el estado actual al cargar la página
-        document.addEventListener("DOMContentLoaded", () => {
-            const isDark = document.documentElement.classList.contains('dark');
-            updateThemeIcons(isDark);
-        });
-
-        // Control de Tema Oscuro / Claro
-        function toggleTheme() {
-            const root = document.documentElement;
-            const isDark = root.classList.contains('dark');
-
-            if (isDark) {
-                // Cambiar a modo Claro
-                root.classList.remove('dark', 'bg-slate-950', 'text-slate-100');
-                root.classList.add('bg-gray-100', 'text-gray-900');
-                localStorage.theme = 'light';
-                updateThemeIcons(false);
-            } else {
-                // Cambiar a modo Oscuro
-                root.classList.remove('bg-gray-100', 'text-gray-900');
-                root.classList.add('dark', 'bg-slate-950', 'text-slate-100');
-                localStorage.theme = 'dark';
-                updateThemeIcons(true);
-            }
-        }
-
-        function updateThemeIcons(isDark) {
-            const iconLight = document.getElementById('theme-icon-light');
-            const iconDark = document.getElementById('theme-icon-dark');
-
-            if (isDark) {
-                iconLight.classList.remove('hidden'); // Muestra sol para poder cambiar a claro
-                iconDark.classList.add('hidden');
-            } else {
-                iconLight.classList.add('hidden');
-                iconDark.classList.remove('hidden'); // Muestra luna para poder cambiar a oscuro
-            }
-        }
+            updateThemeButton();
+        })();
     </script>
     @stack('scripts')
 </body>

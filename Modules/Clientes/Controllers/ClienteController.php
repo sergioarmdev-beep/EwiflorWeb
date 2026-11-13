@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Modules\Clientes\Models\Cliente;
 use Modules\Clientes\Requests\StoreClienteRequest;
 use Modules\Clientes\Requests\UpdateClienteRequest;
+use Illuminate\Support\Facades\DB;
+use Modules\Cotizaciones\Models\Cotizacion;
+use Modules\Ventas\Models\Venta;
 
 class ClienteController extends Controller
 {
@@ -57,19 +60,96 @@ class ClienteController extends Controller
 
     public function show(Cliente $cliente)
     {
-        $cliente->load([
-            'cotizaciones' => fn($query) => $query
-                ->with(['tipoCambio', 'detalles'])
-                ->orderByDesc('id_cotizacion')
-                ->limit(10),
+        // Historial de cotizaciones
+        $cotizaciones = $cliente->cotizaciones()
+            ->with([
+                'tipoCambio',
+                'detalles',
+            ])
+            ->orderByDesc('fecha_emision')
+            ->orderByDesc('id_cotizacion')
+            ->limit(10)
+            ->get();
 
-            'ventas' => fn($query) => $query
-                ->with(['pagos'])
-                ->orderByDesc('id_venta')
-                ->limit(10),
-        ]);
+        // Subconsulta: total pagado por venta
+        $pagosAgrupados = DB::table('pago')
+            ->select('id_venta')
+            ->selectRaw('SUM(monto_bs) AS total_pagado_bs')
+            ->groupBy('id_venta');
 
-        return view('clientes::show', compact('cliente'));
+        // Historial de ventas, incluyendo total y saldo
+        $ventas = $cliente->ventas()
+            ->leftJoin(
+                'v_venta_total as vt',
+                'venta.id_venta',
+                '=',
+                'vt.id_venta'
+            )
+            ->leftJoinSub(
+                $pagosAgrupados,
+                'pa',
+                'venta.id_venta',
+                '=',
+                'pa.id_venta'
+            )
+            ->select([
+                'venta.*',
+                'vt.total_usd',
+                'vt.total_bs',
+                'pa.total_pagado_bs',
+            ])
+            ->with('pagos')
+            ->orderByDesc('venta.fecha_hora')
+            ->orderByDesc('venta.id_venta')
+            ->limit(10)
+            ->get();
+
+        // Indicadores generales de cotizaciones
+        $resumenCotizaciones = $cliente->cotizaciones()
+            ->selectRaw("
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE estado = 'EMITIDA') AS emitidas,
+            COUNT(*) FILTER (WHERE estado = 'CONVERTIDA') AS convertidas,
+            COUNT(*) FILTER (WHERE estado = 'ANULADA') AS anuladas
+        ")
+            ->first();
+
+        // Indicadores financieros de ventas registradas
+        $resumenVentas = DB::table('venta')
+            ->leftJoin(
+                'v_venta_total as vt',
+                'venta.id_venta',
+                '=',
+                'vt.id_venta'
+            )
+            ->leftJoinSub(
+                $pagosAgrupados,
+                'pa',
+                'venta.id_venta',
+                '=',
+                'pa.id_venta'
+            )
+            ->where('venta.id_cliente', $cliente->id_cliente)
+            ->where('venta.estado', 'REGISTRADA')
+            ->selectRaw("
+            COUNT(*) AS total,
+            COALESCE(SUM(vt.total_usd), 0) AS total_usd,
+            COALESCE(SUM(vt.total_bs), 0) AS total_bs,
+            COALESCE(SUM(pa.total_pagado_bs), 0) AS pagado_bs,
+            COALESCE(
+                SUM(vt.total_bs - COALESCE(pa.total_pagado_bs, 0)),
+                0
+            ) AS saldo_bs
+        ")
+            ->first();
+
+        return view('clientes::show', compact(
+            'cliente',
+            'cotizaciones',
+            'ventas',
+            'resumenCotizaciones',
+            'resumenVentas'
+        ));
     }
 
     public function edit(Cliente $cliente)
