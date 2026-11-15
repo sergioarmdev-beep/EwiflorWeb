@@ -1,15 +1,25 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use Modules\Auth\Providers\AuthServiceProvider;
+use Modules\Catalogo\Providers\CatalogoServiceProvider;
+use Modules\Clientes\Providers\ClientesServiceProvider;
+use Modules\Cotizaciones\Providers\CotizacionesServiceProvider;
+use Modules\Inventario\Providers\InventarioServiceProvider;
+use Modules\Precios\Providers\PreciosServiceProvider;
+use Modules\Sistema\Providers\SistemaServiceProvider;
+use Modules\Sucursales\Providers\SucursalesServiceProvider;
+use Modules\Ventas\Providers\VentasServiceProvider;
 
 return [
     AppServiceProvider::class,
-    Modules\Auth\Providers\AuthServiceProvider::class,
-    Modules\Catalogo\Providers\CatalogoServiceProvider::class,
-    Modules\Inventario\Providers\InventarioServiceProvider::class,
-    Modules\Precios\Providers\PreciosServiceProvider::class,
-    Modules\Sistema\Providers\SistemaServiceProvider::class,
-    Modules\Clientes\Providers\ClientesServiceProvider::class,
-    Modules\Cotizaciones\Providers\CotizacionesServiceProvider::class,
-    Modules\Ventas\Providers\VentasServiceProvider::class,
+    AuthServiceProvider::class,
+    CatalogoServiceProvider::class,
+    InventarioServiceProvider::class,
+    PreciosServiceProvider::class,
+    SistemaServiceProvider::class,
+    ClientesServiceProvider::class,
+    CotizacionesServiceProvider::class,
+    VentasServiceProvider::class,
+    SucursalesServiceProvider::class,
 ];

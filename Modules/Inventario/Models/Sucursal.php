@@ -4,6 +4,7 @@ namespace Modules\Inventario\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Auth\Models\user;
+use Modules\Inventario\Models\Almacen;
 
 class Sucursal extends Model
 {
@@ -30,6 +31,10 @@ class Sucursal extends Model
     public function usuarios()
     {
         return $this->hasMany(User::class, 'id_sucursal', 'id_sucursal');
+    }
+    public function almacenes()
+    {
+        return $this->hasMany(Almacen::class, 'id_sucursal', 'id_sucursal');
     }
 }
 /**
