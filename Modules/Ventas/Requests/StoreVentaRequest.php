@@ -19,24 +19,26 @@ class StoreVentaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'modo'         => ['required', Rule::in(['directa', 'cotizacion'])],
-            'id_almacen'   => ['required', 'integer', 'exists:almacen,id_almacen'],
+            'modo' => ['required', Rule::in(['directa', 'cotizacion'])],
+            'id_almacen' => ['required', 'integer', 'exists:almacen,id_almacen'],
 
             // Modo cotización
             'id_cotizacion' => ['required_if:modo,cotizacion', 'integer', 'exists:cotizacion,id_cotizacion'],
 
             // Modo directa
-            'id_cliente'   => ['required_if:modo,directa', 'integer', 'exists:cliente,id_cliente'],
-            'lineas'                          => ['required_if:modo,directa', 'array', 'min:1'],
-            'lineas.*.id_variante'            => [
+            'id_cliente' => ['required_if:modo,directa', 'integer', 'exists:cliente,id_cliente'],
+            'lineas' => ['required_if:modo,directa', 'array', 'min:1'],
+            'lineas.*.id_variante' => [
                 'required_if:modo,directa',
                 'integer',
                 'exists:variante_producto,id_variante',
-                'distinct'
+                'distinct',
             ],
-            'lineas.*.cantidad'               => ['required_if:modo,directa', 'integer', 'min:1'],
-            'lineas.*.precio_unitario_usd'    => ['required_if:modo,directa', 'numeric', 'min:0', 'max:9999999.99'],
-            'lineas.*.descuento_pct'          => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'lineas.*.cantidad' => ['required_if:modo,directa', 'integer', 'min:1'],
+            // El precio se toma del catálogo; si llega, igual se ignora en el servicio.
+            'lineas.*.precio_unitario_usd' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
+            'lineas.*.descuento_tipo' => ['nullable', Rule::in(['PCT', 'USD'])],
+            'lineas.*.descuento_valor' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
         ];
     }
 
@@ -44,7 +46,9 @@ class StoreVentaRequest extends FormRequest
     {
         if ($this->input('modo') === 'directa') {
             $lineas = collect($this->input('lineas', []))->map(function ($l) {
-                $l['descuento_pct'] = $l['descuento_pct'] ?? 0;
+                $l['descuento_tipo'] = $l['descuento_tipo'] ?? 'PCT';
+                $l['descuento_valor'] = $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0);
+
                 return $l;
             })->all();
             $this->merge(['lineas' => $lineas]);

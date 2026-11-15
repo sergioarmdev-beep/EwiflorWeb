@@ -11,6 +11,7 @@ Route::middleware(['auth'])
 
         // Consulta: todos los roles autenticados (alcance filtrado por AccesoSucursal).
         Route::get('/', [SucursalController::class, 'index'])->name('index');
+        Route::get('/mapa', [SucursalController::class, 'mapa'])->name('mapa');
 
         // Gestión: solo Gerente y Administrador.
         // 'crear' se registra ANTES de '/{sucursal}' para que no lo capture el binding.

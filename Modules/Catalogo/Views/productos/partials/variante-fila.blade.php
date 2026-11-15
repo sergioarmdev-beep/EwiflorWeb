@@ -1,11 +1,15 @@
 {{-- Una fila de variante. Variables: $i (índice), $fila (array con los valores) --}}
+@php
+    $puedeEditarPrecio = in_array(auth()->user()?->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true);
+@endphp
+
 <div data-variante-row class="rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:p-5">
 
     <input type="hidden" name="variantes[{{ $i }}][id_variante]" value="{{ $fila['id_variante'] ?? '' }}">
 
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
 
-        <div class="md:col-span-4">
+        <div class="md:col-span-3">
             <label class="block text-xs font-medium text-slate-300 mb-1.5">SKU *</label>
             <input type="text" name="variantes[{{ $i }}][sku]" maxlength="40" required
                 value="{{ $fila['sku'] ?? '' }}" placeholder="Ej. EQ-001-ROJO"
@@ -18,13 +22,32 @@
         </div>
 
         <div class="md:col-span-3">
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">Precio USD</label>
+
+            @if($puedeEditarPrecio)
+            <input type="number" name="variantes[{{ $i }}][precio_usd]" step="0.01" min="0.01"
+                value="{{ $fila['precio_usd'] ?? '' }}" placeholder="Ej. 129.99"
+                class="form-input text-right">
+            @if($i !== '__I__')
+            @error("variantes.$i.precio_usd")
+            <span class="form-error">{{ $message }}</span>
+            @enderror
+            @endif
+            @else
+            <p class="form-input text-right text-slate-400">
+                {{ isset($fila['precio_usd']) && $fila['precio_usd'] !== null ? number_format((float) $fila['precio_usd'], 2) : '—' }}
+            </p>
+            @endif
+        </div>
+
+        <div class="md:col-span-2">
             <label class="block text-xs font-medium text-slate-300 mb-1.5">Color</label>
             <input type="text" name="variantes[{{ $i }}][color]" maxlength="30"
-                value="{{ $fila['color'] ?? '' }}" placeholder="Ej. Acero inoxidable"
+                value="{{ $fila['color'] ?? '' }}" placeholder="Ej. Acero"
                 class="form-input">
         </div>
 
-        <div class="md:col-span-3">
+        <div class="md:col-span-2">
             <label class="block text-xs font-medium text-slate-300 mb-1.5">Estado</label>
             @php $estadoFila = $fila['estado'] ?? 'ACTIVO'; @endphp
             <select name="variantes[{{ $i }}][estado]" class="form-select">

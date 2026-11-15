@@ -30,7 +30,7 @@ class VentaController extends Controller
         if ($s = trim((string) $request->input('buscar'))) {
             $q->where(function ($w) use ($s) {
                 $w->where('numero_factura', 'ilike', "%{$s}%")
-                    ->orWhereHas('cliente', fn($c) => $c->where('nombre', 'ilike', "%{$s}%"));
+                    ->orWhereHas('cliente', fn ($c) => $c->where('nombre', 'ilike', "%{$s}%"));
             });
         }
         if ($desde = $request->input('desde')) {
@@ -50,8 +50,9 @@ class VentaController extends Controller
         $modo = $request->boolean('desde_cotizacion') ? 'cotizacion' : 'directa';
 
         $data = [
-            'modo'      => $modo,
+            'modo' => $modo,
             'almacenes' => Almacen::where('estado', 'ACTIVO')->orderBy('nombre')->get(),
+            'precios' => [],
         ];
 
         if ($modo === 'cotizacion') {
@@ -66,9 +67,12 @@ class VentaController extends Controller
 
             $data['cotizacion'] = $cot;
         } else {
-            $data['clientes']  = Cliente::activos()->orderBy('nombre')->get();
+            $data['clientes'] = Cliente::activos()->orderBy('nombre')->get();
             $data['variantes'] = $this->variantesActivas();
-            $data['lineas']    = old('lineas', []);
+            $data['precios'] = $data['variantes']->mapWithKeys(
+                fn ($v) => [(string) $v->id_variante => $v->precio_usd !== null ? (float) $v->precio_usd : null]
+            );
+            $data['lineas'] = old('lineas', []);
         }
 
         return view('ventas::create', $data);
@@ -76,7 +80,7 @@ class VentaController extends Controller
 
     public function store(StoreVentaRequest $request)
     {
-        $data  = $request->validated();
+        $data = $request->validated();
         $actor = $request->user();
 
         $venta = $data['modo'] === 'cotizacion'
@@ -101,10 +105,17 @@ class VentaController extends Controller
             'usuarioCancela',
         ]);
 
+        $totales = $venta->totales();
+        $totalBs = round((float) ($totales->total_bs ?? 0), 2);
+
         return view('ventas::show', [
-            'venta'   => $venta,
-            'totales' => $venta->totales(),
-            'formas'  => Pago::FORMAS,
+            'venta' => $venta,
+            'totales' => $totales,
+            'formas' => Pago::FORMAS,
+            'puedePagar' => $venta->estado !== 'CANCELADA'
+                && $venta->pagos->isEmpty()
+                && $totalBs > 0,
+            'totalBs' => $totalBs,
         ]);
     }
 
@@ -112,9 +123,10 @@ class VentaController extends Controller
     {
         try {
             $this->service->registrarPago($venta, $request->validated());
+
             return back()->with('ok', 'Pago registrado.');
         } catch (BusinessRuleException $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -122,6 +134,7 @@ class VentaController extends Controller
     {
         try {
             $this->service->cancelar($venta, $request->user(), $request->validated()['motivo']);
+
             return redirect()
                 ->route('ventas.show', $venta)
                 ->with('ok', 'Venta cancelada. Stock revertido.');
@@ -133,16 +146,20 @@ class VentaController extends Controller
     public function comprobante(Venta $venta)
     {
         $venta->load(['cliente', 'usuario', 'sucursal', 'detalles.variante.producto', 'pagos', 'comprobantes']);
+
         return view('ventas::comprobante', [
-            'venta'   => $venta,
+            'venta' => $venta,
             'totales' => $venta->totales(),
         ]);
     }
 
     private function servicePuedeConvertir(Cotizacion $c): bool
     {
-        if ($c->estado !== 'EMITIDA') return false;
+        if ($c->estado !== 'EMITIDA') {
+            return false;
+        }
         $vence = $c->fecha_emision->copy()->addDays($c->vigencia_dias);
+
         return ! now()->startOfDay()->gt($vence);
     }
 
@@ -150,7 +167,7 @@ class VentaController extends Controller
     {
         return VarianteProducto::with('producto')
             ->where('estado', 'ACTIVO')
-            ->whereHas('producto', fn($q) => $q->where('estado', 'ACTIVO'))
+            ->whereHas('producto', fn ($q) => $q->where('estado', 'ACTIVO'))
             ->orderBy('sku')
             ->get();
     }

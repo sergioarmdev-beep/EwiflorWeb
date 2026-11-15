@@ -32,6 +32,13 @@ $saldo = $venta->saldoBs();
 
     @if (session('ok')) <div class="bg-green-100 text-green-800 px-4 py-2 rounded">{{ session('ok') }}</div> @endif
     @if (session('error')) <div class="bg-red-100 text-red-800 px-4 py-2 rounded">{{ session('error') }}</div> @endif
+    @if ($errors->any())
+    <div class="bg-red-100 text-red-800 px-4 py-2 rounded text-sm">
+        <ul class="list-disc list-inside">
+            @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+        </ul>
+    </div>
+    @endif
 
     <div class="bg-white p-6 rounded shadow grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
         <div><span class="text-gray-500">Cliente:</span> {{ $venta->cliente?->nombre ?? '—' }}</div>
@@ -124,20 +131,41 @@ $saldo = $venta->saldoBs();
         </table>
         @endif
 
-        @if ($venta->estado !== 'CANCELADA')
+        @if ($puedePagar)
         <form method="POST" action="{{ route('ventas.pagos.store', $venta) }}"
             class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 border-t">
             @csrf
+            <p class="md:col-span-4 text-sm text-gray-600">
+                Pago único. Puede ser parcial; después de registrarlo no se admiten más pagos.
+            </p>
             <select name="forma_pago" required class="border rounded px-3 py-2">
                 <option value="">— Forma —</option>
-                @foreach ($formas as $f)<option value="{{ $f }}">{{ $f }}</option>@endforeach
+                @foreach ($formas as $f)
+                <option value="{{ $f }}" @selected(old('forma_pago') === $f)>{{ $f }}</option>
+                @endforeach
             </select>
-            <input type="number" name="monto_bs" step="0.01" min="0.01" required
-                placeholder="Monto Bs" class="border rounded px-3 py-2">
-            <input type="text" name="referencia" maxlength="60"
+            <input type="number" name="monto_bs" step="0.01" min="0.01"
+                max="{{ number_format($totalBs, 2, '.', '') }}" required
+                value="{{ old('monto_bs', number_format($totalBs, 2, '.', '')) }}"
+                placeholder="Monto Bs (máx. {{ number_format($totalBs, 2, '.', '') }})"
+                class="border rounded px-3 py-2">
+            <input type="text" name="referencia" maxlength="60" value="{{ old('referencia') }}"
                 placeholder="Referencia (opcional)" class="border rounded px-3 py-2">
-            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Registrar pago</button>
+            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Registrar pago único</button>
         </form>
+        @elseif ($venta->pagos->isNotEmpty() && $venta->estado !== 'CANCELADA')
+            @if ($saldo > 0)
+            <div class="bg-amber-50 text-amber-800 px-4 py-2 rounded text-sm border-t">
+                Pago parcial registrado. Esta venta no admite pagos adicionales.
+                Saldo pendiente: <strong>Bs {{ number_format($saldo, 2) }}</strong>.
+            </div>
+            @else
+            <div class="bg-green-50 text-green-800 px-4 py-2 rounded text-sm border-t">
+                Venta pagada en su totalidad. No se admiten más pagos.
+            </div>
+            @endif
+        @elseif ($venta->estado !== 'CANCELADA')
+        <p class="text-sm text-gray-500">Esta venta no tiene un monto pendiente de cobro.</p>
         @endif
     </div>
 </div>

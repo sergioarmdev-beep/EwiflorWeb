@@ -69,6 +69,9 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
         @endif
     </div>
 
+    {{-- Mapa de la sucursal --}}
+    @include('sucursales::partials.mapa-sucursales', ['sucursales' => collect([$sucursal]), 'altura' => 'h-72'])
+
     {{-- Almacenes --}}
     <section class="bg-white dark:bg-slate-900
                     border border-slate-200 dark:border-slate-800

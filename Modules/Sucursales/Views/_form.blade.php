@@ -111,6 +111,11 @@ $departamentos = \Modules\Sucursales\Support\Catalogos::DEPARTAMENTOS;
         </div>
     </div>
 
+    {{-- Ubicación geográfica (Leaflet + OpenStreetMap) --}}
+    <div class="pt-5 border-t border-slate-200 dark:border-slate-800">
+        @include('sucursales::partials.mapa-picker', ['sucursal' => $sucursal])
+    </div>
+
     {{-- Acciones --}}
     <div class="pt-5 border-t border-slate-200 dark:border-slate-800
                 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">

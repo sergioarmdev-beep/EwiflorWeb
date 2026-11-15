@@ -10,7 +10,6 @@ use Modules\Sucursales\Requests\UpdateAlmacenRequest;
 use Modules\Sucursales\Services\SucursalService;
 use Modules\Sucursales\Support\AccesoSucursal;
 
-
 class AlmacenController extends Controller
 {
     public function __construct(private SucursalService $service) {}

@@ -3,6 +3,7 @@
 namespace Modules\Cotizaciones\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCotizacionRequest extends FormRequest
 {
@@ -18,27 +19,31 @@ class UpdateCotizacionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_cliente'   => ['required', 'integer', 'exists:cliente,id_cliente'],
+            'id_cliente' => ['required', 'integer', 'exists:cliente,id_cliente'],
             'vigencia_dias' => ['required', 'integer', 'min:1', 'max:90'],
-            'observacion'  => ['nullable', 'string', 'max:200'],
+            'observacion' => ['nullable', 'string', 'max:200'],
 
-            'lineas'                          => ['required', 'array', 'min:1'],
-            'lineas.*.id_variante'            => [
+            'lineas' => ['required', 'array', 'min:1'],
+            'lineas.*.id_variante' => [
                 'required',
                 'integer',
                 'exists:variante_producto,id_variante',
-                'distinct'
+                'distinct',
             ],
-            'lineas.*.cantidad'               => ['required', 'integer', 'min:1'],
-            'lineas.*.precio_unitario_usd'    => ['required', 'numeric', 'min:0', 'max:9999999.99'],
-            'lineas.*.descuento_pct'          => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'lineas.*.cantidad' => ['required', 'integer', 'min:1'],
+            // El precio se toma del catálogo; si llega, igual se ignora en el servicio.
+            'lineas.*.precio_unitario_usd' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
+            'lineas.*.descuento_tipo' => ['nullable', Rule::in(['PCT', 'USD'])],
+            'lineas.*.descuento_valor' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
         $lineas = collect($this->input('lineas', []))->map(function ($l) {
-            $l['descuento_pct'] = $l['descuento_pct'] ?? 0;
+            $l['descuento_tipo'] = $l['descuento_tipo'] ?? 'PCT';
+            $l['descuento_valor'] = $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0);
+
             return $l;
         })->all();
 

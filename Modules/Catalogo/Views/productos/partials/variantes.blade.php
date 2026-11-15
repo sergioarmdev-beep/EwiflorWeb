@@ -12,6 +12,7 @@
                 'sku' => $v->sku,
                 'color' => $v->color,
                 'caracteristicas' => $v->caracteristicas,
+                'precio_usd' => $v->precio_usd,
                 'estado' => $v->estado,
             ])->values()->all()
             : [];

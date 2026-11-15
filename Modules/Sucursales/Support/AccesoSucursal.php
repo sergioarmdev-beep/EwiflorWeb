@@ -104,4 +104,18 @@ final class AccesoSucursal
 
         return Sucursal::find($user->id_sucursal);
     }
+
+    /**
+     * Sucursales con coordenadas registradas, para pintarlas en un mapa
+     * (Leaflet + OpenStreetMap). Respeta el alcance del usuario:
+     * gestores → todas; el resto → solo la suya.
+     *
+     * @return Collection<int, Sucursal>
+     */
+    public static function sucursalesParaMapa(?User $user): Collection
+    {
+        return self::sucursalesVisibles($user)
+            ->filter(fn (Sucursal $s) => $s->latitud !== null && $s->longitud !== null)
+            ->values();
+    }
 }

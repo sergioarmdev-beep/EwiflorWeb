@@ -11,8 +11,9 @@ class CatalogoServiceProvider extends ServiceProvider
     {
         // Aplicamos el grupo 'web' a todas las rutas del módulo
         Route::middleware('web')
-            ->group(__DIR__ . '/../Routes/web.php');
+            ->group(__DIR__.'/../Routes/web.php');
 
-        $this->loadViewsFrom(__DIR__ . '/../Views', 'catalogo');
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+        $this->loadViewsFrom(__DIR__.'/../Views', 'catalogo');
     }
 }

@@ -43,6 +43,7 @@ class ProductoRequest extends FormRequest
             'variantes.*.id_variante' => ['nullable', 'integer'],
             'variantes.*.color' => ['nullable', 'string', 'max:30'],
             'variantes.*.caracteristicas' => ['nullable', 'string', 'max:200'],
+            'variantes.*.precio_usd' => ['nullable', 'numeric', 'min:0.01', 'max:9999999.99'],
             'variantes.*.estado' => ['nullable', Rule::in(['ACTIVO', 'INACTIVO'])],
         ];
 
@@ -68,6 +69,7 @@ class ProductoRequest extends FormRequest
         foreach ((array) $this->input('variantes', []) as $i => $_) {
             $n = $i + 1;
             $nombres["variantes.$i.sku"] = "SKU de la variante #$n";
+            $nombres["variantes.$i.precio_usd"] = "precio USD de la variante #$n";
             $nombres["variantes.$i.color"] = "color de la variante #$n";
         }
 
@@ -82,6 +84,7 @@ class ProductoRequest extends FormRequest
             'imagenes.*.image' => 'Los archivos deben ser imágenes.',
             'imagenes.*.mimes' => 'Las imágenes deben ser JPG, PNG o WEBP.',
             'variantes.*.sku.distinct' => 'Hay SKU repetidos en las variantes.',
+            'variantes.*.precio_usd.min' => 'El precio de la variante debe ser mayor a 0.',
         ];
     }
 }

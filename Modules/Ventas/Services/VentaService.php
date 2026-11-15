@@ -4,6 +4,7 @@ namespace Modules\Ventas\Services;
 
 use App\Exceptions\BusinessRuleException;
 use App\Support\DbFunction;
+use App\Support\Descuento;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
 use Modules\Catalogo\Models\VarianteProducto;
@@ -12,7 +13,6 @@ use Modules\Precios\Services\TipoCambioService;
 use Modules\Ventas\Models\Comprobante;
 use Modules\Ventas\Models\Pago;
 use Modules\Ventas\Models\Venta;
-
 
 class VentaService
 {
@@ -47,6 +47,7 @@ class VentaService
             ]);
             $venta = Venta::findOrFail($idVenta);
             $this->postCreacion($venta);
+
             return $venta->fresh();
         });
     }
@@ -83,22 +84,58 @@ class VentaService
 
             $venta = Venta::findOrFail((int) $rows[0]->id);
             $this->postCreacion($venta);
+
             return $venta->fresh();
         });
     }
 
     public function registrarPago(Venta $venta, array $data): Pago
     {
-        if ($venta->estado === 'CANCELADA') {
-            throw new BusinessRuleException('No se pueden registrar pagos en una venta cancelada.');
-        }
+        return DB::transaction(function () use ($venta, $data) {
+            // Bloquea la venta para que dos pagos concurrentes no pasen la validación.
+            $venta = Venta::query()
+                ->whereKey($venta->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return Pago::create([
-            'id_venta'   => $venta->id_venta,
-            'forma_pago' => $data['forma_pago'],
-            'monto_bs'   => $data['monto_bs'],
-            'referencia' => $data['referencia'] ?? null,
-        ]);
+            if ($venta->estado === 'CANCELADA') {
+                throw new BusinessRuleException('No se pueden registrar pagos en una venta cancelada.');
+            }
+
+            if ($venta->pagos()->exists()) {
+                throw new BusinessRuleException(
+                    'Esta venta ya tiene un pago registrado; solo se permite un pago por venta.'
+                );
+            }
+
+            $totales = $venta->totales();
+            $totalBs = round((float) ($totales->total_bs ?? 0), 2);
+
+            if ($totalBs <= 0) {
+                throw new BusinessRuleException('La venta no tiene un total cobrable.');
+            }
+
+            $montoBs = round((float) $data['monto_bs'], 2);
+            $totalCents = (int) round($totalBs * 100);
+            $montoCents = (int) round($montoBs * 100);
+
+            if ($montoCents <= 0) {
+                throw new BusinessRuleException('El monto del pago debe ser mayor a cero.');
+            }
+
+            if ($montoCents > $totalCents) {
+                throw new BusinessRuleException(sprintf(
+                    'El pago no puede superar el total de la venta (Bs %s).',
+                    number_format($totalBs, 2)
+                ));
+            }
+
+            return $venta->pagos()->create([
+                'forma_pago' => $data['forma_pago'],
+                'monto_bs' => $montoBs,
+                'referencia' => $data['referencia'] ?? null,
+            ]);
+        });
     }
 
     public function cancelar(Venta $venta, User $actor, string $motivo): void
@@ -121,16 +158,42 @@ class VentaService
             ->get()
             ->keyBy('id_variante');
 
-        return collect($lineas)->map(function ($l) use ($idAlmacen, $variantes) {
+        // El precio es autoritativo: siempre el del catálogo, nunca el del formulario.
+        $faltantes = [];
+        foreach ($lineas as $l) {
             $v = $variantes[(int) $l['id_variante']] ?? null;
-            $bajoPedido = $v && $v->producto && $v->producto->modalidad === 'BAJO_PEDIDO';
+
+            if (! $v) {
+                throw new BusinessRuleException("La variante #{$l['id_variante']} no existe.");
+            }
+            if ((float) ($v->precio_usd ?? 0) <= 0) {
+                $faltantes[] = $v->sku;
+            }
+        }
+
+        if (! empty($faltantes)) {
+            throw new BusinessRuleException(sprintf(
+                'Estas variantes no tienen precio de lista: %s. Un Gerente o Administrador debe asignarlo en Catálogo.',
+                implode(', ', array_unique($faltantes))
+            ));
+        }
+
+        return collect($lineas)->map(function ($l) use ($idAlmacen, $variantes) {
+            $v = $variantes[(int) $l['id_variante']];
+            $precio = round((float) $v->precio_usd, 2);
+            $cantidad = (int) $l['cantidad'];
 
             return [
-                'id_variante'         => (int) $l['id_variante'],
-                'cantidad'            => (int) $l['cantidad'],
-                'precio_unitario_usd' => (float) $l['precio_unitario_usd'],
-                'descuento_pct'       => (float) ($l['descuento_pct'] ?? 0),
-                'id_almacen'          => $bajoPedido ? null : $idAlmacen,
+                'id_variante' => (int) $l['id_variante'],
+                'cantidad' => $cantidad,
+                'precio_unitario_usd' => $precio,
+                'descuento_pct' => Descuento::aPorcentaje(
+                    $l['descuento_tipo'] ?? 'PCT',
+                    $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0),
+                    $precio,
+                    $cantidad
+                ),
+                'id_almacen' => $v->producto?->modalidad === 'BAJO_PEDIDO' ? null : $idAlmacen,
             ];
         })->values()->all();
     }
@@ -147,9 +210,10 @@ class VentaService
             ['id_venta' => $venta->id_venta]
         );
     }
+
     private function validarDisponibilidad(array $lineas, int $idAlmacen): void
     {
-        $ids = array_map(fn($l) => (int) $l['id_variante'], $lineas);
+        $ids = array_map(fn ($l) => (int) $l['id_variante'], $lineas);
 
         $variantes = VarianteProducto::with('producto:id_producto,nombre,modalidad')
             ->whereIn('id_variante', $ids)
@@ -161,19 +225,20 @@ class VentaService
             ->where('id_almacen', $idAlmacen)
             ->whereIn('id_variante', $ids)
             ->get()
-            ->mapWithKeys(fn($e) => [
+            ->mapWithKeys(fn ($e) => [
                 (int) $e->id_variante => (int) $e->cantidad_total - (int) $e->cantidad_reservada,
             ])
             ->all();
 
         $errores = [];
         foreach ($lineas as $l) {
-            $id  = (int) $l['id_variante'];
-            $v   = $variantes[$id] ?? null;
+            $id = (int) $l['id_variante'];
+            $v = $variantes[$id] ?? null;
             $req = (int) $l['cantidad'];
 
             if (! $v) {
                 $errores[] = "La variante #{$id} no existe.";
+
                 continue;
             }
             if ($v->producto?->modalidad === 'BAJO_PEDIDO') {

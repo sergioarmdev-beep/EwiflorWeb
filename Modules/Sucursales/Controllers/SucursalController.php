@@ -96,4 +96,27 @@ class SucursalController extends Controller
 
         return back()->with('success', "Sucursal {$sucursal->estado}.");
     }
+
+    /**
+     * Endpoint JSON con las sucursales que tienen coordenadas, respetando
+     * el alcance del usuario. Pensado para consumos futuros del frontend
+     * (fetch/AJAX) sin depender de la vista Blade.
+     */
+    public function mapa(Request $request)
+    {
+        $puntos = AccesoSucursal::sucursalesParaMapa($request->user())
+            ->map(fn (Sucursal $s) => [
+                'id_sucursal' => $s->id_sucursal,
+                'nombre' => $s->nombre,
+                'departamento' => $s->departamento,
+                'direccion' => $s->direccion,
+                'telefono' => $s->telefono,
+                'estado' => $s->estado,
+                'latitud' => $s->latitud,
+                'longitud' => $s->longitud,
+            ])
+            ->values();
+
+        return response()->json(['data' => $puntos]);
+    }
 }

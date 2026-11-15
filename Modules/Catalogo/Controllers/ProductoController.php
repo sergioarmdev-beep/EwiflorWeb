@@ -5,6 +5,7 @@ namespace Modules\Catalogo\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Modules\Catalogo\Models\Marca;
@@ -22,6 +23,7 @@ class ProductoController extends Controller
      *               que usa la vista v_reporte_existencias para la alerta REPONER)
      */
     private const SQL_STOCK_TOTAL = '(select COALESCE(SUM(e.cantidad_total), 0) from existencia e join variante_producto vp on vp.id_variante = e.id_variante where vp.id_producto = producto.id_producto)';
+
     private const SQL_STOCK_DISPONIBLE = '(select COALESCE(SUM(e.cantidad_total - e.cantidad_reservada), 0) from existencia e join variante_producto vp on vp.id_variante = e.id_variante where vp.id_producto = producto.id_producto)';
 
     private const POR_PAGINA = 15;
@@ -35,8 +37,8 @@ class ProductoController extends Controller
         $filtros = $request->validate([
             'q' => 'nullable|string|max:100',
             'marca' => 'nullable|integer',
-            'categoria' => 'nullable|in:' . implode(',', Producto::CATEGORIAS),
-            'tipo' => 'nullable|in:' . implode(',', Producto::TIPOS),
+            'categoria' => 'nullable|in:'.implode(',', Producto::CATEGORIAS),
+            'tipo' => 'nullable|in:'.implode(',', Producto::TIPOS),
             'estado' => 'nullable|in:ACTIVO,INACTIVO',
             'stock_bajo' => 'nullable|boolean',
         ]);
@@ -50,12 +52,12 @@ class ProductoController extends Controller
             ->when($filtros['tipo'] ?? null, fn ($q, $v) => $q->where('producto.tipo_producto', $v))
             ->when($filtros['estado'] ?? null, fn ($q, $v) => $q->where('producto.estado', $v))
             ->orderBy('producto.nombre')
-            ->selectRaw(self::SQL_STOCK_TOTAL . ' as stock_total')
-            ->selectRaw(self::SQL_STOCK_DISPONIBLE . ' as stock_actual');
+            ->selectRaw(self::SQL_STOCK_TOTAL.' as stock_total')
+            ->selectRaw(self::SQL_STOCK_DISPONIBLE.' as stock_actual');
 
-        if (!empty($filtros['stock_bajo'])) {
+        if (! empty($filtros['stock_bajo'])) {
             $query->where('producto.modalidad', 'INVENTARIABLE')
-                ->whereRaw(self::SQL_STOCK_DISPONIBLE . ' <= producto.stock_minimo');
+                ->whereRaw(self::SQL_STOCK_DISPONIBLE.' <= producto.stock_minimo');
         }
 
         $productos = $query->paginate(self::POR_PAGINA)->withQueryString();
@@ -65,7 +67,7 @@ class ProductoController extends Controller
             'activos' => Producto::where('estado', 'ACTIVO')->count(),
             'stock_bajo' => Producto::where('estado', 'ACTIVO')
                 ->where('modalidad', 'INVENTARIABLE')
-                ->whereRaw(self::SQL_STOCK_DISPONIBLE . ' <= producto.stock_minimo')
+                ->whereRaw(self::SQL_STOCK_DISPONIBLE.' <= producto.stock_minimo')
                 ->count(),
         ];
 
@@ -186,6 +188,7 @@ class ProductoController extends Controller
         $producto->update(['estado' => $nuevoEstado]);
 
         $mensaje = $nuevoEstado === 'ACTIVO' ? 'Producto activado.' : 'Producto desactivado (ya no se venderá).';
+
         return back()->with('success', $mensaje);
     }
 
@@ -260,12 +263,12 @@ class ProductoController extends Controller
      * Guarda las imágenes subidas. La primera pasa a ser la principal solo si
      * el producto todavía no tiene una. Devuelve las rutas guardadas.
      *
-     * @param  array<int, \Illuminate\Http\UploadedFile>  $archivos
+     * @param  array<int, UploadedFile>  $archivos
      * @return string[]
      */
     private function guardarImagenes(Producto $producto, array $archivos): array
     {
-        if (!$archivos) {
+        if (! $archivos) {
             return [];
         }
 
@@ -283,7 +286,7 @@ class ProductoController extends Controller
 
             $producto->imagenes()->create([
                 'ruta_imagen' => $ruta,
-                'es_principal' => !$tienePrincipal && $i === 0,
+                'es_principal' => ! $tienePrincipal && $i === 0,
                 'orden' => $orden + $i,
             ]);
         }
@@ -307,7 +310,7 @@ class ProductoController extends Controller
             ->where('es_principal', true)
             ->update(['es_principal' => false]);
 
-        if (!$principal->es_principal) {
+        if (! $principal->es_principal) {
             $principal->update(['es_principal' => true]);
         }
     }
@@ -319,6 +322,13 @@ class ProductoController extends Controller
      */
     private function sincronizarVariantes(Producto $producto, array $variantes): void
     {
+        // El precio de lista solo lo pueden modificar Gerente y Administrador (RN-004).
+        $puedeEditarPrecio = in_array(
+            auth()->user()?->nombre_rol,
+            ['GERENTE', 'ADMINISTRADOR'],
+            true
+        );
+
         $conservadas = [];
 
         foreach ($variantes as $v) {
@@ -329,7 +339,12 @@ class ProductoController extends Controller
                 'estado' => $v['estado'] ?? 'ACTIVO',
             ];
 
-            $existente = !empty($v['id_variante'])
+            if ($puedeEditarPrecio && array_key_exists('precio_usd', $v)) {
+                $precio = $v['precio_usd'];
+                $datos['precio_usd'] = ($precio === null || $precio === '') ? null : $precio;
+            }
+
+            $existente = ! empty($v['id_variante'])
                 ? $producto->variantes()->where('id_variante', $v['id_variante'])->first()
                 : null;
 

@@ -4,7 +4,6 @@ namespace Modules\Cotizaciones\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Modules\Auth\Models\User;
 use Modules\Catalogo\Models\VarianteProducto;
 use Modules\Clientes\Models\Cliente;
 use Modules\Cotizaciones\Models\Cotizacion;
@@ -29,8 +28,7 @@ class CotizacionController extends Controller
         if ($s = trim((string) $request->input('buscar'))) {
             $q->whereHas(
                 'cliente',
-                fn($w) =>
-                $w->where('nombre', 'ilike', "%{$s}%")
+                fn ($w) => $w->where('nombre', 'ilike', "%{$s}%")
                     ->orWhere('telefono', 'like', "%{$s}%")
             );
         }
@@ -46,17 +44,20 @@ class CotizacionController extends Controller
 
         return view('cotizaciones::index', [
             'cotizaciones' => $cotizaciones,
-            'clientes'     => Cliente::activos()->orderBy('nombre')->get(['id_cliente', 'nombre']),
+            'clientes' => Cliente::activos()->orderBy('nombre')->get(['id_cliente', 'nombre']),
         ]);
     }
 
     public function create()
     {
+        $variantes = $this->variantes();
+
         return view('cotizaciones::create', [
             'cotizacion' => new Cotizacion(['vigencia_dias' => 14, 'estado' => 'EMITIDA']),
-            'clientes'   => Cliente::activos()->orderBy('nombre')->get(),
-            'variantes'  => $this->variantes(),
-            'lineas'     => [],
+            'clientes' => Cliente::activos()->orderBy('nombre')->get(),
+            'variantes' => $variantes,
+            'precios' => $this->precios($variantes),
+            'lineas' => [],
         ]);
     }
 
@@ -72,6 +73,7 @@ class CotizacionController extends Controller
     public function show(Cotizacion $cotizacion)
     {
         $cotizacion->load(['cliente', 'usuario', 'sucursal', 'tipoCambio', 'detalles.variante.producto']);
+
         return view('cotizaciones::show', compact('cotizacion'));
     }
 
@@ -84,16 +86,19 @@ class CotizacionController extends Controller
         }
 
         $cotizacion->load('detalles');
+        $variantes = $this->variantes();
 
         return view('cotizaciones::edit', [
             'cotizacion' => $cotizacion,
-            'clientes'   => Cliente::activos()->orderBy('nombre')->get(),
-            'variantes'  => $this->variantes(),
-            'lineas'     => $cotizacion->detalles->map(fn($d) => [
-                'id_variante'         => $d->id_variante,
-                'cantidad'            => $d->cantidad,
+            'clientes' => Cliente::activos()->orderBy('nombre')->get(),
+            'variantes' => $variantes,
+            'precios' => $this->precios($variantes),
+            'lineas' => $cotizacion->detalles->map(fn ($d) => [
+                'id_variante' => $d->id_variante,
+                'cantidad' => $d->cantidad,
                 'precio_unitario_usd' => $d->precio_unitario_usd,
-                'descuento_pct'       => $d->descuento_pct,
+                'descuento_tipo' => 'PCT',
+                'descuento_valor' => $d->descuento_pct,
             ])->all(),
         ]);
     }
@@ -120,8 +125,16 @@ class CotizacionController extends Controller
     {
         return VarianteProducto::with('producto')
             ->where('estado', 'ACTIVO')
-            ->whereHas('producto', fn($q) => $q->where('estado', 'ACTIVO'))
+            ->whereHas('producto', fn ($q) => $q->where('estado', 'ACTIVO'))
             ->orderBy('sku')
             ->get();
+    }
+
+    /** @return array<string, float|null> id_variante => precio USD */
+    private function precios($variantes): array
+    {
+        return $variantes
+            ->mapWithKeys(fn ($v) => [(string) $v->id_variante => $v->precio_usd !== null ? (float) $v->precio_usd : null])
+            ->all();
     }
 }

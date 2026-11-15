@@ -12,6 +12,7 @@ class SucursalesServiceProvider extends ServiceProvider
         // CRÍTICO: middleware('web') explícito. NUNCA loadRoutesFrom().
         Route::middleware('web')->group(__DIR__.'/../Routes/web.php');
 
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->loadViewsFrom(__DIR__.'/../Views', 'sucursales');
     }
 }

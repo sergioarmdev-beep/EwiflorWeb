@@ -111,6 +111,9 @@ $puedeGestionar = $esGestor;
     </section>
     @endif
 
+    {{-- Mapa general de sucursales --}}
+    @include('sucursales::partials.mapa-sucursales', ['sucursales' => $sucursales])
+
     {{-- Listado de sucursales (tarjetas) --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 

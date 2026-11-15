@@ -30,6 +30,16 @@ class UpdateSucursalRequest extends FormRequest
             'departamento' => ['required', 'string', Rule::in(Catalogos::DEPARTAMENTOS)],
             'direccion' => ['nullable', 'string', 'max:200'],
             'telefono' => ['nullable', 'string', 'max:20'],
+            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'latitud' => $this->filled('latitud') ? $this->input('latitud') : null,
+            'longitud' => $this->filled('longitud') ? $this->input('longitud') : null,
+        ]);
     }
 }

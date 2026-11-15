@@ -4,13 +4,15 @@ namespace Modules\Inventario\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Modules\Auth\Models\user;
-use Modules\Inventario\Models\Almacen;
 
 class Sucursal extends Model
 {
     protected $table = 'sucursal';
+
     protected $primaryKey = 'id_sucursal';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     public $timestamps = false;
@@ -20,7 +22,14 @@ class Sucursal extends Model
         'departamento',
         'direccion',
         'telefono',
+        'latitud',
+        'longitud',
         'estado',
+    ];
+
+    protected $casts = [
+        'latitud' => 'float',
+        'longitud' => 'float',
     ];
 
     public function getRouteKeyName(): string
@@ -30,8 +39,9 @@ class Sucursal extends Model
 
     public function usuarios()
     {
-        return $this->hasMany(User::class, 'id_sucursal', 'id_sucursal');
+        return $this->hasMany(user::class, 'id_sucursal', 'id_sucursal');
     }
+
     public function almacenes()
     {
         return $this->hasMany(Almacen::class, 'id_sucursal', 'id_sucursal');
