@@ -378,3 +378,22 @@ Nuevo módulo `Modules/Publico/` que expone el catálogo público en la raíz `/
 - `GET /servicio-tecnico` → vista de identificación carga sin errores.
 - `php artisan view:cache` → vistas compilan sin errores.
 - `php -l` → todos los PHP sin errores de sintaxis.
+
+---
+
+## 2026-11-16 — Fix: filtro de cliente en comprasConGarantia (v_reporte_ventas)
+
+### Qué se hizo
+- Corregido `where('rv.id_cliente', ...)` por `where('v.id_cliente', ...)` en
+  `ConsultaPublicaService::comprasConGarantia()`. La vista `v_reporte_ventas`
+  no expone la columna `id_cliente`; está en la tabla `venta` (`v.id_cliente`).
+  El HINT de PostgreSQL ya indicaba: "Probablemente quiera hacer referencia
+  a la columna «v.id_cliente»".
+
+### Archivos modificados
+- `Modules/ServicioTecnico/Services/ConsultaPublicaService.php` — línea 20 del filtro.
+
+### Verificación
+- `GET /servicio-tecnico/panel` → panel del cliente carga sin errores SQL.
+- `php artisan view:cache` → vistas compilan sin errores.
+- `php -l` → todos los PHP sin errores de sintaxis.
