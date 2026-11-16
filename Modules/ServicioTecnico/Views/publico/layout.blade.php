@@ -47,12 +47,11 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('serviciotecnico.publico.salir') }}" method="POST" onclick="event.preventDefault(); this.closest('form').requestSubmit();" class="text-xs text-slate-400 hover:text-white transition">
-                    Cerrar sesión
-                </a>
-                <form action="{{ route('serviciotecnico.publico.salir') }}" method="POST" style="display:none;">
+                <form action="{{ route('serviciotecnico.publico.salir') }}" method="POST">
                     @csrf
-                    <button type="submit"></button>
+                    <button type="submit" class="text-xs text-slate-400 hover:text-white transition">
+                        Cerrar sesión
+                    </button>
                 </form>
             </div>
         </header>
@@ -77,9 +76,5 @@
             EwiflorWeb · Servicio Técnico — Panel público de cliente
         </footer>
     </div>
-
-    <form id="salir-form" action="{{ route('serviciotecnico.publico.salir') }}" method="POST" style="display:none;">
-        @csrf
-    </form>
 </body>
 </html>
