@@ -6,6 +6,7 @@ use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Catalogo\Models\VarianteProducto;
+use Modules\Catalogo\Support\BuscadorVariantes;
 use Modules\Clientes\Models\Cliente;
 use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Inventario\Models\Almacen;
@@ -62,6 +63,7 @@ class VentaController extends Controller
             'almacenes' => Almacen::where('estado', 'ACTIVO')->orderBy('nombre')->get(),
             'precios' => $precios,
             'garantias' => $garantias,
+            'variantesBusqueda' => BuscadorVariantes::payload($variantes),
         ];
 
         if ($modo === 'cotizacion') {
@@ -171,7 +173,7 @@ class VentaController extends Controller
 
     private function variantesActivas()
     {
-        return VarianteProducto::with('producto')
+        return VarianteProducto::with('producto.marca')
             ->where('estado', 'ACTIVO')
             ->whereHas('producto', fn ($q) => $q->where('estado', 'ACTIVO'))
             ->orderBy('sku')

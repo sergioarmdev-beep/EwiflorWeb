@@ -100,10 +100,11 @@
         </div>
 
         <h2 class="font-semibold">Líneas de la venta</h2>
-        <table class="w-full text-sm bg-white shadow rounded overflow-hidden">
+        <div class="overflow-x-auto rounded-lg bg-white shadow">
+        <table class="w-full text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-3 py-2 text-left">Variante</th>
+                    <th class="px-3 py-2 text-left min-w-[240px]">Variante</th>
                     <th class="px-3 py-2 text-right w-20">Cantidad</th>
                     <th class="px-3 py-2 text-right w-28">Precio USD</th>
                     <th class="px-3 py-2 text-right w-20">Garantía (meses)</th>
@@ -117,15 +118,10 @@
                 @foreach ($lineas as $i => $l)
                 <tr>
                     <td class="px-3 py-2">
-                        <select name="lineas[{{ $i }}][id_variante]" required class="w-full border rounded px-2 py-1">
-                            <option value="">— Variante —</option>
-                            @foreach ($variantes as $v)
-                            <option value="{{ $v->id_variante }}"
-                                @selected((string) ($l['id_variante'] ?? '' )===(string) $v->id_variante)>
-                                {{ $v->sku }} — {{ $v->producto->nombre }}{{ (float) ($v->precio_usd ?? 0) <= 0 ? ' (sin precio)' : '' }}
-                            </option>
-                            @endforeach
-                        </select>
+                        <x-variant-search
+                            name="lineas[{{ $i }}][id_variante]"
+                            :items="$variantesBusqueda"
+                            :value="old('lineas.'.$i.'.id_variante', $l['id_variante'] ?? '')" />
                     </td>
                     <td class="px-3 py-2"><input type="number" name="lineas[{{ $i }}][cantidad]" min="1" required value="{{ $l['cantidad'] ?? 1 }}" class="w-full border rounded px-2 py-1 text-right"></td>
                     <td class="px-3 py-2">
@@ -148,6 +144,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
         <p class="text-xs text-gray-500">
             El precio se toma del catálogo y no puede editarse. La garantía por defecto viene del catálogo
             y puede editarse por línea. Solo se permite un descuento por línea,
@@ -159,14 +156,10 @@
         <template id="linea-tpl">
             <tr>
                 <td class="px-3 py-2">
-                    <select data-name="id_variante" required class="w-full border rounded px-2 py-1">
-                        <option value="">— Variante —</option>
-                        @foreach ($variantes as $v)
-                        <option value="{{ $v->id_variante }}">
-                            {{ $v->sku }} — {{ $v->producto->nombre }}{{ (float) ($v->precio_usd ?? 0) <= 0 ? ' (sin precio)' : '' }}
-                        </option>
-                        @endforeach
-                    </select>
+                    <x-variant-search
+                        name=""
+                        :items="$variantesBusqueda"
+                        value="" />
                 </td>
                 <td class="px-3 py-2"><input type="number" data-name="cantidad" min="1" value="1" required class="w-full border rounded px-2 py-1 text-right"></td>
                 <td class="px-3 py-2">
@@ -204,6 +197,7 @@
 
         const tpl = document.getElementById('linea-tpl');
         const precios = @json($precios ?? []);
+        const garantias = @json($garantias ?? []);
         let idx = Number(tbody.dataset.next || 0);
 
         const numero = (valor) => {
@@ -257,6 +251,18 @@
             recalcular(tr);
         }
 
+        /**
+         * Al cambiar de variante se propone la garantía por defecto del catálogo.
+         * Solo se hace en el evento de cambio (nunca al cargar la página), para no
+         * pisar una garantía editada previamente por el usuario.
+         */
+        function aplicarGarantia(tr) {
+            const id = campo(tr, 'id_variante')?.value;
+            const input = campo(tr, 'garantia_meses');
+            if (!id || !input) return;
+            input.value = Number(garantias[id] ?? 0);
+        }
+
         function addRow() {
             const tr = tpl.content.cloneNode(true).querySelector('tr');
             tr.querySelectorAll('[data-name]').forEach(el => {
@@ -275,6 +281,7 @@
             if (!tr) return;
             if (e.target.matches('[name$="[id_variante]"], [data-name="id_variante"]')) {
                 aplicarPrecio(tr);
+                aplicarGarantia(tr);
             } else {
                 recalcular(tr);
             }

@@ -1,5 +1,17 @@
 @import 'tailwindcss';
 
+/*
+ * Modo oscuro por CLASE (la alterna el layout global en `document.documentElement`).
+ * Sin esto, Tailwind v4 usa `prefers-color-scheme` y el botón "Tema" no surte efecto
+ * sobre las clases `dark:` del proyecto.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Alpine.js: oculta los elementos marcados hasta que Alpine los inicializa. */
+[x-cloak] {
+    display: none !important;
+}
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';

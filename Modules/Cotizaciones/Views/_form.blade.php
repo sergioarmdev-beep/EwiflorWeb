@@ -38,10 +38,11 @@ $nextIdx = count($lineas);
 <div class="bg-red-100 text-red-800 px-4 py-2 rounded mb-2">{{ $errors->first('lineas') }}</div>
 @endif
 
-<table class="w-full text-sm bg-white shadow rounded overflow-hidden">
+<div class="overflow-x-auto rounded-lg bg-white shadow">
+<table class="w-full text-sm">
     <thead class="bg-gray-50">
         <tr>
-            <th class="px-3 py-2 text-left">Variante</th>
+            <th class="px-3 py-2 text-left min-w-[240px]">Variante</th>
             <th class="px-3 py-2 text-right w-20">Cantidad</th>
             <th class="px-3 py-2 text-right w-28">Precio USD</th>
             <th class="px-3 py-2 text-right w-20">Garantía (meses)</th>
@@ -55,15 +56,10 @@ $nextIdx = count($lineas);
         @foreach ($lineas as $i => $l)
         <tr>
             <td class="px-3 py-2">
-                <select name="lineas[{{ $i }}][id_variante]" class="w-full border rounded px-2 py-1" required>
-                    <option value="">— Variante —</option>
-                    @foreach ($variantes as $v)
-                    <option value="{{ $v->id_variante }}"
-                        @selected((string) ($l['id_variante'] ?? '' )===(string) $v->id_variante)>
-                        {{ $v->sku }} — {{ $v->producto->nombre }}{{ $v->color ? ' ('.$v->color.')' : '' }}{{ (float) ($v->precio_usd ?? 0) <= 0 ? ' (sin precio)' : '' }}
-                    </option>
-                    @endforeach
-                </select>
+                <x-variant-search
+                    name="lineas[{{ $i }}][id_variante]"
+                    :items="$variantesBusqueda"
+                    :value="old('lineas.'.$i.'.id_variante', $l['id_variante'] ?? '')" />
             </td>
             <td class="px-3 py-2">
                 <input type="number" name="lineas[{{ $i }}][cantidad]" min="1" required
@@ -97,6 +93,7 @@ $nextIdx = count($lineas);
         @endforeach
     </tbody>
 </table>
+</div>
 
 <p class="text-xs text-gray-500 mt-2">
     El precio se toma del catálogo y no puede editarse. La garantía por defecto viene del catálogo
@@ -112,14 +109,10 @@ $nextIdx = count($lineas);
 <template id="linea-tpl">
     <tr>
         <td class="px-3 py-2">
-            <select data-name="id_variante" class="w-full border rounded px-2 py-1" required>
-                <option value="">— Variante —</option>
-                @foreach ($variantes as $v)
-                <option value="{{ $v->id_variante }}">
-                    {{ $v->sku }} — {{ $v->producto->nombre }}{{ $v->color ? ' ('.$v->color.')' : '' }}{{ (float) ($v->precio_usd ?? 0) <= 0 ? ' (sin precio)' : '' }}
-                </option>
-                @endforeach
-            </select>
+            <x-variant-search
+                name=""
+                :items="$variantesBusqueda"
+                value="" />
         </td>
         <td class="px-3 py-2">
             <input type="number" data-name="cantidad" min="1" value="1" required
@@ -149,11 +142,12 @@ $nextIdx = count($lineas);
 </template>
 
 <div class="mt-6 flex gap-2">
-    <button class="bg-blue-600 ...">Emitir cotización</button>
-    <a href="..." class="border ...">Cancelar</a>
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        {{ $isEdit ? 'Actualizar cotización' : 'Emitir cotización' }}
+    </button>
+    <a href="{{ route('cotizaciones.index') }}" class="border rounded px-4 py-2">Cancelar</a>
 </div>
 
-{{-- Reemplaza el @push('scripts') ... @endpush por esto: --}}
 <script>
     (function() {
         const tbody = document.getElementById('lineas-body');
@@ -161,6 +155,7 @@ $nextIdx = count($lineas);
         if (!tbody || !tpl) return;
 
         const precios = @json($precios ?? []);
+        const garantias = @json($garantias ?? []);
         let idx = Number(tbody.dataset.next || 0);
 
         const numero = (valor) => {
@@ -215,6 +210,18 @@ $nextIdx = count($lineas);
             recalcular(tr);
         }
 
+        /**
+         * Al cambiar de variante se propone la garantía por defecto del catálogo.
+         * Solo se hace en el evento de cambio (nunca al cargar la página), para no
+         * pisar una garantía editada previamente por el usuario.
+         */
+        function aplicarGarantia(tr) {
+            const id = campo(tr, 'id_variante')?.value;
+            const input = campo(tr, 'garantia_meses');
+            if (!id || !input) return;
+            input.value = Number(garantias[id] ?? 0);
+        }
+
         function addRow() {
             const frag = tpl.content.cloneNode(true);
             const tr = frag.querySelector('tr');
@@ -234,6 +241,7 @@ $nextIdx = count($lineas);
             if (!tr) return;
             if (e.target.matches('[name$="[id_variante]"], [data-name="id_variante"]')) {
                 aplicarPrecio(tr);
+                aplicarGarantia(tr);
             } else {
                 recalcular(tr);
             }

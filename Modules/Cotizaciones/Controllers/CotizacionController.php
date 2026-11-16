@@ -5,6 +5,7 @@ namespace Modules\Cotizaciones\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Catalogo\Models\VarianteProducto;
+use Modules\Catalogo\Support\BuscadorVariantes;
 use Modules\Clientes\Models\Cliente;
 use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Cotizaciones\Requests\StoreCotizacionRequest;
@@ -58,6 +59,7 @@ class CotizacionController extends Controller
             'variantes' => $variantes,
             'precios' => $this->precios($variantes),
             'garantias' => $this->garantias($variantes),
+            'variantesBusqueda' => BuscadorVariantes::payload($variantes),
             'lineas' => [],
         ]);
     }
@@ -95,6 +97,7 @@ class CotizacionController extends Controller
             'variantes' => $variantes,
             'precios' => $this->precios($variantes),
             'garantias' => $this->garantias($variantes),
+            'variantesBusqueda' => BuscadorVariantes::payload($variantes),
             'lineas' => $cotizacion->detalles->map(fn ($d) => [
                 'id_variante' => $d->id_variante,
                 'cantidad' => $d->cantidad,
@@ -126,7 +129,7 @@ class CotizacionController extends Controller
 
     private function variantes()
     {
-        return VarianteProducto::with('producto')
+        return VarianteProducto::with('producto.marca')
             ->where('estado', 'ACTIVO')
             ->whereHas('producto', fn ($q) => $q->where('estado', 'ACTIVO'))
             ->orderBy('sku')
