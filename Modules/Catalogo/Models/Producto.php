@@ -58,6 +58,31 @@ class Producto extends Model
         return $this->hasMany(ProductoImagen::class, 'id_producto', 'id_producto')->orderBy('orden');
     }
 
+    public function documentos()
+    {
+        return $this->hasMany(ProductoDocumento::class, 'id_producto', 'id_producto')->orderBy('fecha_subida', 'desc');
+    }
+
+    public function repuestos()
+    {
+        return $this->belongsToMany(
+            Producto::class,
+            'producto_repuesto',
+            'id_maquinaria',
+            'id_repuesto'
+        );
+    }
+
+    public function maquinaria()
+    {
+        return $this->belongsToMany(
+            Producto::class,
+            'producto_repuesto',
+            'id_repuesto',
+            'id_maquinaria'
+        );
+    }
+
     public function imagenPrincipal()
     {
         return $this->hasOne(ProductoImagen::class, 'id_producto', 'id_producto')->where('es_principal', true);

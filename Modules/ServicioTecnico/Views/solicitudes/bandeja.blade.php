@@ -29,6 +29,7 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300">Estado</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300">Fecha</th>
                     <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-300">Acción</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-300">Detalle</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -59,6 +60,12 @@
                         @else
                             <span class="text-xs text-slate-400">Asignado</span>
                         @endif
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <a href="{{ route('serviciotecnico.show', $sol) }}"
+                            class="text-xs text-sky-600 dark:text-sky-400 hover:underline font-medium">
+                            Ver detalle
+                        </a>
                     </td>
                 </tr>
                 @endforeach

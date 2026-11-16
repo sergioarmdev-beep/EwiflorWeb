@@ -38,6 +38,16 @@ class ProductoRequest extends FormRequest
             'eliminar_imagenes.*' => ['integer'],
             'imagen_principal' => ['nullable', 'integer'],
 
+            // Documentación
+            'documentos' => ['nullable', 'array', 'max:5'],
+            'documentos.*' => ['file', 'mimes:txt,doc,docx', 'max:5120'], // 5MB
+            'eliminar_documentos' => ['nullable', 'array'],
+            'eliminar_documentos.*' => ['integer'],
+
+            // Repuestos (para maquinaria)
+            'repuestos' => ['nullable', 'array'],
+            'repuestos.*' => ['integer', 'exists:producto,id_producto'],
+
             // Variantes
             'variantes' => ['nullable', 'array', 'max:50'],
             'variantes.*.id_variante' => ['nullable', 'integer'],

@@ -291,6 +291,31 @@ class DashboardStatsService
         $data['solicitudes_pendientes'] = $this->solicitudesPendientes($user->id_usuario);
         $data['garantias_por_vencer'] = $this->garantiasPorVencer();
         $data['ultimas_solicitudes'] = $this->ultimasSolicitudes($user->id_usuario);
+        $data['solicitud_activa'] = $this->solicitudActiva($user->id_usuario);
+    }
+
+    /**
+     * Obtiene la solicitud activa (PROGRAMADA) asignada al técnico, si existe.
+     * Un técnico solo puede tener una activa a la vez.
+     */
+    private function solicitudActiva(int $idTecnico): ?\stdClass
+    {
+        return DB::table('solicitud_servicio as s')
+            ->join('cliente as c', 'c.id_cliente', '=', 's.id_cliente')
+            ->where('s.estado', 'PROGRAMADA')
+            ->where('s.id_tecnico', $idTecnico)
+            ->orderByDesc('s.fecha_solicitud')
+            ->limit(1)
+            ->get([
+                's.id_solicitud',
+                's.estado',
+                's.descripcion_falla',
+                's.fecha_solicitud',
+                's.id_garantia',
+                'c.nombre as cliente',
+                'c.telefono as telefono',
+            ])
+            ->first();
     }
 
     private function solicitudesPendientes(int $idTecnico): int

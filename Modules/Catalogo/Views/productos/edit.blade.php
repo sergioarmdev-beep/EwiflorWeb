@@ -458,7 +458,157 @@
                     @include('catalogo::productos.partials.variantes', ['numero' => '06', 'variantes' => $producto->variantes])
 
 
-                    {{-- SECCIÓN 7: DESCRIPCIÓN --}}
+                    {{-- SECCIÓN 7: DOCUMENTACIÓN --}}
+                    <section class="pt-8 border-t border-slate-800">
+
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                                07
+                            </span>
+
+                            <div>
+                                <h4 class="text-sm font-bold text-white">
+                                    Documentación del producto
+                                </h4>
+                                <p class="text-xs text-slate-500">
+                                    Adjunte manuales, fichas técnicas o documentos en formato TXT o Word.
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Documentos existentes --}}
+                        @if($producto->documentos->count() > 0)
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm font-medium text-slate-300">Documentos actuales</span>
+                                <span class="text-xs text-slate-500">{{ $producto->documentos->count() }} archivo(s)</span>
+                            </div>
+                            <div class="space-y-2">
+                                @foreach($producto->documentos as $documento)
+                                <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-800 bg-slate-950/50">
+                                    <input type="checkbox" name="eliminar_documentos[]" value="{{ $documento->id_documento }}"
+                                        class="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-800 text-sky-500 focus:ring-sky-500 focus:ring-offset-slate-900">
+                                    <div class="flex items-center gap-2 flex-1">
+                                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span class="text-sm text-slate-200">{{ $documento->nombre_original }}</span>
+                                        <span class="text-xs text-slate-500 ml-2">({{ strtoupper($documento->extension) }})</span>
+                                    </div>
+                                    <a href="{{ Storage::url($documento->ruta_archivo) }}" target="_blank"
+                                        class="text-xs text-sky-400 hover:text-sky-300 underline">Descargar</a>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            {{-- Nuevos documentos --}}
+                            <div class="md:col-span-2">
+                                <label for="documentos" class="block text-sm font-medium text-slate-300 mb-2">
+                                    Agregar nuevos documentos <span class="text-slate-500">(opcional)</span>
+                                </label>
+
+                                <input type="file" name="documentos[]" id="documentos" multiple
+                                    accept=".txt,.doc,.docx"
+                                    class="block w-full text-sm text-slate-400
+                                        file:mr-4 file:py-2 file:rounded-full file:border-0
+                                        file:text-sm file:font-semibold file:bg-sky-600 file:text-white
+                                        hover:file:bg-sky-500 cursor-pointer">
+
+                                <p class="text-xs text-slate-500 mt-2">
+                                    Formatos permitidos: .txt, .doc, .docx. Máximo 5 archivos, 5 MB cada uno.
+                                </p>
+
+                                @error('documentos.*')
+                                <span class="form-error">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                        </div>
+                    </section>
+
+
+                    {{-- SECCIÓN 8: REPUESTOS (solo maquinaria) --}}
+                    <section class="pt-8 border-t border-slate-800 repuestos-section"
+                        id="repuestos-section"
+                        data-tipo-producto="{{ $producto->tipo_producto }}">
+
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                                08
+                            </span>
+
+                            <div>
+                                <h4 class="text-sm font-bold text-white">
+                                    Repuestos asociados
+                                </h4>
+                                <p class="text-xs text-slate-500">
+                                    Gestionar los repuestos compatibles con esta maquinaria.
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Repuestos ya asociados --}}
+                        @if($producto->repuestos->count() > 0)
+                        <div class="mb-6">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm font-medium text-slate-300">Repuestos vinculados</span>
+                            </div>
+                            <div class="space-y-2">
+                                @foreach($producto->repuestos as $repuesto)
+                                <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-800 bg-slate-950/50">
+                                    <input type="hidden" name="repuestos[]" value="{{ $repuesto->id_producto }}">
+                                    <span class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 text-sm font-mono">
+                                        {{ strtoupper(substr($repuesto->codigo, 0, 2)) }}
+                                    </span>
+                                    <div class="flex-1">
+                                        <span class="text-sm text-slate-200 block">{{ $repuesto->nombre }}</span>
+                                        <span class="text-xs text-slate-500">{{ $repuesto->codigo }} {{ $repuesto->modelo ? '- '.$repuesto->modelo : '' }}</span>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Agregar más repuestos --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label for="repuestos-nuevos" class="block text-sm font-medium text-slate-300 mb-2">
+                                    Agregar repuestos <span class="text-slate-500">(opcional)</span>
+                                </label>
+
+                                <select name="repuestos[]" id="repuestos-nuevos" multiple
+                                    class="form-select h-auto min-h-[200px]">
+                                    <option value="">Seleccione repuestos...</option>
+
+                                    @php
+                                        $idsExistentes = $producto->repuestos->pluck('id_producto')->toArray();
+                                        $repuestosDisponibles = Modules\Catalogo\Models\Producto::where('tipo_producto', 'REPUESTO')->where('estado', 'ACTIVO')
+                                            ->whereNotIn('id_producto', $idsExistentes)
+                                            ->orderBy('nombre')->get();
+                                    @endphp
+
+                                    @foreach($repuestosDisponibles as $repuesto)
+                                    <option value="{{ $repuesto->id_producto }}">
+                                        {{ $repuesto->codigo }} - {{ $repuesto->nombre }} {{ $repuesto->modelo ? '('.$repuesto->modelo.')' : '' }}
+                                    </option>
+                                    @endforeach
+                                </select>
+
+                                <p class="text-xs text-slate-500 mt-2">
+                                    Solo aplica a productos de tipo <strong>MAQUINARIA</strong>.
+                                    Los repuestos disponibles son aquellos marcados como tipo REPUESTO.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+
+                    {{-- SECCIÓN 9: DESCRIPCIÓN --}}
                     <section class="pt-8 border-t border-slate-800">
 
                         <div class="flex items-center gap-3 mb-6">
@@ -594,27 +744,36 @@
         cursor: pointer;
     }
 
-    /* Evita que las imágenes alteren el flujo del formulario */
-    .form-input,
-    .form-select {
-        box-sizing: border-box;
-        max-width: 100%;
+    /* Ocultar sección de repuestos si no es maquinaria */
+    .repuestos-section {
+        display: none;
     }
 
-    section {
-        position: relative;
-        min-width: 0;
+    .repuestos-section[data-tipo-producto="MAQUINARIA"] {
+        display: block;
     }
 
-    section img {
-        max-width: 100%;
-    }
-
-    /* Evita desbordamientos horizontales */
-    form,
-    form>div {
-        min-width: 0;
+    .repuestos-section.mostrar {
+        display: block;
     }
 </style>
+
+<script>
+    const tipoSelect = document.getElementById('tipo_producto');
+    const repuestosSection = document.getElementById('repuestos-section');
+
+    function toggleRepuestos() {
+        if (tipoSelect && tipoSelect.value === 'MAQUINARIA') {
+            repuestosSection.classList.add('mostrar');
+        } else if (repuestosSection) {
+            repuestosSection.classList.remove('mostrar');
+        }
+    }
+
+    if (tipoSelect) {
+        tipoSelect.addEventListener('change', toggleRepuestos);
+    }
+    toggleRepuestos();
+</script>
 
 @endsection

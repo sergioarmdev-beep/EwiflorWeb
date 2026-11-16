@@ -5,13 +5,18 @@ namespace Modules\ServicioTecnico\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Garantias\Models\SolicitudServicio;
+use Modules\ServicioTecnico\Requests\CancelarSolicitudRequest;
 use Modules\ServicioTecnico\Requests\CerrarSolicitudRequest;
 use Modules\ServicioTecnico\Requests\RegistrarSolicitudRequest;
+use Modules\ServicioTecnico\Services\ConsultaPublicaService;
 use Modules\ServicioTecnico\Services\SolicitudService;
 
 class SolicitudController extends Controller
 {
-    public function __construct(private SolicitudService $solicitudes) {}
+    public function __construct(
+        private SolicitudService $solicitudes,
+        private ConsultaPublicaService $consultaPublica,
+    ) {}
 
     /**
      * Técnico: bandeja de encargos pendientes y asignados.
@@ -47,11 +52,25 @@ class SolicitudController extends Controller
     public function cerrar(CerrarSolicitudRequest $request, SolicitudServicio $solicitud)
     {
         try {
-            $this->solicitudes->cerrar($solicitud, $request->validated());
+            $this->solicitudes->cerrar($solicitud, $request->user(), $request->validated());
 
             return back()->with('success', "Solicitud #{$solicitud->id_solicitud} cerrada correctamente.");
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Gerente/Administrador: cancela una solicitud con motivo.
+     */
+    public function cancelar(CancelarSolicitudRequest $request, SolicitudServicio $solicitud)
+    {
+        try {
+            $this->solicitudes->cancelar($solicitud, $request->user(), $request->validated()['motivo']);
+
+            return back()->with('success', "Solicitud #{$solicitud->id_solicitud} cancelada correctamente.");
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -92,6 +111,20 @@ class SolicitudController extends Controller
 
         return redirect()->route('serviciotecnico.show', $solicitud)
             ->with('success', "Solicitud #{$solicitud->id_solicitud} creada para {$cliente->nombre}.");
+    }
+
+    /**
+     * Listado de garantías vigentes que vencen en los próximos días.
+     */
+    public function garantiasPorVencer(Request $request)
+    {
+        $dias = (int) $request->get('dias', 30);
+        $garantias = $this->consultaPublica->garantiasPorVencer($dias);
+
+        return view('serviciotecnico::solicitudes.garantias-por-vencer', [
+            'garantias' => $garantias,
+            'dias' => $dias,
+        ]);
     }
 
     /**

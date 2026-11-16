@@ -3,6 +3,8 @@
 namespace Modules\ServicioTecnico\Services;
 
 use App\Exceptions\BusinessRuleException;
+use App\Support\DbFunction;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
@@ -56,11 +58,23 @@ class SolicitudService
     /**
      * Acepta un encargo pendiente. Bloquea doble asignación con UPDATE condicional.
      * Solo el técnico puede aceptar.
+     *
+     * Regla de negocio: un técnico solo puede tener una solicitud activa (PROGRAMADA)
+     * a la vez. Si ya tiene una, no puede aceptar otra hasta cerrarla.
      */
     public function aceptar(SolicitudServicio $solicitud, User $tecnico): SolicitudServicio
     {
         if ($solicitud->estado !== 'PENDIENTE') {
             throw new BusinessRuleException('Esta solicitud ya fue atendida.');
+        }
+
+        $yaTieneActiva = DB::table('solicitud_servicio')
+            ->where('id_tecnico', $tecnico->id_usuario)
+            ->where('estado', 'PROGRAMADA')
+            ->exists();
+
+        if ($yaTieneActiva) {
+            throw new BusinessRuleException('Ya tienes una solicitud activa. Debes cerrarla antes de aceptar otro encargo.');
         }
 
         $actualizados = DB::table('solicitud_servicio')
@@ -81,11 +95,26 @@ class SolicitudService
 
     /**
      * Cierra una solicitud con resultado, diagnóstico y costo.
+     *
+     * Reglas:
+     * - No se puede cerrar si ya está CERRADA o CANCELADA.
+     * - Si el usuario es SERVICIO_TECNICO, debe ser el técnico asignado (id_tecnico).
+     * - GERENTE y ADMINISTRADOR pueden cerrar cualquier solicitud en estado
+     *   PENDIENTE o PROGRAMADA.
      */
-    public function cerrar(SolicitudServicio $solicitud, array $data): SolicitudServicio
+    public function cerrar(SolicitudServicio $solicitud, User $user, array $data): SolicitudServicio
     {
-        if ($solicitud->estado === 'CERRADA') {
-            throw new BusinessRuleException('Esta solicitud ya está cerrada.');
+        if (in_array($solicitud->estado, ['CERRADA', 'CANCELADA'], true)) {
+            throw new BusinessRuleException('Esta solicitud ya está cerrada o cancelada.');
+        }
+
+        if (! in_array($solicitud->estado, ['PENDIENTE', 'PROGRAMADA'], true)) {
+            throw new BusinessRuleException('No se puede cerrar una solicitud en estado: '.$solicitud->estado);
+        }
+
+        $rol = $user->nombre_rol;
+        if ($rol === 'SERVICIO_TECNICO' && $solicitud->id_tecnico !== $user->id_usuario) {
+            throw new BusinessRuleException('Solo puedes cerrar solicitudes que te hayan sido asignadas.');
         }
 
         $solicitud->update([
@@ -116,16 +145,17 @@ class SolicitudService
 
     /**
      * Solicitudes pendientes para el técnico (sin asignar o ya asignadas a él).
+     * Devuelve una colección de objetos SolicitudServicio (no arrays) para que
+     * las vistas puedan acceder con notación de objeto (->).
      */
-    public function pendientesParaTecnico(int $idTecnico): array
+    public function pendientesParaTecnico(int $idTecnico): Collection
     {
         return SolicitudServicio::query()
             ->whereIn('estado', ['PENDIENTE', 'PROGRAMADA'])
             ->where(fn ($q) => $q->where('id_tecnico', $idTecnico)->orWhereNull('id_tecnico'))
             ->with('cliente')
             ->orderByDesc('fecha_solicitud')
-            ->get()
-            ->toArray();
+            ->get();
     }
 
     /**
@@ -171,5 +201,25 @@ class SolicitudService
             ->orderBy('nombre_completo')
             ->get()
             ->toArray();
+    }
+
+    /**
+     * Cancela una solicitud de servicio (solo GERENTE o ADMINISTRADOR).
+     * La lógica transaccional vive en la función PG cancelar_solicitud_servicio().
+     */
+    public function cancelar(SolicitudServicio $solicitud, User $user, string $motivo): SolicitudServicio
+    {
+        $rol = $user->nombre_rol;
+        if (! in_array($rol, ['GERENTE', 'ADMINISTRADOR'], true)) {
+            throw new BusinessRuleException('Solo el Gerente o el Administrador pueden cancelar una solicitud de servicio.');
+        }
+
+        DbFunction::call('cancelar_solicitud_servicio', [
+            $solicitud->id_solicitud,
+            $user->id_usuario,
+            $motivo,
+        ]);
+
+        return $solicitud->fresh();
     }
 }

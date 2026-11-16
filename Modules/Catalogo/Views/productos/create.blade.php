@@ -376,12 +376,115 @@
                     @include('catalogo::productos.partials.variantes', ['numero' => '05'])
 
 
-                    {{-- SECCIÓN 6: DESCRIPCIÓN --}}
+                    {{-- SECCIÓN 6: DOCUMENTACIÓN --}}
                     <section class="pt-8 border-t border-slate-800">
 
                         <div class="flex items-center gap-3 mb-6">
                             <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
                                 06
+                            </span>
+
+                            <div>
+                                <h4 class="text-sm font-bold text-white">
+                                    Documentación del producto
+                                </h4>
+                                <p class="text-xs text-slate-500">
+                                    Suba manuales, fichas técnicas o documentos en formato TXT o Word.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            {{-- Documentos --}}
+                            <div class="md:col-span-2">
+                                <label for="documentos" class="block text-sm font-medium text-slate-300 mb-2">
+                                    Documentos adjuntos <span class="text-slate-500">(opcional)</span>
+                                </label>
+
+                                <input type="file" name="documentos[]" id="documentos" multiple
+                                    accept=".txt,.doc,.docx"
+                                    class="block w-full text-sm text-slate-400
+                                        file:mr-4 file:py-2 file:rounded-full file:border-0
+                                        file:text-sm file:font-semibold file:bg-sky-600 file:text-white
+                                        hover:file:bg-sky-500 cursor-pointer">
+
+                                <p class="text-xs text-slate-500 mt-2">
+                                    Formatos permitidos: .txt, .doc, .docx. Máximo 5 archivos, 5 MB cada uno.
+                                </p>
+
+                                @error('documentos.*')
+                                <span class="form-error">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                        </div>
+                    </section>
+
+
+                    {{-- SECCIÓN 7: REPUESTOS (solo maquinaria) --}}
+                    <section class="pt-8 border-t border-slate-800 repuestos-section"
+                        id="repuestos-section"
+                        data-tipo-producto="{{ old('tipo_producto') }}">
+                        {{-- Se muestra solo si el tipo es MAQUINARIA --}}
+
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                                07
+                            </span>
+
+                            <div>
+                                <h4 class="text-sm font-bold text-white">
+                                    Repuestos asociados
+                                </h4>
+                                <p class="text-xs text-slate-500">
+                                    Seleccione los repuestos compatibles con esta maquinaria.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            {{-- Selector de repuestos --}}
+                            <div class="md:col-span-2">
+                                <label for="repuestos" class="block text-sm font-medium text-slate-300 mb-2">
+                                    Repuestos compatibles <span class="text-slate-500">(opcional)</span>
+                                </label>
+
+                                <select name="repuestos[]" id="repuestos" multiple
+                                    class="form-select h-auto min-h-[200px]">
+                                    <option value="">Seleccione repuestos...</option>
+
+                                    @php
+                                        $repuestosDisponibles = Modules\Catalogo\Models\Producto::where('tipo_producto', 'REPUESTO')->where('estado', 'ACTIVO')->orderBy('nombre')->get();
+                                    @endphp
+
+                                    @foreach($repuestosDisponibles as $repuesto)
+                                    <option value="{{ $repuesto->id_producto }}">
+                                        {{ $repuesto->codigo }} - {{ $repuesto->nombre }} {{ $repuesto->modelo ? '('.$repuesto->modelo.')' : '' }}
+                                    </option>
+                                    @endforeach
+                                </select>
+
+                                <p class="text-xs text-slate-500 mt-2">
+                                    Solo aplica a productos de tipo <strong>MAQUINARIA</strong>.
+                                    Los repuestos disponibles son aquellos marcados como tipo REPUESTO.
+                                </p>
+
+                                @error('repuestos.*')
+                                <span class="form-error">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                        </div>
+                    </section>
+
+                    {{-- SECCIÓN 8: DESCRIPCIÓN --}}
+                    <section class="pt-8 border-t border-slate-800">
+
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                                08
                             </span>
 
                             <div>
@@ -407,12 +510,12 @@
                     </section>
 
 
-                    {{-- SECCIÓN 7: VISIBILIDAD --}}
+                    {{-- SECCIÓN 9: VISIBILIDAD --}}
                     <section class="pt-8 border-t border-slate-800">
 
                         <div class="flex items-center gap-3 mb-6">
                             <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
-                                07
+                                09
                             </span>
 
                             <div>
@@ -542,6 +645,37 @@
     input[type="file"]::file-selector-button {
         cursor: pointer;
     }
+
+    /* Ocultar sección de repuestos si no es maquinaria */
+    .repuestos-section {
+        display: none;
+    }
+
+    .repuestos-section[data-tipo-producto="MAQUINARIA"] {
+        display: block;
+    }
+
+    .repuestos-section.mostrar {
+        display: block;
+    }
 </style>
+
+<script>
+    // Mostrar/ocultar sección de repuestos según tipo de producto
+    const tipoSelect = document.getElementById('tipo_producto');
+    const repuestosSection = document.getElementById('repuestos-section');
+
+    function toggleRepuestos() {
+        if (tipoSelect.value === 'MAQUINARIA') {
+            repuestosSection.classList.add('mostrar');
+        } else {
+            repuestosSection.classList.remove('mostrar');
+        }
+    }
+
+    tipoSelect.addEventListener('change', toggleRepuestos);
+    // Ejecutar al cargar por si el valor viene por defecto
+    toggleRepuestos();
+</script>
 
 @endsection

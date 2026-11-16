@@ -421,3 +421,227 @@ Nuevo módulo `Modules/Publico/` que expone el catálogo público en la raíz `/
 - `GET /servicio-tecnico/panel` → cerrar sesión limpia la sesión y redirige a identificar.
 - `php artisan view:cache` → vistas compilan sin errores.
 - `php -l` → todos los PHP sin errores de sintaxis.
+
+---
+
+## 2026-11-16 — Feature: cancelar solicitud de servicio (RF-011 / CU-011) + listado de garantías por vencer
+
+### Qué se hizo
+Implementado el estado `CANCELADA` para solicitudes de servicio, con motivo de cancelación y función PostgreSQL para la lógica transaccional. También se agregó el listado de garantías por vencer.
+
+### Archivos creados
+**Migración:**
+- `database/migrations/2026_11_16_000005_add_estado_cancelada_y_motivo_a_solicitud_servicio.php` — columna `motivo_cancelacion TEXT NULL`, CHECK constraint actualizado con `CANCELADA`, función PG `cancelar_solicitud_servicio(id_solicitud, id_usuario_cancela, motivo)` con `RAISE EXCEPTION` para estados no cancelables. Se ejecuta con `--database=pgsql_migrator`.
+
+**Módulo ServicioTecnico:**
+- `Modules/ServicioTecnico/Requests/CancelarSolicitudRequest.php` — valida `motivo` (required, string, min:5, max:1000).
+- `Modules/ServicioTecnico/Views/solicitudes/garantias-por-vencer.blade.php` — listado de garantías vigentes por vencer (tabla con días restantes, filtro por días).
+
+### Archivos modificados
+- `Modules/Garantias/Models/SolicitudServicio.php` — `ESTADOS` agrega `'CANCELADA'`.
+- `Modules/ServicioTecnico/Services/SolicitudService.php` — nuevo `cancelar(SolicitudServicio, User, string $motivo)`; valida rol GERENTE/ADMINISTRADOR, llama a `DbFunction::call('cancelar_solicitud_servicio', ...)`.
+- `Modules/ServicioTecnico/Services/ConsultaPublicaService.php` — nuevo `garantiasPorVencer(int $dias = 30)` usando `v_garantia_vigente`.
+- `Modules/ServicioTecnico/Controllers/SolicitudController.php` — nuevo `cancelar()` (flash success/error) y `garantiasPorVencer(Request)`; constructor inyecta `ConsultaPublicaService`.
+- `Modules/ServicioTecnico/Routes/web.php` — `POST /servicio-tecnico/{solicitud}/cancelar` (`serviciotecnico.cancelar`, `role:GERENTE,ADMINISTRADOR`) y `GET /servicio-tecnico/garantias-por-vencer` (`serviciotecnico.garantias.por_vencer`, `role:SERVICIO_TECNICO,GERENTE,ADMINISTRADOR`).
+- `Modules/ServicioTecnico/Views/solicitudes/gestion.blade.php` — columna "Acciones" con botón Cancelar para estados PENDIENTE/PROGRAMADA, badge CANCELADA, filtro de estado CANCELADA, modal de confirmación con motivo.
+
+### Decisiones de diseño
+- **Estado `CANCELADA` vs `CERRADA`:** cancelar no implica resultado ni diagnóstico; solo motivo y fecha_cierre. CERRADA sigue para servicio completado.
+- **Solo GERENTE/ADMINISTRADOR pueden cancelar** (no el técnico que la aceptó), validado en el service (defensa en profundidad) y en el middleware de ruta.
+- **Función PostgreSQL** para la transacción (cambio de estado + motivo + fecha_cierre), llamada vía `App\Support\DbFunction::call()` con manejo de `RAISE EXCEPTION` → `BusinessRuleException`.
+- **Auditoría 100% por trigger** `fn_auditar_cambio` (ya existe sobre `solicitud_servicio`), sin Observers.
+- **`SolicitudServicio` se queda en `Garantias`** para no romper enlaces existentes (respuesta a consulta de arquitectura).
+- **Flash messages** usan `session('success')` / `session('error')` (consistente con el resto del módulo).
+
+### Gotchas descubiertos
+- PowerShell no soporta `&&`; usar `;` para encadenar comandos.
+- `pint.bat` usa el PHP del PATH (XAMPP 8.2) y falla; ejecutar con `C:\tools\php85\php.exe vendor\laravel\pint\builds/pint`.
+- `Rule::in` importado pero no usado en `CancelarSolicitudRequest` — Pint lo detectó como unused import.
+
+### Verificación
+- Migración aplicada OK: `2026_11_16_000005_add_estado_cancelada_y_motivo_a_solicitud_servicio`.
+- `php artisan route:list --name=serviciotecnico` → 16 rutas incluidas `serviciotecnico.cancelar` y `serviciotecnico.garantias.por_vencer`.
+- `php -l` → todos los PHP sin errores de sintaxis.
+- `vendor/bin/pint --test` → pasado en todos los archivos modificados.
+
+---
+
+## 2026-11-16 — Fix: técnico puede aceptar y cerrar solicitudes de servicio (RF-011 / CU-011)
+
+### Qué se hizo
+Corregido el flujo de técnico para que pueda aceptar una solicitud pendiente y cerrarla con resultado, diagnóstico, costo y fecha de finalización.
+
+### Archivos modificados
+- `Modules/ServicioTecnico/Services/SolicitudService.php` — `cerrar()` ahora recibe `User $user` y valida:
+  - No se puede cerrar si ya está `CERRADA` o `CANCELADA`.
+  - Solo permite estados `PENDIENTE` o `PROGRAMADA`.
+  - Si el rol es `SERVICIO_TECNICO`, solo puede cerrar solicitudes donde `id_tecnico === auth()->id()`.
+  - `GERENTE` y `ADMINISTRADOR` pueden cerrar cualquier solicitud.
+- `Modules/ServicioTecnico/Controllers/SolicitudController.php` — `cerrar()` pasa `$request->user()` al service.
+- `Modules/ServicioTecnico/Views/solicitudes/bandeja.blade.php` — agregada columna "Detalle" con enlace a `serviciotecnico.show` para cada solicitud, para que el técnico pueda ir directamente al formulario de cierre.
+
+### Decisiones de diseño
+- El técnico solo puede cerrar solicitudes que haya aceptado (esté asignado como `id_tecnico`), evitando que cierre encargos de otros técnicos.
+- El formulario de cierre ya incluía `resultado`, `diagnostico` y `costo_servicio_bs`; después de cerrar se muestra `fecha_cierre` automática.
+- La información de garantía vigente ya se mostraba mediante `$solicitud->estaEnGarantia()`.
+
+### Verificación
+- `php -l` → ambos archivos PHP sin errores de sintaxis.
+- Pint aplicado sobre `SolicitudService.php`.
+- `php artisan view:cache` → vistas compiladas correctamente.
+
+---
+
+## 2026-11-16 — Fix: `pendientesParaTecnico()` devolvía arrays en lugar de objetos
+
+### Qué se hizo
+Corregido `ErrorException: Attempt to read property "id_solicitud" on array` en `bandeja.blade.php:38`.
+
+### Causa
+`SolicitudService::pendientesParaTecnico()` usaba `->get()->toArray()`, devolviendo un **array de arrays**. La vista `bandeja.blade.php` accedía con notación de objeto (`$sol->id_solicitud`, `$sol->cliente?->nombre`), lo cual fallaba porque los elementos eran arrays, no objetos Eloquent.
+
+### Archivo modificado
+- `Modules/ServicioTecnico/Services/SolicitudService.php` — `pendientesParaTecnico()` ya no usa `->toArray()`. Devuelve `\Illuminate\Database\Eloquent\Collection` de objetos `SolicitudServicio` con `->with('cliente')`, permitiendo acceso con `->` en las vistas.
+
+### Verificación
+- `GET /servicio-tecnico/bandeja` → carga sin error 500.
+- `php -l` → sin errores de sintaxis.
+- Pint pasando.
+- `php artisan view:cache` → vistas compiladas correctamente.
+
+---
+
+## 2026-11-16 — Feature: Sidebar y dashboard para Servicio Técnico
+
+### Qué se hizo
+Se agregaron los botones de acceso a las rutas implementadas en el layout principal y se mejoró el dashboard para el rol SERVICIO_TECNICO con el flujo de una sola solicitud activa a la vez.
+
+### Archivos modificados
+
+**Sidebar (`resources/views/layouts/app.blade.php`):**
+- "Gestión servicio técnico": cambió de solo `GERENTE` a `GERENTE, ADMINISTRADOR` (línea ~168)
+- Agregado "Garantías por vencer" para `SERVICIO_TECNICO, GERENTE, ADMINISTRADOR` (después de "Nueva solicitud servicio técnico")
+
+**DashboardStatsService (`Modules/Sistema/Services/DashboardStatsService.php`):**
+- `paraTecnico()` ahora incluye `solicitud_activa` obtenida mediante el nuevo método `solicitudActiva()`, que devuelve la solicitud `PROGRAMADA` asignada al técnico (solo una a la vez)
+
+**Dashboard (`Modules/Sistema/Views/dashboard.blade.php`):**
+- Para SERVICIO_TECNICO: agregada sección "Mi solicitud activa" que muestra:
+  - Si tiene una activa (PROGRAMADA): datos del cliente, descripción, fecha, indicador de garantía, botón "Finalizar servicio" (redirige al formulario de cierre) y "Ver bandeja"
+  - Si no tiene ninguna: estado vacío con botón "Ir a la bandeja" para aceptar un encargo pendiente
+
+### Decisiones de diseño
+- Un técnico solo puede tener una solicitud activa (PROGRAMADA) a la vez. Mientras la tenga, no puede aceptar otra desde el dashboard.
+- Para finalizar debe ir al formulario de cierre (`serviciotecnico.show`) donde llena resultado, diagnóstico y costo.
+- Una vez cerrada (estado CERRADA), la solicitud ya no aparece como activa y el técnico puede aceptar otra desde la bandeja.
+- "Gestión servicio técnico" ahora es accesible para GERENTE y ADMINISTRADOR (no solo GERENTE).
+- "Garantías por vencer" accesible para SERVICIO_TECNICO, GERENTE y ADMINISTRADOR.
+
+### Verificación
+- `php -l` → DashboardStatsService sin errores de sintaxis.
+- Pint → pasando.
+- `php artisan view:cache` → vistas compiladas correctamente (incluyendo app.blade.php y dashboard.blade.php).
+
+### Gotchas corregidos
+- `solicitudActiva()` declaraba retorno `?array` pero `DB::...->first()` devuelve `stdClass`. Se cambió el tipo de retorno a `?\stdClass` para evitar `TypeError` en PHP 8.5.
+
+---
+
+## 2026-11-16 — Feature: Vinculación de repuestos y documentación de productos (Catálogo)
+
+### Qué se hizo
+Implementadas dos funcionalidades en el módulo `Catalogo`:
+
+1. **Vinculación de repuestos a maquinaria:** tabla pivote `producto_repuesto` que relaciona productos tipo `MAQUINARIA` con productos tipo `REPUESTO`. Relación `belongsToMany` bidireccional (`repuestos()` / `maquinaria()`) en el modelo `Producto`. Sección en el formulario de creación/edición que solo se muestra cuando el tipo es `MAQUINARIA`.
+
+2. **Subida de documentación (TXT / Word):** tabla `producto_documento` para almacenar archivos adjuntos a productos (`.txt`, `.doc`, `.docx`, máx. 5 MB cada uno, hasta 5 archivos). Modelo `ProductoDocumento` con relación `hasMany` en `Producto`. En edición se listan los documentos existentes con opción de descargar y eliminar individualmente.
+
+3. **Restricción de roles:** todas las rutas de escritura (`create`, `store`, `edit`, `update`, `destroy`, `toggleEstado`) ya estaban protegidas con `middleware('role:GERENTE,ADMINISTRADOR')` en `Routes/web.php`. Además, se validó en el controlador que el precio de variantes solo pueda editarse por Gerente/Administrador (patrón existente).
+
+### Archivos creados
+```
+database/sql/patches/A-02-maquinaria-repuestos-documentos.sql   ← tablas producto_repuesto, producto_documento, índices, triggers de auditoría
+Modules/Catalogo/Models/ProductoDocumento.php                    ← modelo read-write para producto_documento
+```
+
+### Archivos modificados
+- `Modules/Catalogo/Models/Producto.php` — relaciones `documentos()`, `repuestos()`, `maquinaria()`.
+- `Modules/Catalogo/Controllers/ProductoController.php` — `store()` y `update()` ahora guardan documentos (`guardarDocumentos()` nuevo), sincronizan repuestos via `sync()`/`detach()`, y `destroy()` limpia documentos y repuestos asociados. `edit()` eager-loads `documentos` y `repuestos`.
+- `Modules/Catalogo/Requests/ProductoRequest.php` — reglas de validación para `documentos.*` (file, mimes:txt,doc,docx, max:5120), `eliminar_documentos.*`, `repuestos.*`.
+- `Modules/Catalogo/Views/productos/create.blade.php` — sección Documentación (subida .txt/.doc/.docx) y sección Repuestos (select múltiple, oculto si no es MAQUINARIA con JS).
+- `Modules/Catalogo/Views/productos/edit.blade.php` — sección Documentación (lista de existentes con checkbox eliminar + descargar, subida de nuevos) y sección Repuestos (lista de vinculados + selector de nuevos, oculto si no es MAQUINARIA con JS).
+
+---
+
+## 2026-11-16 — Fix: técnico solo puede tener una solicitud activa a la vez (RF-011 / CU-011)
+
+### Qué se hizo
+Corregido error grave: un técnico con rol `SERVICIO_TECNICO` podía aceptar múltiples encargos simultáneamente. Ahora solo puede tener **una** solicitud activa (`PROGRAMADA`) a la vez.
+
+### Archivo modificado
+- `Modules/ServicioTecnico/Services/SolicitudService.php` — `aceptar()` ahora valida al inicio que el técnico no tenga ya una solicitud `PROGRAMADA` asignada:
+
+```php
+$yaTieneActiva = DB::table('solicitud_servicio')
+    ->where('id_tecnico', $tecnico->id_usuario)
+    ->where('estado', 'PROGRAMADA')
+    ->exists();
+
+if ($yaTieneActiva) {
+    throw new BusinessRuleException(
+        'Ya tienes una solicitud activa. Debes cerrarla antes de aceptar otro encargo.'
+    );
+}
+```
+
+### Decisiones de diseño
+- **Validación en el service (defensa en profundidad):** incluso si el botón de aceptar se muestra en la bandeja, al hacer clic se lanza `BusinessRuleException` y se muestra flash de error. No se acepta el encargo.
+- **Flujo del técnico:** aceptar una pendiente → cierra con resultado/diagnóstico/costo → pasa a `CERRADA` → puede aceptar otra desde la bandeja.
+- Mientras tenga una activa, el dashboard muestra "Mi solicitud activa" con botón "Finalizar servicio" para ir directamente al cierre.
+
+### Verificación
+- `php -l` → sin errores de sintaxis ✅
+- Pint → pasando ✅
+- `php artisan view:cache` → vistas compiladas correctamente.
+
+---
+
+## 2026-11-16 — Feature: Vinculación de repuestos y documentación de productos (Catálogo)
+
+### Qué se hizo
+Implementadas dos funcionalidades en el módulo `Catalogo`:
+
+1. **Vinculación de repuestos a maquinaria:** tabla pivote `producto_repuesto` que relaciona productos tipo `MAQUINARIA` con productos tipo `REPUESTO`. Relación `belongsToMany` bidireccional (`repuestos()` / `maquinaria()`) en el modelo `Producto`. Sección en el formulario de creación/edición que solo se muestra cuando el tipo es `MAQUINARIA`.
+
+2. **Subida de documentación (TXT / Word):** tabla `producto_documento` para almacenar archivos adjuntos a productos (`.txt`, `.doc`, `.docx`, máx. 5 MB cada uno, hasta 5 archivos). Modelo `ProductoDocumento` con relación `hasMany` en `Producto`. En edición se listan los documentos existentes con opción de descargar y eliminar individualmente.
+
+3. **Restricción de roles:** todas las rutas de escritura (`create`, `store`, `edit`, `update`, `destroy`, `toggleEstado`) ya estaban protegidas con `middleware('role:GERENTE,ADMINISTRADOR')` en `Routes/web.php`. Además, se validó en el controlador que el precio de variantes solo pueda editarse por Gerente/Administrador (patrón existente).
+
+### Archivos creados
+```
+database/sql/patches/A-02-maquinaria-repuestos-documentos.sql   ← tablas producto_repuesto, producto_documento, índices, triggers de auditoría
+Modules/Catalogo/Models/ProductoDocumento.php                    ← modelo read-write para producto_documento
+```
+
+### Archivos modificados
+- `Modules/Catalogo/Models/Producto.php` — relaciones `documentos()`, `repuestos()`, `maquinaria()`.
+- `Modules/Catalogo/Controllers/ProductoController.php` — `store()` y `update()` ahora guardan documentos (`guardarDocumentos()` nuevo), sincronizan repuestos via `sync()`/`detach()`, y `destroy()` limpia documentos y repuestos asociados. `edit()` eager-loads `documentos` y `repuestos`.
+- `Modules/Catalogo/Requests/ProductoRequest.php` — reglas de validación para `documentos.*` (file, mimes:txt,doc,docx, max:5120), `eliminar_documentos.*`, `repuestos.*`.
+- `Modules/Catalogo/Views/productos/create.blade.php` — sección Documentación (subida .txt/.doc/.docx) y sección Repuestos (select múltiple, oculto si no es MAQUINARIA con JS).
+- `Modules/Catalogo/Views/productos/edit.blade.php` — sección Documentación (lista de existentes con checkbox eliminar + descargar, subida de nuevos) y sección Repuestos (lista de vinculados + selector de nuevos, oculto si no es MAQUINARIA con JS).
+
+### Decisiones de diseño
+- **Parche SQL en `database/sql/patches/`** (no migración Laravel) siguiendo el patrón de DDL del proyecto.
+- **Los documentos se almacenan en el disco `public`** bajo la carpeta `documentos-productos`, igual que las imágenes.
+- **`sync()` para repuestos** maneja tanto alta como baja de asociaciones en una sola operación.
+- **JS para mostrar/ocultar** la sección de repuestos según `tipo_producto` (clase CSS `.mostrar` + `data-tipo-producto`).
+- **Roles:** ya restringido por middleware en rutas; no se agregó middleware nuevo.
+
+### Verificación
+- Migración aplicada OK: tablas `producto_repuesto`, `producto_documento` y triggers creados con `--database=pgsql_migrator`.
+- `php -l` → todos los PHP sin errores de sintaxis (Producto, ProductoDocumento, ProductoController, ProductoRequest).
+- `view:cache` → no probado aún con las nuevas vistas (pendiente).
+
+### Gotchas descubiertos
+- La conexión por defecto `ewiflor_app` no tiene privilegios DDL (`SQLSTATE[42501]`); usar `--database=pgsql_migrator` para aplicar el parche SQL.
+- PowerShell no soporta `&&` ni `||`; usar `;` para encadenar comandos o ejecutar scripts PHP independientes.

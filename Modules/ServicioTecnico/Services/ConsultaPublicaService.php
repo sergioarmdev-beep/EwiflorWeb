@@ -70,4 +70,33 @@ class ConsultaPublicaService
             ])
             ->toArray();
     }
+
+    /**
+     * Garantías vigentes que vencen dentro de los próximos $dias días.
+     * Usa la vista v_garantia_vigente (ya calcula fecha_vencimiento y vigente).
+     */
+    public function garantiasPorVencer(int $dias = 30): array
+    {
+        return DB::table('v_garantia_vigente as gv')
+            ->join('venta as v', 'v.id_venta', '=', 'gv.id_venta')
+            ->join('cliente as c', 'c.id_cliente', '=', 'v.id_cliente')
+            ->where('gv.vigente', true)
+            ->where('gv.fecha_vencimiento', '>=', now()->startOfDay())
+            ->where('gv.fecha_vencimiento', '<=', now()->startOfDay()->addDays($dias))
+            ->orderBy('gv.fecha_vencimiento')
+            ->get([
+                'gv.id_garantia',
+                'gv.id_detalle_venta',
+                'gv.id_venta',
+                'gv.sku',
+                'gv.producto',
+                'gv.fecha_inicio',
+                'gv.duracion_meses',
+                'gv.fecha_vencimiento',
+                'c.nombre as cliente_nombre',
+                'c.telefono as cliente_telefono',
+                'v.id_cliente',
+            ])
+            ->toArray();
+    }
 }

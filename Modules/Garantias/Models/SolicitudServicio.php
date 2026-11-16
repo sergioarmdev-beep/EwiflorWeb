@@ -9,7 +9,7 @@ use Modules\Clientes\Models\Cliente;
 
 class SolicitudServicio extends Model
 {
-    public const ESTADOS = ['PENDIENTE', 'PROGRAMADA', 'CERRADA'];
+    public const ESTADOS = ['PENDIENTE', 'PROGRAMADA', 'CERRADA', 'CANCELADA'];
 
     public const RESULTADOS = ['REPARACION', 'SERVICIO_PAGADO', 'REEMPLAZO'];
 

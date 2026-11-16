@@ -110,7 +110,17 @@ class ProductoController extends Controller
                 $producto = Producto::create($datos);
 
                 $rutasNuevas = $this->guardarImagenes($producto, $request->file('imagenes', []));
+                
+                // Guardar documentos
+                $documentosNuevos = $this->guardarDocumentos($producto, $request->file('documentos', []));
+                $rutasNuevas = array_merge($rutasNuevas, $documentosNuevos);
+
                 $this->sincronizarVariantes($producto, $request->input('variantes', []));
+
+                // Sincronizar repuestos (si es maquinaria)
+                if ($producto->tipo_producto === 'MAQUINARIA') {
+                    $producto->repuestos()->sync($request->input('repuestos', []));
+                }
             });
         } catch (Throwable $e) {
             // Si algo falla no dejamos archivos huérfanos en el disco.
@@ -123,7 +133,7 @@ class ProductoController extends Controller
 
     public function edit(Producto $producto)
     {
-        $producto->load(['imagenes', 'variantes']);
+        $producto->load(['imagenes', 'variantes', 'documentos', 'repuestos']);
 
         return view('catalogo::productos.edit', [
             'producto' => $producto,
@@ -166,6 +176,28 @@ class ProductoController extends Controller
 
                 // 4) Variantes
                 $this->sincronizarVariantes($producto, $request->input('variantes', []));
+
+                // 5) Documentos marcados para eliminar
+                $documentosEliminar = array_map('intval', $request->input('eliminar_documentos', []));
+                if ($documentosEliminar) {
+                    $docsAEliminar = $producto->documentos()->whereIn('id_documento', $documentosEliminar)->get();
+                    foreach ($docsAEliminar as $doc) {
+                        $rutasABorrar[] = $doc->ruta_archivo;
+                        $doc->delete();
+                    }
+                }
+
+                // 6) Documentos nuevos
+                $documentosRutas = $this->guardarDocumentos($producto, $request->file('documentos', []));
+                $rutasNuevas = array_merge($rutasNuevas, $documentosRutas);
+
+                // 7) Repuestos (si es maquinaria)
+                if ($producto->tipo_producto === 'MAQUINARIA') {
+                    $producto->repuestos()->sync($request->input('repuestos', []));
+                } else {
+                    // Si ya no es maquinaria, limpiar repuestos asociados
+                    $producto->repuestos()->detach();
+                }
             });
         } catch (Throwable $e) {
             $this->borrarArchivos($rutasNuevas);
@@ -195,11 +227,16 @@ class ProductoController extends Controller
     public function destroy(Producto $producto)
     {
         $rutas = $producto->imagenes()->pluck('ruta_imagen')->all();
+        $rutasDocumentos = $producto->documentos()->pluck('ruta_archivo')->all();
 
         try {
             // Primero la base de datos: si hay ventas o movimientos asociados la
             // transacción se revierte y NO se tocan los archivos.
             DB::transaction(function () use ($producto) {
+                // Los repuestos se desvinculan (tabla pivote)
+                $producto->repuestos()->detach();
+                // Los documentos se eliminan (CASCADE en FK)
+                $producto->documentos()->delete();
                 $producto->variantes()->delete();
                 $producto->imagenes()->delete();
                 $producto->delete();
@@ -209,8 +246,9 @@ class ProductoController extends Controller
         }
 
         $this->borrarArchivos($rutas);
+        $this->borrarArchivos($rutasDocumentos);
 
-        return back()->with('success', 'Producto, variantes e imágenes eliminados correctamente.');
+        return back()->with('success', 'Producto, variantes, imágenes, documentos y repuestos eliminados correctamente.');
     }
 
     /* =========================================================
@@ -246,6 +284,37 @@ class ProductoController extends Controller
                 'ruta_imagen' => $ruta,
                 'es_principal' => ! $tienePrincipal && $i === 0,
                 'orden' => $orden + $i,
+            ]);
+        }
+
+        return $rutas;
+    }
+
+    /**
+     * Guarda los archivos de documentación subidos (.txt, .doc, .docx).
+     * Devuelve las rutas guardadas.
+     *
+     * @param  array<int, UploadedFile>  $archivos
+     * @return string[]
+     */
+    private function guardarDocumentos(Producto $producto, array $archivos): array
+    {
+        if (! $archivos) {
+            return [];
+        }
+
+        $rutas = [];
+
+        foreach (array_values($archivos) as $archivo) {
+            $ruta = $archivo->store('documentos-productos', 'public');
+            $rutas[] = $ruta;
+
+            $producto->documentos()->create([
+                'id_producto' => $producto->id_producto,
+                'nombre_original' => $archivo->getClientOriginalName(),
+                'ruta_archivo' => $ruta,
+                'extension' => $archivo->getClientOriginalExtension(),
+                'fecha_subida' => now(),
             ]);
         }
 

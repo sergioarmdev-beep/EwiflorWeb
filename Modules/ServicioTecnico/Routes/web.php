@@ -36,6 +36,11 @@ Route::middleware(['auth'])->prefix('servicio-tecnico')->name('serviciotecnico.'
         Route::post('/{solicitud}/cerrar', [SolicitudController::class, 'cerrar'])->name('cerrar');
     });
 
+    // Gerente/Administrador: cancelar solicitud con motivo
+    Route::middleware('role:GERENTE,ADMINISTRADOR')->group(function () {
+        Route::post('/{solicitud}/cancelar', [SolicitudController::class, 'cancelar'])->name('cancelar');
+    });
+
     // Vendedor: crear solicitud en nombre de un cliente
     Route::middleware('role:VENDEDOR,GERENTE,ADMINISTRADOR')->group(function () {
         Route::get('/nueva', [SolicitudController::class, 'nueva'])->name('nueva');
@@ -45,6 +50,11 @@ Route::middleware(['auth'])->prefix('servicio-tecnico')->name('serviciotecnico.'
     // Gerente/Administrador: gestión global de movimientos del módulo
     Route::middleware('role:GERENTE,ADMINISTRADOR')->group(function () {
         Route::get('/gestion', [SolicitudController::class, 'gestion'])->name('gestion');
+    });
+
+    // Garantías por vencer (técnico, gerente, admin)
+    Route::middleware('role:SERVICIO_TECNICO,GERENTE,ADMINISTRADOR')->group(function () {
+        Route::get('/garantias-por-vencer', [SolicitudController::class, 'garantiasPorVencer'])->name('garantias.por_vencer');
     });
 
     // Consulta de detalle para roles autorizados

@@ -41,7 +41,7 @@ class PublicoController extends Controller
         SesionCliente::establecer($cliente->id_cliente, $cliente->nombre, $cliente->telefono);
 
         return redirect()->route('serviciotecnico.publico.panel')
-            ->with('success', 'Bienvenido, '.e($cliente->nombre).'. Aquí puedes ver tus compras y solicitar servicio técnico.');
+            ->with('success', 'Bienvenido, ' . e($cliente->nombre) . '. Aquí puedes ver tus compras y solicitar servicio técnico.');
     }
 
     public function panel()
@@ -117,7 +117,6 @@ class PublicoController extends Controller
     {
         SesionCliente::limpiar();
 
-        return redirect()->route('serviciotecnico.publico.identificar')
-            ->with('success', 'Sesión de cliente cerrada.');
+        return redirect('/')->with('success', 'Sesión de cliente cerrada.');
     }
 }
