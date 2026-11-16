@@ -17,7 +17,7 @@ class ConsultaPublicaService
     {
         $ventas = DB::table('v_reporte_ventas as rv')
             ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
-            ->where('rv.id_cliente', $idCliente)
+            ->where('v.id_cliente', $idCliente)
             ->where('rv.estado', 'REGISTRADA')
             ->orderByDesc('rv.fecha')
             ->get([
