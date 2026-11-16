@@ -2152,7 +2152,7 @@
         </div>
     </div>
 
-    <script id="product-data" type="application/json">{!! json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPE_UNICODE) !!}</script>
+    <script id="product-data" type="application/json">{!! json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
 
     <!-- JAVASCRIPT -->
     <script>
