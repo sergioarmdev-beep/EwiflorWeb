@@ -342,6 +342,37 @@ true
                     Por cobrar
                 </p>
             </div>
+
+            {{-- Garantías por vencer --}}
+            <div class="bg-white dark:bg-slate-900
+                        border border-slate-200 dark:border-slate-800
+                        rounded-xl p-5 shadow-sm">
+
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        Garantías por vencer
+                    </p>
+
+                    <span class="w-9 h-9 flex items-center justify-center rounded-lg
+                                 bg-amber-100 text-amber-700
+                                 dark:bg-amber-500/10 dark:text-amber-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="1.8"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </span>
+                </div>
+
+                <p class="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-3 tabular-nums">
+                    {{ $garantiasPorVencer ?? 0 }}
+                </p>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    Próximos 30 días
+                </p>
+            </div>
         </div>
 
         {{-- Resumen financiero --}}
@@ -639,6 +670,264 @@ true
                                 class="text-sm font-semibold text-sky-700 hover:text-sky-900
                                                dark:text-sky-400 dark:hover:text-sky-300 transition">
                                 Ver
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </section>
+
+    {{-- Garantías activas --}}
+    <section class="bg-white dark:bg-slate-900
+                border border-slate-200 dark:border-slate-800
+                rounded-xl shadow-sm overflow-hidden">
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+                    gap-3 px-5 py-4
+                    border-b border-slate-200 dark:border-slate-800">
+
+            <div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="1.8"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+
+                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                        Garantías activas
+                    </h2>
+                </div>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Garantías vigentes y por vencer en los próximos 30 días
+                </p>
+            </div>
+
+            @if ($garantiasActivas->count() > 0)
+            <a href="{{ route('ventas.index', ['buscar' => $cliente->nombre]) }}"
+                class="text-sm font-semibold text-sky-700 hover:text-sky-900
+                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                Ver todas las ventas →
+            </a>
+            @endif
+        </div>
+
+        @if ($garantiasActivas->isEmpty())
+        <div class="px-6 py-14 text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
+                        bg-slate-100 dark:bg-slate-800
+                        text-slate-500 dark:text-slate-400
+                        flex items-center justify-center">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1.6"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+
+            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+                Sin garantías activas
+            </h3>
+
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Este cliente no tiene garantías vigentes ni por vencer.
+            </p>
+        </div>
+        @else
+        <div class="overflow-x-auto">
+            <table class="min-w-[950px] w-full text-sm text-left">
+                <thead class="bg-slate-100 dark:bg-slate-800/80
+                                  text-xs uppercase tracking-wider
+                                  text-slate-600 dark:text-slate-400">
+                    <tr>
+                        <th class="px-4 py-4 font-semibold">Garantía</th>
+                        <th class="px-4 py-4 font-semibold">Producto / SKU</th>
+                        <th class="px-4 py-4 font-semibold">Fecha inicio</th>
+                        <th class="px-4 py-4 font-semibold">Vencimiento</th>
+                        <th class="px-4 py-4 font-semibold text-center">Días restantes</th>
+                        <th class="px-4 py-4 font-semibold">Venta</th>
+                        <th class="px-4 py-4 font-semibold">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                    @foreach ($garantiasActivas as $g)
+                    @php
+                    $diasRestantes = \Carbon\Carbon::parse($g->fecha_vencimiento)->diffInDays(now());
+                    $estadoClase = $diasRestantes <= 7
+                        ? 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
+                        : 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
+                    $estadoTexto = $diasRestantes <= 7 ? 'Por vencer' : 'Vigente';
+                    @endphp
+
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                            #{{ $g->id_garantia }}
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                            {{ $g->producto }}
+                            <span class="text-xs text-slate-500 block">({{ $g->sku }})</span>
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                            {{ \Carbon\Carbon::parse($g->fecha_inicio)->format('d/m/Y') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap
+                                {{ $diasRestantes <= 7 ? 'font-bold text-amber-600 dark:text-amber-400' : '' }}">
+                            {{ \Carbon\Carbon::parse($g->fecha_vencimiento)->format('d/m/Y') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-center text-sm font-mono
+                                {{ $diasRestantes <= 7 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-600 dark:text-slate-400' }}">
+                            {{ $diasRestantes }} días
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-mono">
+                            #{{ $g->id_venta }}
+                        </td>
+
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                                                     text-xs font-semibold border {{ $estadoClase }}">
+                                {{ $estadoTexto }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </section>
+
+    {{-- Solicitudes de servicio técnico --}}
+    <section class="bg-white dark:bg-slate-900
+                border border-slate-200 dark:border-slate-800
+                rounded-xl shadow-sm overflow-hidden">
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
+                    gap-3 px-5 py-4
+                    border-b border-slate-200 dark:border-slate-800">
+
+            <div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="1.8"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+
+                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                        Solicitudes de servicio técnico
+                    </h2>
+                </div>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Historial de solicitudes de servicio asociadas a este cliente
+                </p>
+            </div>
+
+            <a href="{{ route('serviciotecnico.publico.panel') }}"
+                class="text-sm font-semibold text-sky-700 hover:text-sky-900
+                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                Gestión de servicio →
+            </a>
+        </div>
+
+        @if ($solicitudesServicio->isEmpty())
+        <div class="px-6 py-14 text-center">
+            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
+                        bg-slate-100 dark:bg-slate-800
+                        text-slate-500 dark:text-slate-400
+                        flex items-center justify-center">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="1.6"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+
+            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+                Sin solicitudes de servicio
+            </h3>
+
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Este cliente no tiene solicitudes de servicio técnico registradas.
+            </p>
+        </div>
+        @else
+        <div class="overflow-x-auto">
+            <table class="min-w-[950px] w-full text-sm text-left">
+                <thead class="bg-slate-100 dark:bg-slate-800/80
+                                  text-xs uppercase tracking-wider
+                                  text-slate-600 dark:text-slate-400">
+                    <tr>
+                        <th class="px-4 py-4 font-semibold">Solicitud</th>
+                        <th class="px-4 py-4 font-semibold">Fecha</th>
+                        <th class="px-4 py-4 font-semibold">Falla</th>
+                        <th class="px-4 py-4 font-semibold text-center">Estado</th>
+                        <th class="px-4 py-4 font-semibold">Técnico</th>
+                        <th class="px-4 py-4 font-semibold">Resultado</th>
+                        <th class="px-4 py-4 font-semibold text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                    @foreach ($solicitudesServicio as $s)
+                    @php
+                    $estadoClase = match ($s->estado) {
+                        'PENDIENTE' => 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
+                        'PROGRAMADA' => 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
+                        'CERRADA' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+                        'CANCELADA' => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                        default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                    };
+                    $resultadoTexto = $s->resultado
+                        ? \Str::ucfirst(\Str::replace('_', ' ', $s->resultado))
+                        : '—';
+                    @endphp
+
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200 font-mono">
+                            #{{ $s->id_solicitud }}
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap font-mono">
+                            {{ \Carbon\Carbon::parse($s->fecha_solicitud)->format('d/m/Y H:i') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                            {{ \Illuminate\Support\Str::limit($s->descripcion_falla, 60) }}
+                        </td>
+
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full
+                                                     text-xs font-semibold border {{ $estadoClase }}">
+                                {{ $s->estado }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                            {{ data_get($s, 'tecnico.nombre_completo', 'Sin asignar') }}
+                        </td>
+
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-400 text-sm">
+                            {{ $resultadoTexto }}
+                        </td>
+
+                        <td class="px-4 py-3 text-right">
+                            <a href="{{ route('serviciotecnico.show', $s->id_solicitud) }}"
+                                class="text-sm font-semibold text-sky-700 hover:text-sky-900
+                                               dark:text-sky-400 dark:hover:text-sky-300 transition">
+                                Ver detalle
                             </a>
                         </td>
                     </tr>

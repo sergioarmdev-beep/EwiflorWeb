@@ -645,3 +645,34 @@ Modules/Catalogo/Models/ProductoDocumento.php                    ← modelo read
 ### Gotchas descubiertos
 - La conexión por defecto `ewiflor_app` no tiene privilegios DDL (`SQLSTATE[42501]`); usar `--database=pgsql_migrator` para aplicar el parche SQL.
 - PowerShell no soporta `&&` ni `||`; usar `;` para encadenar comandos o ejecutar scripts PHP independientes.
+
+---
+
+## 2026-11-16 — Feature: Detalle de cliente enriquecido con garantías y servicio técnico (Módulo Clientes)
+
+### Qué se hizo
+Se enriqueció la vista `clientes::show` con tres nuevas secciones para dar al cliente un perfil completo: historial de compras, cotizaciones, garantías activas y solicitudes de servicio técnico en una sola pantalla.
+
+### Archivos modificados
+
+**Controlador (`Modules/Clientes/Controllers/ClienteController.php`):**
+- `show()` ahora consulta:
+  - `garantiasActivas`: desde `v_garantia_vigente` filtrando por `id_cliente`, `vigente = true` y `fecha_vencimiento` dentro de los próximos 30 días, ordenado por vencimiento próximo.
+  - `garantiasPorVencer`: conteo simple de garantías que vencen en ≤ 7 días (para tarjeta del resumen comercial).
+  - `solicitudesServicio`: relación existente `$cliente->solicitudesServicio()` con carga de `tecnico`, limitado a 10 registros ordenados por fecha descendente.
+
+**Vista (`Modules/Clientes/Views/show.blade.php`):**
+- Nueva tarjeta "Garantías por vencer" en el resumen comercial (después de "Saldo pendiente").
+- Nueva sección "Garantías activas": tabla con garantía, producto/SKU, fecha inicio, vencimiento, días restantes (alerta ámbar si ≤ 7 días), venta asociada y estado (Vigente / Por vencer).
+- Nueva sección "Solicitudes de servicio técnico": tabla con solicitud, fecha, falla (truncada), estado, técnico, resultado y enlace "Ver detalle" a `serviciotecnico.show`.
+
+### Decisiones de diseño
+- **Garantías:** solo se muestran vigentes y por vencer (no vencidas). Usa la vista `v_garantia_vigente` ya existente.
+- **Roles:** misma restricción que `clientes.show` (GERENTE, ADMINISTRADOR, VENDEDOR), ya aplicada por middleware en la ruta.
+- **Enlaces:** las solicitudes de servicio enlazan a `serviciotecnico.show` para ver el detalle completo.
+- **Sin cambios de ruta ni modelo:** las relaciones `solicitudesServicio()` ya existían en `Cliente`; solo se consumen en el controlador y la vista.
+
+### Verificación
+- `php -l` → ClienteController sin errores de sintaxis ✅
+- Pint → pasando ✅
+- `php artisan view:cache` → vistas compiladas correctamente ✅

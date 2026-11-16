@@ -3,6 +3,7 @@
 namespace Modules\Clientes\Controllers;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Modules\Clientes\Models\Cliente;
@@ -142,12 +143,45 @@ class ClienteController extends Controller
         ')
             ->first();
 
+        // Garantías activas (vigentes y por vencer en los próximos 30 días)
+        $garantiasActivas = DB::table('v_garantia_vigente as gv')
+            ->where('gv.id_cliente', $cliente->id_cliente)
+            ->where('gv.vigente', true)
+            ->where('gv.fecha_vencimiento', '>=', now()->startOfDay())
+            ->where('gv.fecha_vencimiento', '<=', now()->startOfDay()->addDays(30))
+            ->orderBy('gv.fecha_vencimiento')
+            ->get([
+                'gv.id_garantia',
+                'gv.id_detalle_venta',
+                'gv.id_venta',
+                'gv.sku',
+                'gv.producto',
+                'gv.fecha_inicio',
+                'gv.duracion_meses',
+                'gv.fecha_vencimiento',
+            ]);
+
+        // Garantías por vencer (resumen simple para tarjeta comercial)
+        $garantiasPorVencer = $garantiasActivas->where(
+            fn ($g) => Carbon::parse($g->fecha_vencimiento)->diffInDays(now()) <= 7
+        )->count();
+
+        // Solicitudes de servicio técnico del cliente
+        $solicitudesServicio = $cliente->solicitudesServicio()
+            ->with('tecnico')
+            ->orderByDesc('fecha_solicitud')
+            ->limit(10)
+            ->get();
+
         return view('clientes::show', compact(
             'cliente',
             'cotizaciones',
             'ventas',
             'resumenCotizaciones',
-            'resumenVentas'
+            'resumenVentas',
+            'garantiasActivas',
+            'garantiasPorVencer',
+            'solicitudesServicio'
         ));
     }
 
