@@ -22,7 +22,7 @@ class AuditoriaController extends Controller
             $query->whereDate('fecha_hora', '<=', $hasta);
         }
         if ($usuario = $request->input('usuario')) {
-            $query->whereHas('usuario', fn($q) => $q->where('nombre_usuario', 'ilike', "%{$usuario}%"));
+            $query->whereHas('usuario', fn ($q) => $q->where('nombre_usuario', 'ilike', "%{$usuario}%"));
         }
         if ($modulo = $request->input('modulo')) {
             $query->where('modulo', $modulo);

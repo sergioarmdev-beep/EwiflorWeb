@@ -37,8 +37,8 @@ class ExistenciaController extends Controller
 
         return view('inventario::existencias.index', [
             'existencias' => $existencias,
-            'almacenes'   => Almacen::orderBy('nombre')->get(['id_almacen', 'nombre']),
-            'filtros'     => $request->only(['almacen', 'buscar', 'solo_alerta']),
+            'almacenes' => Almacen::orderBy('nombre')->get(['id_almacen', 'nombre']),
+            'filtros' => $request->only(['almacen', 'buscar', 'solo_alerta']),
         ]);
     }
 }

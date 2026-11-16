@@ -13,6 +13,7 @@ class StoreTipoCambioManualRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
+
         return $user && in_array($user->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true);
     }
 
@@ -20,7 +21,7 @@ class StoreTipoCambioManualRequest extends FormRequest
     {
         return [
             'fecha' => ['required', 'date', 'before_or_equal:today'],
-            'tipo'  => ['required', Rule::in(['PARALELO', 'OFICIAL'])],
+            'tipo' => ['required', Rule::in(['PARALELO', 'OFICIAL'])],
             'valor' => ['required', 'numeric', 'gt:0', 'max:999999.9999'],
         ];
     }
@@ -29,8 +30,8 @@ class StoreTipoCambioManualRequest extends FormRequest
     {
         return [
             'fecha.before_or_equal' => 'No puedes registrar un tipo de cambio con fecha futura.',
-            'valor.gt'              => 'El valor debe ser mayor a cero.',
-            'valor.max'             => 'El valor excede el máximo permitido.',
+            'valor.gt' => 'El valor debe ser mayor a cero.',
+            'valor.max' => 'El valor excede el máximo permitido.',
         ];
     }
 }

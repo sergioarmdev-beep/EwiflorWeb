@@ -41,7 +41,7 @@ class LoginController extends Controller
 
         // Si la clave es correcta pero la cuenta está inactiva, lo decimos (solo lo ve quien conoce la clave).
         $usuario = User::where('nombre_usuario', $credentials['nombre_usuario'])->first();
-        if ($usuario && !$usuario->estaActivo() && Hash::check($credentials['password'], $usuario->contrasena_hash)) {
+        if ($usuario && ! $usuario->estaActivo() && Hash::check($credentials['password'], $usuario->contrasena_hash)) {
             return back()->withErrors([
                 'nombre_usuario' => 'Tu cuenta está desactivada. Contacta a un administrador.',
             ])->onlyInput('nombre_usuario');
@@ -57,6 +57,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/login');
     }
 }

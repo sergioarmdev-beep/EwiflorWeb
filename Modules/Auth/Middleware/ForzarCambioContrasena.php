@@ -16,7 +16,7 @@ class ForzarCambioContrasena
     {
         $usuario = $request->user();
 
-        if ($usuario && $usuario->debe_cambiar_contrasena && !$request->routeIs('perfil.*', 'logout')) {
+        if ($usuario && $usuario->debe_cambiar_contrasena && ! $request->routeIs('perfil.*', 'logout')) {
             if ($request->expectsJson()) {
                 abort(423, 'Debes cambiar tu contraseña antes de continuar.');
             }

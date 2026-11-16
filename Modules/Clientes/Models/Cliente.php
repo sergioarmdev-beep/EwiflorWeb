@@ -11,7 +11,9 @@ use Modules\Ventas\Models\Venta;
 class Cliente extends Model
 {
     protected $table = 'cliente';
+
     protected $primaryKey = 'id_cliente';
+
     public $timestamps = false; // fecha_registro la pone el DEFAULT now() de la BD
 
     protected $fillable = [
@@ -24,7 +26,7 @@ class Cliente extends Model
     ];
 
     protected $casts = [
-        'es_mayorista'   => 'boolean',
+        'es_mayorista' => 'boolean',
         'fecha_registro' => 'datetime',
     ];
 
@@ -59,6 +61,7 @@ class Cliente extends Model
             ? strtolower(trim($value))
             : null;
     }
+
     /**
      * Cotizaciones registradas para este cliente.
      */

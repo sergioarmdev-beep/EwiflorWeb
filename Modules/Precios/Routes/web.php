@@ -12,6 +12,6 @@ Route::middleware(['auth'])
 
         Route::middleware(['role:GERENTE,ADMINISTRADOR'])->group(function () {
             Route::post('/refresh', [TipoCambioController::class, 'refresh'])->name('refresh');
-            Route::post('/manual',  [TipoCambioController::class, 'storeManual'])->name('store-manual');
+            Route::post('/manual', [TipoCambioController::class, 'storeManual'])->name('store-manual');
         });
     });

@@ -20,13 +20,13 @@ class TipoCambioController extends Controller
         $resumen = $this->service->resumen();
 
         return view('precios::tipo-cambio.index', [
-            'actuales'    => $resumen['actuales'],
+            'actuales' => $resumen['actuales'],
             'variaciones' => $resumen['variaciones'],
-            'brecha'      => $resumen['brecha'],
-            'historial'   => $this->service->historialPaginado($filtros, 20),
-            'filtros'     => $filtros,
-            'estadoApi'   => $this->service->estadoApi(),
-            'ultimaSync'  => $this->service->ultimaSincronizacion(),
+            'brecha' => $resumen['brecha'],
+            'historial' => $this->service->historialPaginado($filtros, 20),
+            'filtros' => $filtros,
+            'estadoApi' => $this->service->estadoApi(),
+            'ultimaSync' => $this->service->ultimaSincronizacion(),
         ]);
     }
 
@@ -53,7 +53,7 @@ class TipoCambioController extends Controller
             );
         } catch (\Throwable $e) {
             Log::error('Precios: error al registrar tipo de cambio manual', [
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
                 'usuario' => $request->user()?->getKey(),
             ]);
 
@@ -66,7 +66,7 @@ class TipoCambioController extends Controller
     public function exportar(FiltroHistorialRequest $request): StreamedResponse
     {
         $filtros = $request->filtros();
-        $nombre  = 'tipo_cambio_' . now('America/La_Paz')->format('Ymd_His') . '.csv';
+        $nombre = 'tipo_cambio_'.now('America/La_Paz')->format('Ymd_His').'.csv';
 
         return response()->streamDownload(function () use ($filtros) {
             $out = fopen('php://output', 'w');
@@ -99,6 +99,6 @@ class TipoCambioController extends Controller
     {
         $valor = $valor ?? '';
 
-        return $valor !== '' && str_contains('=+-@', $valor[0]) ? "'" . $valor : $valor;
+        return $valor !== '' && str_contains('=+-@', $valor[0]) ? "'".$valor : $valor;
     }
 }

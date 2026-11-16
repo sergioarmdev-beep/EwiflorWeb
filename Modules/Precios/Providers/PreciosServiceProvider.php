@@ -16,9 +16,9 @@ class PreciosServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
-        $this->loadViewsFrom(__DIR__ . '/../Views', 'precios');
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        Route::middleware('web')->group(__DIR__.'/../Routes/web.php');
+        $this->loadViewsFrom(__DIR__.'/../Views', 'precios');
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
 
         if ($this->app->runningInConsole()) {
             $this->commands([SincronizarTipoCambioCommand::class]);

@@ -13,13 +13,13 @@ class MovimientoService
      * @param  array{tipo: string, motivo: string, id_almacen_origen?: ?int,
      *               id_almacen_destino?: ?int, id_variante: int,
      *               cantidad: int, sentido?: ?string}  $data
-     * @return int  id_movimiento
+     * @return int id_movimiento
      */
     public function registrar(array $data, User $actor): int
     {
         $detalle = [
             'id_variante' => (int) $data['id_variante'],
-            'cantidad'    => (int) $data['cantidad'],
+            'cantidad' => (int) $data['cantidad'],
         ];
 
         if ($data['tipo'] === 'AJUSTE') {

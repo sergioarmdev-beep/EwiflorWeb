@@ -12,7 +12,7 @@ class DbFunction
      * Invoca una función PostgreSQL y devuelve la primera fila (o null).
      *
      * @throws BusinessRuleException si la función lanza RAISE EXCEPTION (SQLSTATE P0001)
-     * @throws QueryException        si el error no es de negocio
+     * @throws QueryException si el error no es de negocio
      */
     public static function call(string $function, array $params = []): mixed
     {
@@ -21,6 +21,7 @@ class DbFunction
 
         try {
             $rows = DB::select($sql, array_values($params));
+
             return $rows[0] ?? null;
         } catch (QueryException $e) {
             if ($e->getCode() === 'P0001') {
@@ -43,8 +44,10 @@ class DbFunction
         if ($row === null) {
             return null;
         }
+
         return array_values((array) $row)[0] ?? null;
     }
+
     public static function query(string $sql, array $bindings = []): array
     {
         try {

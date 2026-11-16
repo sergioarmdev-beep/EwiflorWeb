@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Modules\Inventario\Models\Sucursal;
 use Modules\Auth\Models\User;
+use Modules\Inventario\Models\Sucursal;
 
 class AdminUserSeeder extends Seeder
 {
@@ -16,13 +16,13 @@ class AdminUserSeeder extends Seeder
         User::updateOrCreate(
             ['nombre_usuario' => 'admin'],
             [
-                'nombre_completo'         => 'Administrador Demo',
-                'correo'                  => 'admin@ewiflor.local',
-                'contrasena_hash'         => Hash::make('admin123'),
-                'nombre_rol'              => 'GERENTE',
-                'id_sucursal'             => $idSucursal,
+                'nombre_completo' => 'Administrador Demo',
+                'correo' => 'admin@ewiflor.local',
+                'contrasena_hash' => Hash::make('admin123'),
+                'nombre_rol' => 'GERENTE',
+                'id_sucursal' => $idSucursal,
                 'porcentaje_comision_pct' => 0,
-                'estado'                  => 'ACTIVO',
+                'estado' => 'ACTIVO',
             ]
         );
     }

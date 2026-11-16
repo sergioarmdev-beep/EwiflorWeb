@@ -10,6 +10,7 @@ class StoreMovimientoRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
+
         return $user && in_array($user->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true);
     }
 
@@ -52,10 +53,10 @@ class StoreMovimientoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'id_almacen_origen.required'  => 'Debes indicar el almacén de origen.',
+            'id_almacen_origen.required' => 'Debes indicar el almacén de origen.',
             'id_almacen_destino.required' => 'Debes indicar el almacén de destino.',
-            'id_almacen_destino.not_in'   => 'El origen y el destino no pueden ser el mismo almacén.',
-            'sentido.required'            => 'Los ajustes requieren indicar el sentido (incremento/decremento).',
+            'id_almacen_destino.not_in' => 'El origen y el destino no pueden ser el mismo almacén.',
+            'sentido.required' => 'Los ajustes requieren indicar el sentido (incremento/decremento).',
         ];
     }
 
@@ -67,11 +68,11 @@ class StoreMovimientoRequest extends FormRequest
         $tipo = $this->input('tipo');
 
         $this->merge([
-            'id_almacen_origen'  => in_array($tipo, ['SALIDA', 'AJUSTE', 'TRANSFERENCIA'], true)
+            'id_almacen_origen' => in_array($tipo, ['SALIDA', 'AJUSTE', 'TRANSFERENCIA'], true)
                 ? $this->input('id_almacen_origen') : null,
             'id_almacen_destino' => in_array($tipo, ['ENTRADA', 'TRANSFERENCIA'], true)
                 ? $this->input('id_almacen_destino') : null,
-            'sentido'            => $tipo === 'AJUSTE' ? $this->input('sentido') : null,
+            'sentido' => $tipo === 'AJUSTE' ? $this->input('sentido') : null,
         ]);
     }
 }

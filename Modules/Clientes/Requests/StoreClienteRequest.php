@@ -20,9 +20,9 @@ class StoreClienteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nombre'       => ['required', 'string', 'max:120'],
-            'telefono'     => ['required', 'string', 'max:20'],
-            'correo'       => ['nullable', 'email', 'max:100'],
+            'nombre' => ['required', 'string', 'max:120'],
+            'telefono' => ['required', 'string', 'max:20'],
+            'correo' => ['nullable', 'email', 'max:100'],
             'tipo_cliente' => ['nullable', Rule::in(Cliente::TIPOS)],
             'es_mayorista' => ['sometimes', 'boolean'],
         ];
@@ -32,7 +32,7 @@ class StoreClienteRequest extends FormRequest
     {
         $this->merge([
             'es_mayorista' => $this->boolean('es_mayorista'),
-            'correo'       => $this->filled('correo')
+            'correo' => $this->filled('correo')
                 ? strtolower(trim($this->input('correo')))
                 : null,
         ]);

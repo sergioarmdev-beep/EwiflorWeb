@@ -17,7 +17,7 @@ class StoreUserRequest extends FormRequest
     {
         $this->merge([
             'nombre_usuario' => strtolower(trim((string) $this->nombre_usuario)),
-            'correo'         => $this->correo ? strtolower(trim($this->correo)) : null,
+            'correo' => $this->correo ? strtolower(trim($this->correo)) : null,
         ]);
     }
 
@@ -25,26 +25,26 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'nombre_completo' => ['required', 'string', 'max:100'],
-            'nombre_usuario'  => [
+            'nombre_usuario' => [
                 'required',
                 'string',
                 'max:30',
                 'alpha_dash',
                 Rule::unique('usuario', 'nombre_usuario'),
             ],
-            'correo'          => [
+            'correo' => [
                 'nullable',
                 'email',
                 'max:100',
                 Rule::unique('usuario', 'correo'),
             ],
-            'password'        => array_merge(ReglasContrasena::reglas(true), ['confirmed']),
-            'nombre_rol'      => ['required', Rule::in($this->user()->rolesAsignables())],
-            'id_sucursal'     => ['nullable', 'integer', 'exists:sucursal,id_sucursal'],
+            'password' => array_merge(ReglasContrasena::reglas(true), ['confirmed']),
+            'nombre_rol' => ['required', Rule::in($this->user()->rolesAsignables())],
+            'id_sucursal' => ['nullable', 'integer', 'exists:sucursal,id_sucursal'],
             'porcentaje_comision_pct' => ['required', 'numeric', 'between:0,100'],
-            'estado'          => ['required', Rule::in(['ACTIVO', 'INACTIVO'])],
+            'estado' => ['required', Rule::in(['ACTIVO', 'INACTIVO'])],
             // Si el usuario se crea a partir de una solicitud de cuenta pendiente
-            'id_solicitud'    => [
+            'id_solicitud' => [
                 'nullable',
                 'integer',
                 Rule::exists('solicitud_cuenta', 'id_solicitud')->where('estado', 'PENDIENTE'),
@@ -56,9 +56,9 @@ class StoreUserRequest extends FormRequest
     {
         return ReglasContrasena::mensajes() + [
             'nombre_usuario.unique' => 'Ese nombre de usuario ya está registrado.',
-            'correo.unique'         => 'Ese correo ya está registrado.',
-            'nombre_rol.in'         => 'El rol seleccionado no está permitido para tu cuenta.',
-            'id_solicitud.exists'   => 'La solicitud ya fue procesada o no existe.',
+            'correo.unique' => 'Ese correo ya está registrado.',
+            'nombre_rol.in' => 'El rol seleccionado no está permitido para tu cuenta.',
+            'id_solicitud.exists' => 'La solicitud ya fue procesada o no existe.',
         ];
     }
 }

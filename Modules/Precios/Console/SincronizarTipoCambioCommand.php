@@ -7,7 +7,8 @@ use Modules\Precios\Services\TipoCambioService;
 
 class SincronizarTipoCambioCommand extends Command
 {
-    protected $signature   = 'precios:sincronizar-tipo-cambio';
+    protected $signature = 'precios:sincronizar-tipo-cambio';
+
     protected $description = 'Sincroniza el tipo de cambio: oficial (API del BCB de cucu) y paralelo (DolarAPI).';
 
     public function handle(TipoCambioService $service): int

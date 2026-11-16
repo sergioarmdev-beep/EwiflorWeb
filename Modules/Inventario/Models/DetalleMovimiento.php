@@ -9,7 +9,9 @@ use Modules\Catalogo\Models\VarianteProducto;
 class DetalleMovimiento extends Model
 {
     protected $table = 'detalle_movimiento';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [

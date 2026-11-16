@@ -13,12 +13,13 @@ class SessionTimeout
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return $next($request);
         }
 
-        if (!$request->session()->has('last_activity')) {
+        if (! $request->session()->has('last_activity')) {
             $request->session()->put('last_activity', now()->timestamp);
+
             return $next($request);
         }
 

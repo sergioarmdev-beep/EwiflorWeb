@@ -4,15 +4,17 @@ namespace Modules\Ventas\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Modules\Inventario\Models\Sucursal;
 use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
+use Modules\Inventario\Models\Sucursal;
 use Modules\Precios\Models\TipoCambio;
 
 class Venta extends Model
 {
     protected $table = 'venta';
+
     protected $primaryKey = 'id_venta';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -27,9 +29,9 @@ class Venta extends Model
     ];
 
     protected $casts = [
-        'fecha_hora'         => 'datetime',
-        'fecha_entrega'      => 'date',
-        'fecha_cancelacion'  => 'datetime',
+        'fecha_hora' => 'datetime',
+        'fecha_entrega' => 'date',
+        'fecha_cancelacion' => 'datetime',
     ];
 
     public function getRouteKeyName(): string
@@ -41,30 +43,37 @@ class Venta extends Model
     {
         return $this->belongsTo(Cliente::class, 'id_cliente');
     }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'id_usuario');
     }
+
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class, 'id_sucursal');
     }
+
     public function tipoCambio()
     {
         return $this->belongsTo(TipoCambio::class, 'id_tipo_cambio');
     }
+
     public function detalles()
     {
         return $this->hasMany(DetalleVenta::class, 'id_venta');
     }
+
     public function pagos()
     {
         return $this->hasMany(Pago::class, 'id_venta');
     }
+
     public function comprobantes()
     {
         return $this->hasMany(Comprobante::class, 'id_venta');
     }
+
     public function usuarioCancela()
     {
         return $this->belongsTo(User::class, 'id_usuario_cancela');

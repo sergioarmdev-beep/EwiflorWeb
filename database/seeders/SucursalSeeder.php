@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Modules\Inventario\Models\Sucursal;
 use Modules\Inventario\Models\Almacen;
+use Modules\Inventario\Models\Sucursal;
 
 class SucursalSeeder extends Seeder
 {
@@ -16,23 +16,23 @@ class SucursalSeeder extends Seeder
     {
         $sucursales = [
             [
-                'nombre'       => 'La Paz',
+                'nombre' => 'La Paz',
                 'departamento' => 'LA_PAZ',
-                'direccion'    => 'Av. Arce, Zona Central',
-                'telefono'     => '2-2441234',
-                'estado'       => 'ACTIVO',
-                'almacenes'    => [
+                'direccion' => 'Av. Arce, Zona Central',
+                'telefono' => '2-2441234',
+                'estado' => 'ACTIVO',
+                'almacenes' => [
                     ['nombre' => 'Almacén La Paz Central', 'tamano' => 'GRANDE'],
                     ['nombre' => 'Almacén La Paz Secundario', 'tamano' => 'PEQUENO'],
                 ],
             ],
             [
-                'nombre'       => 'Santa Cruz',
+                'nombre' => 'Santa Cruz',
                 'departamento' => 'SANTA_CRUZ',
-                'direccion'    => 'Av. Cristo Redentor, Km 5',
-                'telefono'     => '3-3456789',
-                'estado'       => 'ACTIVO',
-                'almacenes'    => [
+                'direccion' => 'Av. Cristo Redentor, Km 5',
+                'telefono' => '3-3456789',
+                'estado' => 'ACTIVO',
+                'almacenes' => [
                     ['nombre' => 'Almacén Santa Cruz Central', 'tamano' => 'GRANDE'],
                 ],
             ],
@@ -51,9 +51,9 @@ class SucursalSeeder extends Seeder
                 Almacen::updateOrCreate(
                     ['nombre' => $alm['nombre']],
                     [
-                        'tamano'      => $alm['tamano'],
+                        'tamano' => $alm['tamano'],
                         'id_sucursal' => $sucursal->id_sucursal,
-                        'estado'      => 'ACTIVO',
+                        'estado' => 'ACTIVO',
                     ]
                 );
             }
@@ -65,7 +65,7 @@ class SucursalSeeder extends Seeder
             Almacen::with('sucursal')
                 ->orderBy('id_almacen')
                 ->get()
-                ->map(fn($a) => [
+                ->map(fn ($a) => [
                     $a->sucursal?->nombre ?? '—',
                     $a->nombre,
                     $a->tamano,

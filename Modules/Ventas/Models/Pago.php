@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class Pago extends Model
 {
     protected $table = 'pago';
+
     protected $primaryKey = 'id_pago';
+
     public $timestamps = false;
 
     protected $fillable = ['id_venta', 'forma_pago', 'monto_bs', 'referencia'];
 
     protected $casts = [
-        'monto_bs'   => 'decimal:2',
+        'monto_bs' => 'decimal:2',
         'fecha_hora' => 'datetime',
     ];
 

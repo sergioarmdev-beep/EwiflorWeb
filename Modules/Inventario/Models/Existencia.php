@@ -11,6 +11,7 @@ class Existencia extends Model
     protected $table = 'existencia';
 
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -22,7 +23,7 @@ class Existencia extends Model
     ];
 
     protected $casts = [
-        'cantidad_total'     => 'integer',
+        'cantidad_total' => 'integer',
         'cantidad_reservada' => 'integer',
     ];
 

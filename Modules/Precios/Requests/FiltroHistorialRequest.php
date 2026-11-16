@@ -15,10 +15,10 @@ class FiltroHistorialRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tipo'   => ['nullable', Rule::in(['PARALELO', 'OFICIAL'])],
+            'tipo' => ['nullable', Rule::in(['PARALELO', 'OFICIAL'])],
             'origen' => ['nullable', Rule::in(['API', 'MANUAL'])],
-            'desde'  => ['nullable', 'date'],
-            'hasta'  => ['nullable', 'date', 'after_or_equal:desde'],
+            'desde' => ['nullable', 'date'],
+            'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
         ];
     }
 

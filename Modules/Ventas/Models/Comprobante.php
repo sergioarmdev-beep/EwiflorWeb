@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Comprobante extends Model
 {
     protected $table = 'comprobante';
+
     protected $primaryKey = 'id_comprobante';
+
     public $timestamps = false;
 
     protected $fillable = ['id_venta', 'tipo', 'numero'];

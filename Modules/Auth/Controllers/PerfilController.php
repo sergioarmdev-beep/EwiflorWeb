@@ -26,18 +26,18 @@ class PerfilController extends Controller
 
         $request->validate([
             'password_actual' => ['required', 'string', 'current_password'],
-            'password'        => array_merge(
+            'password' => array_merge(
                 ReglasContrasena::reglas(true),
                 ['confirmed', 'different:password_actual']
             ),
         ], ReglasContrasena::mensajes() + [
-            'password_actual.required'         => 'Ingresa tu contraseña actual.',
+            'password_actual.required' => 'Ingresa tu contraseña actual.',
             'password_actual.current_password' => 'La contraseña actual no es correcta.',
-            'password.different'               => 'La nueva contraseña debe ser distinta de la actual.',
+            'password.different' => 'La nueva contraseña debe ser distinta de la actual.',
         ]);
 
         $usuario->forceFill([
-            'contrasena_hash'         => Hash::make($request->input('password')),
+            'contrasena_hash' => Hash::make($request->input('password')),
             'debe_cambiar_contrasena' => false,
         ])->save();
 

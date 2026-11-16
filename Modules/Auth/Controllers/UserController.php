@@ -11,7 +11,6 @@ use Modules\Auth\Models\User;
 use Modules\Auth\Requests\StoreUserRequest;
 use Modules\Auth\Requests\UpdateUserRequest;
 use Modules\Auth\Support\GeneradorContrasena;
-
 use Modules\Inventario\Models\Sucursal;
 
 class UserController extends Controller
@@ -53,14 +52,14 @@ class UserController extends Controller
 
         // Orden por columna (clic en el encabezado de la tabla)
         $orden = in_array($request->input('orden'), self::ORDENABLES, true) ? $request->input('orden') : 'nombre_completo';
-        $dir   = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+        $dir = $request->input('dir') === 'desc' ? 'desc' : 'asc';
 
         if ($orden === 'sucursal') {
-            $sucursal = new Sucursal();
+            $sucursal = new Sucursal;
             $query->orderBy(
                 DB::table($sucursal->getTable())
                     ->select('nombre')
-                    ->whereColumn($sucursal->getTable() . '.' . $sucursal->getKeyName(), 'usuario.id_sucursal'),
+                    ->whereColumn($sucursal->getTable().'.'.$sucursal->getKeyName(), 'usuario.id_sucursal'),
                 $dir
             );
         } else {
@@ -74,11 +73,11 @@ class UserController extends Controller
         $usuarios = $query->paginate(15)->withQueryString();
 
         return view('auth::usuarios.index', [
-            'usuarios'   => $usuarios,
+            'usuarios' => $usuarios,
             'sucursales' => $this->sucursalesActivas(),
-            'orden'      => $orden,
-            'dir'        => $dir,
-            'resumen'    => $this->resumen(),
+            'orden' => $orden,
+            'dir' => $dir,
+            'resumen' => $this->resumen(),
         ]);
     }
 
@@ -101,10 +100,10 @@ class UserController extends Controller
         }
 
         return view('auth::usuarios.create', [
-            'usuario'    => $usuario,
-            'solicitud'  => $solicitud,
+            'usuario' => $usuario,
+            'solicitud' => $solicitud,
             'sucursales' => $this->sucursalesActivas(),
-            'roles'      => $this->rolesPermitidos(),
+            'roles' => $this->rolesPermitidos(),
         ]);
     }
 
@@ -120,10 +119,10 @@ class UserController extends Controller
 
             if ($idSolicitud) {
                 SolicitudCuenta::whereKey($idSolicitud)->update([
-                    'estado'             => SolicitudCuenta::APROBADA,
+                    'estado' => SolicitudCuenta::APROBADA,
                     'id_usuario_revisor' => $request->user()->id_usuario,
-                    'fecha_revision'     => now(),
-                    'id_usuario_creado'  => $usuario->id_usuario,
+                    'fecha_revision' => now(),
+                    'id_usuario_creado' => $usuario->id_usuario,
                 ]);
             }
 
@@ -145,9 +144,9 @@ class UserController extends Controller
         $this->autorizarGestionDe($usuario);
 
         return view('auth::usuarios.edit', [
-            'usuario'    => $usuario,
+            'usuario' => $usuario,
             'sucursales' => $this->sucursalesActivas(),
-            'roles'      => $this->rolesPermitidos(),
+            'roles' => $this->rolesPermitidos(),
         ]);
     }
 
@@ -157,7 +156,7 @@ class UserController extends Controller
 
         $data = $request->validated();
 
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $data['contrasena_hash'] = Hash::make($data['password']);
         }
         unset($data['password'], $data['password_confirmation']);
@@ -202,16 +201,16 @@ class UserController extends Controller
         $temporal = GeneradorContrasena::generar(10, false);
 
         $usuario->forceFill([
-            'contrasena_hash'         => Hash::make($temporal),
+            'contrasena_hash' => Hash::make($temporal),
             'debe_cambiar_contrasena' => true,
         ])->save();
 
         return redirect()
             ->route('usuarios.index', $request->only(['buscar', 'rol', 'estado', 'id_sucursal', 'orden', 'dir', 'page']))
             ->with('password_temporal', [
-                'nombre'         => $usuario->nombre_completo,
+                'nombre' => $usuario->nombre_completo,
                 'nombre_usuario' => $usuario->nombre_usuario,
-                'password'       => $temporal,
+                'password' => $temporal,
             ]);
     }
 
@@ -234,9 +233,9 @@ class UserController extends Controller
     private function rolesPermitidos(): array
     {
         $etiquetas = [
-            'GERENTE'          => 'Gerente',
-            'ADMINISTRADOR'    => 'Administrador',
-            'VENDEDOR'         => 'Vendedor',
+            'GERENTE' => 'Gerente',
+            'ADMINISTRADOR' => 'Administrador',
+            'VENDEDOR' => 'Vendedor',
             'SERVICIO_TECNICO' => 'Servicio técnico',
         ];
 
@@ -255,10 +254,10 @@ class UserController extends Controller
             ->first();
 
         return [
-            'total'      => (int) ($tot->total ?? 0),
-            'activos'    => (int) ($tot->activos ?? 0),
-            'inactivos'  => (int) ($tot->inactivos ?? 0),
-            'por_rol'    => User::query()->selectRaw('nombre_rol, COUNT(*) AS c')->groupBy('nombre_rol')->pluck('c', 'nombre_rol')->all(),
+            'total' => (int) ($tot->total ?? 0),
+            'activos' => (int) ($tot->activos ?? 0),
+            'inactivos' => (int) ($tot->inactivos ?? 0),
+            'por_rol' => User::query()->selectRaw('nombre_rol, COUNT(*) AS c')->groupBy('nombre_rol')->pluck('c', 'nombre_rol')->all(),
             'solicitudes' => SolicitudCuenta::where('estado', SolicitudCuenta::PENDIENTE)->count(),
         ];
     }

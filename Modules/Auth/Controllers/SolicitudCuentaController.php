@@ -28,12 +28,12 @@ class SolicitudCuentaController extends Controller
 
         $data = $request->validateWithBag('solicitud', [
             'nombre_completo' => ['required', 'string', 'max:100'],
-            'correo'          => ['required', 'email', 'max:100'],
-            'celular'         => ['required', 'string', 'max:20', 'regex:/^[0-9+()\-\s]{7,20}$/'],
-            'motivo'          => ['required', 'string', 'min:10', 'max:500'],
+            'correo' => ['required', 'email', 'max:100'],
+            'celular' => ['required', 'string', 'max:20', 'regex:/^[0-9+()\-\s]{7,20}$/'],
+            'motivo' => ['required', 'string', 'min:10', 'max:500'],
         ], [
             'celular.regex' => 'Ingresa un número de celular válido (solo dígitos, +, espacios o guiones).',
-            'motivo.min'    => 'Cuéntanos un poco más sobre el motivo (mínimo 10 caracteres).',
+            'motivo.min' => 'Cuéntanos un poco más sobre el motivo (mínimo 10 caracteres).',
         ]);
 
         $yaExiste = User::where('correo', $data['correo'])->exists()
@@ -75,14 +75,14 @@ class SolicitudCuentaController extends Controller
 
         return view('auth::solicitudes.index', [
             'solicitudes' => $solicitudes,
-            'estado'      => $estado,
-            'conteos'     => $conteos,
+            'estado' => $estado,
+            'conteos' => $conteos,
         ]);
     }
 
     public function rechazar(Request $request, SolicitudCuenta $solicitud)
     {
-        if (!$solicitud->estaPendiente()) {
+        if (! $solicitud->estaPendiente()) {
             return back()->with('error', 'Esa solicitud ya fue procesada.');
         }
 
@@ -91,10 +91,10 @@ class SolicitudCuentaController extends Controller
         ]);
 
         $solicitud->update([
-            'estado'             => SolicitudCuenta::RECHAZADA,
+            'estado' => SolicitudCuenta::RECHAZADA,
             'id_usuario_revisor' => $request->user()->id_usuario,
-            'fecha_revision'     => now(),
-            'nota_revision'      => $data['nota_revision'] ?? null,
+            'fecha_revision' => now(),
+            'nota_revision' => $data['nota_revision'] ?? null,
         ]);
 
         return back()->with('success', "Solicitud de {$solicitud->nombre_completo} rechazada.");

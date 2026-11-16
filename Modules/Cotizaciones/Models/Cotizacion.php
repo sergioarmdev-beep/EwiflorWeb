@@ -3,15 +3,17 @@
 namespace Modules\Cotizaciones\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Modules\Inventario\Models\Sucursal;
 use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
+use Modules\Inventario\Models\Sucursal;
 use Modules\Precios\Models\TipoCambio;
 
 class Cotizacion extends Model
 {
     protected $table = 'cotizacion';
+
     protected $primaryKey = 'id_cotizacion';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -67,13 +69,14 @@ class Cotizacion extends Model
             return 'CERRADA';
         }
         $vence = $this->fecha_emision->copy()->addDays($this->vigencia_dias);
+
         return now()->startOfDay()->gt($vence) ? 'VENCIDA' : 'VIGENTE';
     }
 
     public function totalUsd(): float
     {
         return round((float) $this->detalles->sum(
-            fn($d) => $d->cantidad * (float) $d->precio_unitario_usd * (1 - (float) $d->descuento_pct / 100)
+            fn ($d) => $d->cantidad * (float) $d->precio_unitario_usd * (1 - (float) $d->descuento_pct / 100)
         ), 2);
     }
 

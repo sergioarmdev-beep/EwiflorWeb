@@ -10,9 +10,13 @@ use Modules\Auth\Models\User;
 class Movimiento extends Model
 {
     protected $table = 'movimiento_inventario';
+
     protected $primaryKey = 'id_movimiento';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
+
     public $timestamps = false;
 
     protected $fillable = [

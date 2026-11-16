@@ -21,14 +21,20 @@ use Illuminate\Support\Facades\Log;
  */
 class BcbApiService
 {
-    private const BASE_URL        = 'https://apibcb.cucu.bo';
+    private const BASE_URL = 'https://apibcb.cucu.bo';
+
     private const ENDPOINT_OFICIAL = '/api/v1/tc/oficial';
-    private const TIMEOUT         = 15;
-    private const USER_AGENT      = 'MiaImportaciones-Precios/1.0';
+
+    private const TIMEOUT = 15;
+
+    private const USER_AGENT = 'MiaImportaciones-Precios/1.0';
 
     private const CACHE_KEY_OFICIAL = 'cucu_bcb.oficial';
+
     private const CACHE_KEY_BLOQUEO = 'cucu_bcb.bloqueo_hasta';
+
     private const CACHE_TTL_OFICIAL = 5; // minutos
+
     private const BLOQUEO_POR_DEFECTO = 3600; // segundos si no viene Retry-After
 
     /**
@@ -66,11 +72,11 @@ class BcbApiService
         // Si estamos bloqueados/limitados, ni siquiera intentamos.
         $bloqueoHasta = Cache::get(self::CACHE_KEY_BLOQUEO);
         if ($bloqueoHasta && $bloqueoHasta > time()) {
-            return $this->fallo('LIMITE_EXCEDIDO', 'API en espera por límite de uso; reintento en ' . ($bloqueoHasta - time()) . ' s.');
+            return $this->fallo('LIMITE_EXCEDIDO', 'API en espera por límite de uso; reintento en '.($bloqueoHasta - time()).' s.');
         }
 
         try {
-            $response = $this->httpClient($timeout)->get(self::BASE_URL . self::ENDPOINT_OFICIAL);
+            $response = $this->httpClient($timeout)->get(self::BASE_URL.self::ENDPOINT_OFICIAL);
 
             if (in_array($response->status(), [429, 403], true)) {
                 $retry = $response->header('Retry-After');
@@ -82,25 +88,25 @@ class BcbApiService
                 return $this->fallo('LIMITE_EXCEDIDO', "HTTP {$response->status()}; reintentar en {$espera} s.");
             }
 
-            if (!$response->successful()) {
-                return $this->fallo('ERROR_HTTP_' . $response->status(), 'HTTP ' . $response->status() . ' al consultar el TC oficial');
+            if (! $response->successful()) {
+                return $this->fallo('ERROR_HTTP_'.$response->status(), 'HTTP '.$response->status().' al consultar el TC oficial');
             }
 
             $json = $response->json();
-            $t    = is_array($json) ? ($json['tc_oficial'] ?? null) : null;
+            $t = is_array($json) ? ($json['tc_oficial'] ?? null) : null;
 
-            if (!is_array($t) || !is_numeric($t['compra'] ?? null) || !is_numeric($t['venta'] ?? null) || empty($t['fecha'])) {
+            if (! is_array($t) || ! is_numeric($t['compra'] ?? null) || ! is_numeric($t['venta'] ?? null) || empty($t['fecha'])) {
                 Log::warning('API BCB cucu: respuesta sin tc_oficial válido', is_array($json) ? $json : []);
 
                 return $this->fallo('RESPUESTA_INVALIDA', 'La respuesta no trae compra/venta/fecha.');
             }
 
             $resultado = [
-                'ok'     => true,
+                'ok' => true,
                 'estado' => ($t['desactualizado'] ?? false) ? 'DESACTUALIZADO' : 'Disponible',
-                'data'   => $t,
-                'raw'    => $json,
-                'error'  => null,
+                'data' => $t,
+                'raw' => $json,
+                'error' => null,
             ];
 
             Cache::put(self::CACHE_KEY_OFICIAL, $resultado, now()->addMinutes(self::CACHE_TTL_OFICIAL));
@@ -131,7 +137,7 @@ class BcbApiService
      * @return array{
      *   disponible: bool,
      *   estado: string,
-     *   verificado: \Carbon\Carbon,
+     *   verificado: Carbon,
      *   raw?: array,
      *   error?: string
      * }
@@ -142,7 +148,7 @@ class BcbApiService
 
         $estado = [
             'disponible' => $r['ok'] && $r['estado'] === 'Disponible',
-            'estado'     => $r['estado'],
+            'estado' => $r['estado'],
             'verificado' => now(),
         ];
 
@@ -166,28 +172,28 @@ class BcbApiService
     {
         $r = $this->consultarOficial();
 
-        if (!$r['ok']) {
+        if (! $r['ok']) {
             return null;
         }
 
         $t = $r['data'];
 
-        $actualizado = !empty($t['actualizado'])
+        $actualizado = ! empty($t['actualizado'])
             ? Carbon::parse($t['actualizado'])->setTimezone('America/La_Paz')
             : null;
 
         return [
-            'tipo'                    => 'OFICIAL',
-            'compra'                  => (float) $t['compra'],
-            'venta'                   => (float) $t['venta'],
+            'tipo' => 'OFICIAL',
+            'compra' => (float) $t['compra'],
+            'venta' => (float) $t['venta'],
             // Día que rige el valor (el que se guarda como `fecha`).
-            'fecha_vigencia'          => Carbon::parse($t['fecha'], 'America/La_Paz')->startOfDay(),
+            'fecha_vigencia' => Carbon::parse($t['fecha'], 'America/La_Paz')->startOfDay(),
             // Instante en que la API obtuvo el dato del BCB (referencia).
-            'fecha_actualizacion'     => $actualizado,
+            'fecha_actualizacion' => $actualizado,
             'fecha_actualizacion_raw' => $t['actualizado'] ?? null,
-            'nombre'                  => 'TC oficial (BCB)',
-            'desactualizado'          => (bool) ($t['desactualizado'] ?? false),
-            'raw'                     => $t,
+            'nombre' => 'TC oficial (BCB)',
+            'desactualizado' => (bool) ($t['desactualizado'] ?? false),
+            'raw' => $t,
         ];
     }
 }

@@ -9,9 +9,9 @@ Route::middleware(['auth', 'role:GERENTE,ADMINISTRADOR,VENDEDOR'])
     ->group(function () {
 
         // 1) Estáticas PRIMERO
-        Route::get('/',      [CotizacionController::class, 'index'])->name('index');
+        Route::get('/', [CotizacionController::class, 'index'])->name('index');
         Route::get('/crear', [CotizacionController::class, 'create'])->name('create');
-        Route::post('/',     [CotizacionController::class, 'store'])->name('store');
+        Route::post('/', [CotizacionController::class, 'store'])->name('store');
 
         // 2) Dinámicas DESPUÉS, con whereNumber
         Route::get('/{cotizacion}', [CotizacionController::class, 'show'])

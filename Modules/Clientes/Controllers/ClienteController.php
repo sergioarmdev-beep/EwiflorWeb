@@ -4,11 +4,10 @@ namespace Modules\Clientes\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Modules\Clientes\Models\Cliente;
 use Modules\Clientes\Requests\StoreClienteRequest;
 use Modules\Clientes\Requests\UpdateClienteRequest;
-use Illuminate\Support\Facades\DB;
-use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Ventas\Models\Venta;
 
 class ClienteController extends Controller
@@ -46,7 +45,7 @@ class ClienteController extends Controller
 
     public function create()
     {
-        return view('clientes::create', ['cliente' => new Cliente()]);
+        return view('clientes::create', ['cliente' => new Cliente]);
     }
 
     public function store(StoreClienteRequest $request)
@@ -131,7 +130,7 @@ class ClienteController extends Controller
             )
             ->where('venta.id_cliente', $cliente->id_cliente)
             ->where('venta.estado', 'REGISTRADA')
-            ->selectRaw("
+            ->selectRaw('
             COUNT(*) AS total,
             COALESCE(SUM(vt.total_usd), 0) AS total_usd,
             COALESCE(SUM(vt.total_bs), 0) AS total_bs,
@@ -140,7 +139,7 @@ class ClienteController extends Controller
                 SUM(vt.total_bs - COALESCE(pa.total_pagado_bs, 0)),
                 0
             ) AS saldo_bs
-        ")
+        ')
             ->first();
 
         return view('clientes::show', compact(

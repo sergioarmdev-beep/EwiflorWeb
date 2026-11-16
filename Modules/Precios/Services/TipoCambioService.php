@@ -14,10 +14,13 @@ use Modules\Precios\Models\TipoCambio;
 
 class TipoCambioService
 {
-    private const CACHE_KEY_ESTADO  = 'precios.estado_apis';
+    private const CACHE_KEY_ESTADO = 'precios.estado_apis';
+
     private const CACHE_TTL_MINUTOS = 10;
-    private const TIMEOUT_ESTADO    = 5;  // segundos, al verificar al cargar la página
-    private const TIMEOUT_REFRESCO  = 15; // segundos, al sincronizar
+
+    private const TIMEOUT_ESTADO = 5;  // segundos, al verificar al cargar la página
+
+    private const TIMEOUT_REFRESCO = 15; // segundos, al sincronizar
 
     private const TIPOS = ['PARALELO', 'OFICIAL'];
 
@@ -52,23 +55,23 @@ class TipoCambioService
      */
     public function resumen(): array
     {
-        $actuales    = [];
+        $actuales = [];
         $variaciones = [];
 
         foreach (self::TIPOS as $tipo) {
             $key = strtolower($tipo);
 
-            $vigente  = $this->vigente($tipo);
+            $vigente = $this->vigente($tipo);
             $anterior = $vigente ? $this->anteriorA($vigente) : null;
 
-            $actuales[$key]    = $vigente;
+            $actuales[$key] = $vigente;
             $variaciones[$key] = $this->calcularVariacion($vigente, $anterior);
         }
 
         return [
-            'actuales'    => $actuales,
+            'actuales' => $actuales,
             'variaciones' => $variaciones,
-            'brecha'      => $this->calcularBrecha($actuales['paralelo'], $actuales['oficial']),
+            'brecha' => $this->calcularBrecha($actuales['paralelo'], $actuales['oficial']),
         ];
     }
 
@@ -96,23 +99,23 @@ class TipoCambioService
     /** Registro inmediatamente anterior (mismo tipo) al dado, según el mismo orden. */
     private function anteriorA(TipoCambio $actual): ?TipoCambio
     {
-        $fecha    = $actual->fecha?->toDateString();
+        $fecha = $actual->fecha?->toDateString();
         $registro = $actual->fecha_registro;
 
         return TipoCambio::query()
             ->where('tipo', $actual->tipo)
             ->where(function ($q) use ($fecha, $registro, $actual) {
                 $q->whereDate('fecha', '<', $fecha)
-                  ->orWhere(function ($q) use ($fecha, $registro, $actual) {
-                      $q->whereDate('fecha', $fecha)
-                        ->where(function ($q) use ($registro, $actual) {
-                            $q->where('fecha_registro', '<', $registro)
-                              ->orWhere(function ($q) use ($registro, $actual) {
-                                  $q->where('fecha_registro', $registro)
-                                    ->where('id_tipo_cambio', '<', $actual->id_tipo_cambio);
-                              });
-                        });
-                  });
+                    ->orWhere(function ($q) use ($fecha, $registro, $actual) {
+                        $q->whereDate('fecha', $fecha)
+                            ->where(function ($q) use ($registro, $actual) {
+                                $q->where('fecha_registro', '<', $registro)
+                                    ->orWhere(function ($q) use ($registro, $actual) {
+                                        $q->where('fecha_registro', $registro)
+                                            ->where('id_tipo_cambio', '<', $actual->id_tipo_cambio);
+                                    });
+                            });
+                    });
             })
             ->orderByDesc('fecha')
             ->orderByDesc('fecha_registro')
@@ -122,16 +125,16 @@ class TipoCambioService
 
     private function calcularVariacion(?TipoCambio $actual, ?TipoCambio $anterior): ?array
     {
-        if (!$actual || !$anterior) {
+        if (! $actual || ! $anterior) {
             return null;
         }
 
-        $valorActual   = (float) $actual->valor;
+        $valorActual = (float) $actual->valor;
         $valorAnterior = (float) $anterior->valor;
-        $diferencia    = $valorActual - $valorAnterior;
+        $diferencia = $valorActual - $valorAnterior;
 
         return [
-            'anterior'   => $valorAnterior,
+            'anterior' => $valorAnterior,
             'diferencia' => $diferencia,
             'porcentaje' => $valorAnterior > 0 ? ($diferencia / $valorAnterior) * 100 : null,
         ];
@@ -139,7 +142,7 @@ class TipoCambioService
 
     private function calcularBrecha(?TipoCambio $paralelo, ?TipoCambio $oficial): ?array
     {
-        if (!$paralelo || !$oficial) {
+        if (! $paralelo || ! $oficial) {
             return null;
         }
 
@@ -202,22 +205,22 @@ class TipoCambioService
     private function verificarFuentes(int $timeout): array
     {
         $fuentes = [
-            'OFICIAL'  => $this->bcb->verificarEstado($timeout),
+            'OFICIAL' => $this->bcb->verificarEstado($timeout),
             'PARALELO' => $this->dolar->verificarEstado($timeout),
         ];
 
         $caidas = [];
         foreach ($fuentes as $tipo => $e) {
-            if (!$e['disponible']) {
+            if (! $e['disponible']) {
                 $caidas[] = "{$tipo}: {$e['estado']}";
             }
         }
 
         return [
             'disponible' => $caidas === [],
-            'estado'     => $caidas === [] ? 'Disponible' : implode(' · ', $caidas),
+            'estado' => $caidas === [] ? 'Disponible' : implode(' · ', $caidas),
             'verificado' => now(),
-            'fuentes'    => $fuentes,
+            'fuentes' => $fuentes,
         ];
     }
 
@@ -257,43 +260,43 @@ class TipoCambioService
         Cache::put(self::CACHE_KEY_ESTADO, $estado, now()->addMinutes(self::CACHE_TTL_MINUTOS));
 
         $datos = [
-            'oficial'  => $estado['fuentes']['OFICIAL']['disponible'] ? $this->bcb->obtenerOficial() : null,
+            'oficial' => $estado['fuentes']['OFICIAL']['disponible'] ? $this->bcb->obtenerOficial() : null,
             'paralelo' => $estado['fuentes']['PARALELO']['disponible'] ? $this->dolar->obtenerParalelo() : null,
         ];
         $registro = ['paralelo' => null, 'oficial' => null];
-        $creados  = 0;
+        $creados = 0;
 
         DB::transaction(function () use ($datos, &$registro, &$creados) {
             foreach ($datos as $key => $data) {
-                if (!$data) {
+                if (! $data) {
                     continue;
                 }
                 [$modelo, $creado] = $this->persistirDesdeApi($data);
-                $registro[$key]    = $modelo;
-                $creados          += $creado ? 1 : 0;
+                $registro[$key] = $modelo;
+                $creados += $creado ? 1 : 0;
             }
         });
 
         $obtenidos = count(array_filter($registro));
 
         $mensaje = match (true) {
-            $obtenidos === 0 && !$estado['disponible'] => 'El servicio de tipo de cambio no está disponible ('
-                . $estado['estado'] . '). Se está usando el último valor registrado.',
+            $obtenidos === 0 && ! $estado['disponible'] => 'El servicio de tipo de cambio no está disponible ('
+                .$estado['estado'].'). Se está usando el último valor registrado.',
             $obtenidos === 0 => 'No se pudo obtener ninguna cotización desde las APIs.',
             $obtenidos === 1 => 'Solo se actualizó una de las dos cotizaciones'
-                . ($estado['disponible'] ? '' : ' (' . $estado['estado'] . ')')
-                . '. Verifique la otra.',
-            $creados === 0   => 'Las cotizaciones ya estaban al día; no hubo cambios.',
-            default          => 'Tipo de cambio actualizado.',
+                .($estado['disponible'] ? '' : ' ('.$estado['estado'].')')
+                .'. Verifique la otra.',
+            $creados === 0 => 'Las cotizaciones ya estaban al día; no hubo cambios.',
+            default => 'Tipo de cambio actualizado.',
         };
 
         return [
-            'ok'         => $obtenidos > 0,
+            'ok' => $obtenidos > 0,
             'estado_api' => $estado,
-            'paralelo'   => $registro['paralelo'],
-            'oficial'    => $registro['oficial'],
-            'creados'    => $creados,
-            'mensaje'    => $mensaje,
+            'paralelo' => $registro['paralelo'],
+            'oficial' => $registro['oficial'],
+            'creados' => $creados,
+            'mensaje' => $mensaje,
         ];
     }
 
@@ -313,7 +316,7 @@ class TipoCambioService
             ? $data['fecha_vigencia']->toDateString()
             : $fechaRef->copy()->setTimezone('America/La_Paz')->toDateString();
 
-        $venta  = round((float) $data['venta'], 4);
+        $venta = round((float) $data['venta'], 4);
         $compra = round((float) $data['compra'], 4);
 
         $existente = TipoCambio::query()
@@ -333,12 +336,12 @@ class TipoCambioService
         }
 
         $nuevo = TipoCambio::create([
-            'fecha'                => $fecha,
-            'tipo'                 => $data['tipo'],
-            'valor'                => $venta,
-            'valor_compra'         => $compra,
-            'origen'               => 'API',
-            'id_usuario'           => null,
+            'fecha' => $fecha,
+            'tipo' => $data['tipo'],
+            'valor' => $venta,
+            'valor_compra' => $compra,
+            'origen' => 'API',
+            'id_usuario' => null,
             'fecha_referencia_api' => $fechaRef,
         ]);
 
@@ -348,11 +351,11 @@ class TipoCambioService
     public function registrarManual(array $data, User $actor): TipoCambio
     {
         return TipoCambio::create([
-            'fecha'                => $data['fecha'],
-            'tipo'                 => $data['tipo'],
-            'valor'                => $data['valor'],
-            'origen'               => 'MANUAL',
-            'id_usuario'           => $actor->id_usuario,
+            'fecha' => $data['fecha'],
+            'tipo' => $data['tipo'],
+            'valor' => $data['valor'],
+            'origen' => 'MANUAL',
+            'id_usuario' => $actor->id_usuario,
             'fecha_referencia_api' => null,
         ]);
     }
@@ -385,7 +388,7 @@ class TipoCambioService
 
     private function valorOFalla(string $tipo): float
     {
-        $tipo  = $this->normalizarTipo($tipo);
+        $tipo = $this->normalizarTipo($tipo);
         $valor = $this->valorVigente($tipo);
 
         if ($valor === null || $valor <= 0) {
@@ -399,7 +402,7 @@ class TipoCambioService
     {
         $tipo = strtoupper($tipo);
 
-        if (!in_array($tipo, self::TIPOS, true)) {
+        if (! in_array($tipo, self::TIPOS, true)) {
             throw new \InvalidArgumentException("Tipo de cambio inválido: {$tipo}. Use PARALELO u OFICIAL.");
         }
 

@@ -9,9 +9,13 @@ use Modules\Auth\Models\User;
 class TipoCambio extends Model
 {
     protected $table = 'tipo_cambio';
+
     protected $primaryKey = 'id_tipo_cambio';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -25,10 +29,10 @@ class TipoCambio extends Model
     ];
 
     protected $casts = [
-        'fecha'                => 'date',
-        'valor'                => 'decimal:4',
-        'valor_compra'         => 'decimal:4',
-        'fecha_registro'       => 'datetime',
+        'fecha' => 'date',
+        'valor' => 'decimal:4',
+        'valor_compra' => 'decimal:4',
+        'fecha_registro' => 'datetime',
         'fecha_referencia_api' => 'datetime',
     ];
 

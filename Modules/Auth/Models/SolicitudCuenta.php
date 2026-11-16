@@ -8,13 +8,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SolicitudCuenta extends Model
 {
     public const PENDIENTE = 'PENDIENTE';
-    public const APROBADA  = 'APROBADA';
+
+    public const APROBADA = 'APROBADA';
+
     public const RECHAZADA = 'RECHAZADA';
 
     protected $table = 'solicitud_cuenta';
+
     protected $primaryKey = 'id_solicitud';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
+
     public $timestamps = false;
 
     protected $fillable = [

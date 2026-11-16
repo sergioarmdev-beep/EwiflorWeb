@@ -16,17 +16,14 @@ class DashboardStatsService
     public function para(User $user): array
     {
         $data = [
-            'rol'         => $user->nombre_rol,
+            'rol' => $user->nombre_rol,
             'tipo_cambio' => $this->tipoCambioActual(),
         ];
 
         match (true) {
-            in_array($user->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true)
-                => $this->paraGerente($data),
-            $user->nombre_rol === 'VENDEDOR'
-                => $this->paraVendedor($data, $user),
-            $user->nombre_rol === 'SERVICIO_TECNICO'
-                => $this->paraTecnico($data, $user),
+            in_array($user->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true) => $this->paraGerente($data),
+            $user->nombre_rol === 'VENDEDOR' => $this->paraVendedor($data, $user),
+            $user->nombre_rol === 'SERVICIO_TECNICO' => $this->paraTecnico($data, $user),
             default => null,
         };
 
@@ -52,15 +49,15 @@ class DashboardStatsService
 
     private function paraGerente(array &$data): void
     {
-        $data['total_productos']         = $this->totalProductos();
-        $data['stock_bajo_total']        = $this->totalExistenciasBajoMinimo();
-        $data['productos_bajo_minimo']   = $this->productosBajoMinimo();
+        $data['total_productos'] = $this->totalProductos();
+        $data['stock_bajo_total'] = $this->totalExistenciasBajoMinimo();
+        $data['productos_bajo_minimo'] = $this->productosBajoMinimo();
         $data['cotizaciones_pendientes'] = $this->cotizacionesPendientes();
-        $data['ventas']                  = $this->resumenVentas();
-        $data['ultimas_ventas']          = $this->ultimasVentas();
-        $data['ultimos_movimientos']     = $this->ultimosMovimientos();
-        $data['ultimas_cotizaciones']    = $this->ultimasCotizaciones();
-        $data['alertas_sistema']         = $this->alertasSistema();
+        $data['ventas'] = $this->resumenVentas();
+        $data['ultimas_ventas'] = $this->ultimasVentas();
+        $data['ultimos_movimientos'] = $this->ultimosMovimientos();
+        $data['ultimas_cotizaciones'] = $this->ultimasCotizaciones();
+        $data['alertas_sistema'] = $this->alertasSistema();
     }
 
     private function totalProductos(): int
@@ -100,10 +97,10 @@ class DashboardStatsService
         $usuariosActivos = DB::table('usuario')->where('estado', 'ACTIVO')->count();
         if ($usuariosActivos < 2) {
             $alertas[] = [
-                'tipo'      => 'usuarios',
-                'titulo'    => 'Equipo con pocos usuarios activos',
-                'mensaje'   => 'Hay menos de dos cuentas activas. Verifica que el equipo tenga los accesos necesarios.',
-                'url'       => route('usuarios.create'),
+                'tipo' => 'usuarios',
+                'titulo' => 'Equipo con pocos usuarios activos',
+                'mensaje' => 'Hay menos de dos cuentas activas. Verifica que el equipo tenga los accesos necesarios.',
+                'url' => route('usuarios.create'),
                 'url_texto' => 'Crear usuario',
             ];
         }
@@ -113,18 +110,18 @@ class DashboardStatsService
 
             if ($ultimaSync === null) {
                 $alertas[] = [
-                    'tipo'      => 'tipo_cambio',
-                    'titulo'    => 'Tipo de cambio sin registro',
-                    'mensaje'   => 'No se encontró una sincronización ni un registro manual de tipo de cambio.',
-                    'url'       => route('precios.tipo-cambio.index'),
+                    'tipo' => 'tipo_cambio',
+                    'titulo' => 'Tipo de cambio sin registro',
+                    'mensaje' => 'No se encontró una sincronización ni un registro manual de tipo de cambio.',
+                    'url' => route('precios.tipo-cambio.index'),
                     'url_texto' => 'Revisar tipo de cambio',
                 ];
             } elseif ($ultimaSync->diffInHours(now()) > 24) {
                 $alertas[] = [
-                    'tipo'      => 'tipo_cambio',
-                    'titulo'    => 'Tipo de cambio posiblemente desactualizado',
-                    'mensaje'   => 'El último registro fue ' . $ultimaSync->diffForHumans() . '. Comprueba la sincronización.',
-                    'url'       => route('precios.tipo-cambio.index'),
+                    'tipo' => 'tipo_cambio',
+                    'titulo' => 'Tipo de cambio posiblemente desactualizado',
+                    'mensaje' => 'El último registro fue '.$ultimaSync->diffForHumans().'. Comprueba la sincronización.',
+                    'url' => route('precios.tipo-cambio.index'),
                     'url_texto' => 'Revisar tipo de cambio',
                 ];
             }
@@ -172,10 +169,10 @@ class DashboardStatsService
 
         return [
             'cantidad_hoy' => (clone $ventasHoy)->count(),
-            'total_hoy'    => (clone $ventasHoy)->sum('rv.total_bs'),
+            'total_hoy' => (clone $ventasHoy)->sum('rv.total_bs'),
             'cantidad_mes' => (clone $ventasMes)->count(),
-            'total_mes'    => (clone $ventasMes)->sum('rv.total_bs'),
-            'pagado_mes'   => (float) $pagosMes,
+            'total_mes' => (clone $ventasMes)->sum('rv.total_bs'),
+            'pagado_mes' => (float) $pagosMes,
             'saldo_pendiente' => (float) $saldoPendiente,
         ];
     }

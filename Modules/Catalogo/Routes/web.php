@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Catalogo\Controllers\ProductoController;
 use Modules\Catalogo\Controllers\MarcaController;
+use Modules\Catalogo\Controllers\ProductoController;
 use Modules\Catalogo\Controllers\StockController;
 
 // ==========================================

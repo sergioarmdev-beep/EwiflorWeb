@@ -15,13 +15,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('usuario', 'debe_cambiar_contrasena')) {
+        if (! Schema::hasColumn('usuario', 'debe_cambiar_contrasena')) {
             Schema::table('usuario', function (Blueprint $table) {
                 $table->boolean('debe_cambiar_contrasena')->default(false);
             });
         }
 
-        if (!Schema::hasTable('solicitud_cuenta')) {
+        if (! Schema::hasTable('solicitud_cuenta')) {
             Schema::create('solicitud_cuenta', function (Blueprint $table) {
                 $table->increments('id_solicitud');
                 $table->string('nombre_completo', 100);

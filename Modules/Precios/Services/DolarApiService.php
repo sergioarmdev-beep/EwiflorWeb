@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Log;
 class DolarApiService
 {
     private const BASE_URL = 'https://bo.dolarapi.com';
-    private const TIMEOUT  = 15;
+
+    private const TIMEOUT = 15;
 
     /**
      * Cliente HTTP común.
@@ -41,7 +42,7 @@ class DolarApiService
      * @return array{
      *   disponible: bool,
      *   estado: string,
-     *   verificado: \Carbon\Carbon,
+     *   verificado: Carbon,
      *   raw?: array,
      *   error?: string
      * }
@@ -49,25 +50,25 @@ class DolarApiService
     public function verificarEstado(int $timeout = self::TIMEOUT): array
     {
         try {
-            $response = $this->httpClient($timeout)->get(self::BASE_URL . '/v1/estado');
+            $response = $this->httpClient($timeout)->get(self::BASE_URL.'/v1/estado');
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 return [
                     'disponible' => false,
-                    'estado'     => 'ERROR_HTTP_' . $response->status(),
+                    'estado' => 'ERROR_HTTP_'.$response->status(),
                     'verificado' => now(),
-                    'error'      => 'HTTP ' . $response->status() . ' al consultar /v1/estado',
+                    'error' => 'HTTP '.$response->status().' al consultar /v1/estado',
                 ];
             }
 
-            $data   = $response->json();
+            $data = $response->json();
             $estado = $data['estado'] ?? null;
 
             return [
                 'disponible' => $estado === 'Disponible',
-                'estado'     => $estado ?? 'DESCONOCIDO',
+                'estado' => $estado ?? 'DESCONOCIDO',
                 'verificado' => now(),
-                'raw'        => $data,
+                'raw' => $data,
             ];
         } catch (ConnectionException $e) {
             Log::warning('DolarAPI /v1/estado — error de conexión', [
@@ -76,9 +77,9 @@ class DolarApiService
 
             return [
                 'disponible' => false,
-                'estado'     => 'SIN_CONEXION',
+                'estado' => 'SIN_CONEXION',
                 'verificado' => now(),
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ];
         } catch (\Throwable $e) {
             Log::error('DolarAPI /v1/estado — error inesperado', [
@@ -88,9 +89,9 @@ class DolarApiService
 
             return [
                 'disponible' => false,
-                'estado'     => 'ERROR_INTERNO',
+                'estado' => 'ERROR_INTERNO',
                 'verificado' => now(),
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ];
         }
     }
@@ -103,17 +104,19 @@ class DolarApiService
     private function obtener(string $casa, string $tipo): ?array
     {
         try {
-            $response = $this->httpClient()->get(self::BASE_URL . '/v1/dolares/' . $casa);
+            $response = $this->httpClient()->get(self::BASE_URL.'/v1/dolares/'.$casa);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::warning("DolarAPI /dolares/{$casa} respondió {$response->status()}");
+
                 return null;
             }
 
             $data = $response->json();
 
-            if (!isset($data['compra'], $data['venta'])) {
+            if (! isset($data['compra'], $data['venta'])) {
                 Log::warning("DolarAPI /dolares/{$casa} no trajo compra/venta", $data ?? []);
+
                 return null;
             }
 
@@ -122,24 +125,26 @@ class DolarApiService
                 : null;
 
             return [
-                'tipo'                    => $tipo,
-                'compra'                  => (float) $data['compra'],
-                'venta'                   => (float) $data['venta'],
-                'fecha_actualizacion'     => $fechaActualizacion,
+                'tipo' => $tipo,
+                'compra' => (float) $data['compra'],
+                'venta' => (float) $data['venta'],
+                'fecha_actualizacion' => $fechaActualizacion,
                 'fecha_actualizacion_raw' => $data['fechaActualizacion'] ?? null,
-                'nombre'                  => $data['nombre'] ?? $casa,
-                'raw'                     => $data,
+                'nombre' => $data['nombre'] ?? $casa,
+                'raw' => $data,
             ];
         } catch (ConnectionException $e) {
             Log::warning("DolarAPI /dolares/{$casa} — error de conexión", [
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         } catch (\Throwable $e) {
             Log::error("DolarAPI /dolares/{$casa} — error inesperado", [
                 'error' => $e->getMessage(),
                 'clase' => get_class($e),
             ]);
+
             return null;
         }
     }

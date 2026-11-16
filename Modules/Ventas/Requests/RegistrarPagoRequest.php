@@ -21,7 +21,7 @@ class RegistrarPagoRequest extends FormRequest
     {
         return [
             'forma_pago' => ['required', Rule::in(Pago::FORMAS)],
-            'monto_bs'   => ['required', 'numeric', 'gt:0', 'max:99999999.99'],
+            'monto_bs' => ['required', 'numeric', 'gt:0', 'max:99999999.99'],
             'referencia' => ['nullable', 'string', 'max:60'],
         ];
     }

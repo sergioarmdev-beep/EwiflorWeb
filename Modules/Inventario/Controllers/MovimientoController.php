@@ -36,15 +36,15 @@ class MovimientoController extends Controller
 
         return view('inventario::movimientos.index', [
             'movimientos' => $movimientos,
-            'filtros'     => $request->only(['tipo']),
+            'filtros' => $request->only(['tipo']),
         ]);
     }
 
     public function create()
     {
         return view('inventario::movimientos.create', [
-            'almacenes'  => Almacen::where('estado', 'ACTIVO')->orderBy('nombre')->get(),
-            'variantes'  => VarianteProducto::with('producto')
+            'almacenes' => Almacen::where('estado', 'ACTIVO')->orderBy('nombre')->get(),
+            'variantes' => VarianteProducto::with('producto')
                 ->where('estado', 'ACTIVO')
                 ->orderBy('sku')
                 ->get(),

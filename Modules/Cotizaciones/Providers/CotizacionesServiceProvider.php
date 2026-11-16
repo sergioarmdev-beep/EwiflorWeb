@@ -9,9 +9,9 @@ class CotizacionesServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->loadViewsFrom(__DIR__ . '/../Views', 'cotizaciones');
+        $this->loadViewsFrom(__DIR__.'/../Views', 'cotizaciones');
 
         // middleware('web') EXPLÍCITO. Nunca loadRoutesFrom().
-        Route::middleware('web')->group(__DIR__ . '/../Routes/web.php');
+        Route::middleware('web')->group(__DIR__.'/../Routes/web.php');
     }
 }

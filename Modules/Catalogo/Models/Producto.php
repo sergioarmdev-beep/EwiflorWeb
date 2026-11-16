@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Producto extends Model
 {
     public const CATEGORIAS = ['ALIMENTARIA', 'PANADERIA', 'REPOSTERIA', 'CARNICA'];
+
     public const TIPOS = ['MAQUINARIA', 'REPUESTO', 'ACCESORIO'];
 
     protected $table = 'producto';
+
     protected $primaryKey = 'id_producto';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -26,7 +29,7 @@ class Producto extends Model
         'stock_minimo',
         'garantia_meses',
         'es_publico',
-        'estado'
+        'estado',
     ];
 
     protected $casts = [
@@ -77,7 +80,7 @@ class Producto extends Model
             return $query;
         }
 
-        $like = '%' . mb_strtolower(addcslashes($termino, '%_\\')) . '%';
+        $like = '%'.mb_strtolower(addcslashes($termino, '%_\\')).'%';
 
         return $query->where(function (Builder $q) use ($like) {
             $q->whereRaw('LOWER(producto.codigo) LIKE ?', [$like])
@@ -96,7 +99,7 @@ class Producto extends Model
      */
     public function getStockBajoAttribute(): bool
     {
-        if ($this->modalidad !== 'INVENTARIABLE' || !array_key_exists('stock_actual', $this->attributes)) {
+        if ($this->modalidad !== 'INVENTARIABLE' || ! array_key_exists('stock_actual', $this->attributes)) {
             return false;
         }
 

@@ -6,7 +6,6 @@ use Modules\Auth\Controllers\PerfilController;
 use Modules\Auth\Controllers\SolicitudCuentaController;
 use Modules\Auth\Controllers\UserController;
 
-
 Route::middleware('web')->group(function () {
 
     Route::middleware('guest')->group(function () {

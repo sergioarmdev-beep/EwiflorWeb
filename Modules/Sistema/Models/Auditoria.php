@@ -12,8 +12,11 @@ class Auditoria extends Model
      * triggers de PostgreSQL (fn_auditar_cambio). Nunca se escribe desde Laravel.
      */
     protected $table = 'auditoria';
+
     protected $primaryKey = 'id_auditoria';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     /**
