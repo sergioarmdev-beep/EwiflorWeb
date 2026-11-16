@@ -359,3 +359,21 @@ Nuevo módulo `Modules/Publico/` que expone el catálogo público en la raíz `/
 - `php artisan view:cache` → vistas compilan sin errores
 - `php -l` → todos los PHP sin errores de sintaxis
 - Pint aplicado sobre archivos creados/modificados
+
+---
+
+## 2026-11-16 — Fix: constante JSON_UNESCAPED_UNICODE en vista pública y caché de vistas
+
+### Qué se hizo
+- Corregido `JSON_UNESCAPE_UNICODE` → `JSON_UNESCAPED_UNICODE` (faltaba la "D") en `Modules/Publico/Views/publico.blade.php`, línea del script JSON de detalle de producto.
+- Limpiado y recompilado caché de vistas (`view:clear` + `view:cache`) para resolver `View [publico.identificar] not found.` y errores de constantes en tiempo de ejecución.
+- Verificadas rutas `serviciotecnico.publico.identificar` y `serviciotecnico.publico.panel` registradas correctamente.
+
+### Archivos modificados
+- `Modules/Publico/Views/publico.blade.php` — constante JSON corregida.
+
+### Verificación
+- `GET /` → catálogo público carga sin errores 500.
+- `GET /servicio-tecnico` → vista de identificación carga sin errores.
+- `php artisan view:cache` → vistas compilan sin errores.
+- `php -l` → todos los PHP sin errores de sintaxis.
