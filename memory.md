@@ -319,3 +319,43 @@ Se agregó la columna `garantia_meses` a `detalle_venta` y `detalle_cotizacion` 
 - `php artisan view:cache` → vistas compilan sin errores.
 - `route:list --path=ventas` / `--path=cotizaciones` → 7 rutas cada uno.
 - Pint aplicado sobre todos los archivos creados/modificados.
+
+---
+
+## 2026-11-16 — Feature: Módulo Publico (catálogo público sin autenticación)
+
+### Qué se hizo
+Nuevo módulo `Modules/Publico/` que expone el catálogo público en la raíz `/` sin requerir autenticación, y permite a clientes existentes solicitar servicio técnico dejando nombre y celular.
+
+### Archivos creados
+**Módulo Publico:**
+- `Modules/Publico/Providers/PublicoServiceProvider.php` — rutas + vistas `publico::`
+- `Modules/Publico/Routes/web.php` — ruta `GET /` (nombre `catalogo.publico`) y `POST contactar-servicio-tecnico` (nombre `publico.contactar.servicio.tecnico`)
+- `Modules/Publico/Controllers/PublicoController.php` — `catalogoPublico()` (movido desde Catalogo) y `contactarServicioTecnico()` (nuevo)
+- `Modules/Publico/Views/publico.blade.php` — vista completa del catálogo público con formulario de contacto servicio técnico
+
+### Archivos modificados
+- `bootstrap/providers.php` — registrado `PublicoServiceProvider`
+- `routes/web.php` — ruta raíz `/` eliminada (ahora la maneja el módulo Publico)
+- `Modules/Catalogo/Routes/web.php` — eliminada ruta `catalogo.publico` y referencia a `ProductoController@catalogoPublico`
+- `Modules/Catalogo/Controllers/ProductoController.php` — eliminado método `catalogoPublico()`
+- `Modules/Catalogo/Views/productos/publico.blade.php` — eliminado (movido a `Modules/Publico/Views/publico.blade.php`)
+- `memory.md` — esta entrada
+
+### Decisiones de diseño
+- **URL en la raíz `/`** con nombre de ruta `catalogo.publico` conservado para no romper enlaces existentes.
+- **Sin autenticación** — la vista pública es accesible sin login.
+- **Contacto solo para clientes existentes** — el formulario valida que el nombre+celular coincida con un cliente registrado con compras previas (bloqueo por diseño, se aclara en el formulario).
+- **Origen `PUBLICO`** — las solicitudes creadas desde la web pública usan `origen='PUBLICO'` y `id_usuario_registra=null`.
+- **Vista movida, no copiada** — `publico.blade.php` se movió de `Modules/Catalogo` a `Modules/Publico` y se adaptó (formulario de contacto, rutas actualizadas).
+
+### Gotchas descubiertos
+- La ruta raíz `/` en `routes/web.php` central conflictúa con el módulo Publico; se eliminó para evitar rutas duplicadas.
+- El nombre de ruta `catalogo.publico` se conserva para no romper enlaces y redirecciones existentes.
+
+### Verificación
+- `php artisan route:list --name=catalogo.publico` → ruta `/` OK, controlador `PublicoController@catalogoPublico`
+- `php artisan route:list --name=publico.contactar.servicio.tecnico` → ruta POST OK
+- `php artisan view:cache` → vistas compilan sin errores
+- `php -l` → todos los PHP sin errores de sintaxis
+- Pint aplicado sobre archivos creados/modificados

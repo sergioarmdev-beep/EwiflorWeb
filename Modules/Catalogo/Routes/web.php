@@ -6,11 +6,6 @@ use Modules\Catalogo\Controllers\ProductoController;
 use Modules\Catalogo\Controllers\StockController;
 
 // ==========================================
-// RUTA PÚBLICA (Visitantes / Usuario web)
-// ==========================================
-Route::get('/catalogo-publico', [ProductoController::class, 'catalogoPublico'])->name('catalogo.publico');
-
-// ==========================================
 // RUTAS PRIVADAS (Requieren Login)
 // ==========================================
 Route::middleware(['auth'])->prefix('catalogo')->group(function () {

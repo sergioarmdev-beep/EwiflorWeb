@@ -214,48 +214,6 @@ class ProductoController extends Controller
     }
 
     /* =========================================================
-     |  CATÁLOGO PÚBLICO
-     * ========================================================= */
-
-    public function catalogoPublico()
-    {
-        $productos = Producto::publicos()
-            ->with([
-                'marca',
-                'imagenes',
-                'variantes' => fn ($q) => $q->where('estado', 'ACTIVO'),
-            ])
-            ->orderBy('nombre')
-            ->get();
-
-        // Datos que consume el modal de detalle (se serializan como JSON en la vista).
-        $detalle = $productos->mapWithKeys(function (Producto $p) {
-            return [$p->id_producto => [
-                'id' => $p->id_producto,
-                'nombre' => $p->nombre,
-                'marca' => $p->marca?->nombre,
-                'pais' => $p->marca?->pais_origen,
-                'modelo' => $p->modelo,
-                'categoria' => $p->categoria,
-                'tipo' => $p->tipo_producto,
-                'garantia' => (int) $p->garantia_meses,
-                'descripcion' => $p->descripcion,
-                'imagenes' => $p->imagenes->map(fn ($i) => [
-                    'url' => $i->url,
-                    'alt' => $i->texto_alternativo ?: $p->nombre,
-                ])->values(),
-                'variantes' => $p->variantes->map(fn ($v) => [
-                    'sku' => $v->sku,
-                    'color' => $v->color,
-                    'caracteristicas' => $v->caracteristicas,
-                ])->values(),
-            ]];
-        });
-
-        return view('catalogo::productos.publico', compact('productos', 'detalle'));
-    }
-
-    /* =========================================================
      |  HELPERS PRIVADOS
      * ========================================================= */
 

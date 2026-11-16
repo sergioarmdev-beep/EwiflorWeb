@@ -776,6 +776,181 @@
             line-height: 1.8;
         }
 
+        /* CONTACTO SERVICIO TÉCNICO */
+
+        .contacto-section {
+            background: var(--surface);
+        }
+
+        .contacto-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            margin-top: 42px;
+        }
+
+        .contacto-info h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .contacto-info p {
+            color: var(--muted);
+            line-height: 1.8;
+            margin-bottom: 24px;
+        }
+
+        .contacto-info .contacto-dato {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .contacto-dato strong {
+            color: var(--text);
+        }
+
+        .contacto-form {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+        }
+
+        .contacto-form h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .contacto-form .form-group {
+            margin-bottom: 18px;
+        }
+
+        .contacto-form label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .contacto-form input,
+        .contacto-form textarea {
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface-soft);
+            color: var(--text);
+            font-size: .9rem;
+            transition: border-color .25s ease, box-shadow .25s ease;
+        }
+
+        .contacto-form textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .contacto-form input:focus,
+        .contacto-form textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, .12);
+        }
+
+        .contacto-form .form-hint {
+            font-size: .7rem;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .contacto-form button[type="submit"] {
+            width: 100%;
+            min-height: 48px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: white;
+            font-size: .9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .25s ease, box-shadow .25s ease;
+            margin-top: 8px;
+        }
+
+        .contacto-form button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(2, 132, 199, .25);
+        }
+
+        /* NOSOTROS */
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            gap: 55px;
+        }
+
+        .about-image {
+            overflow: hidden;
+            aspect-ratio: 5 / 4;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: var(--surface);
+        }
+
+        .about-image img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .about-copy p {
+            color: var(--muted);
+            line-height: 1.9;
+        }
+
+        /* CTA */
+
+        .cta-section {
+            padding: 85px 0;
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(14, 165, 233, .2), transparent 65%),
+                var(--surface);
+        }
+
+        .cta-box {
+            padding: 55px 30px;
+            border: 1px solid rgba(56, 189, 248, .25);
+            border-radius: 24px;
+            background: linear-gradient(135deg, rgba(2, 132, 199, .12), rgba(37, 99, 235, .06));
+            text-align: center;
+        }
+
+        .cta-box h2 {
+            margin: 0 0 15px;
+            font-size: clamp(1.9rem, 4vw, 2.8rem);
+            font-weight: 900;
+            letter-spacing: -.04em;
+        }
+
+        .cta-box p {
+            max-width: 600px;
+            margin: 0 auto 28px;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
         /* FOOTER */
 
         .footer {
@@ -892,6 +1067,10 @@
 
             .search-wrapper {
                 width: 100%;
+            }
+
+            .contacto-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1339,6 +1518,7 @@
                 <a href="#inicio" class="nav-link">Inicio</a>
                 <a href="#categorias" class="nav-link">Categorías</a>
                 <a href="#catalogo" class="nav-link">Catálogo</a>
+                <a href="#contacto" class="nav-link">Contacto</a>
                 <a href="#nosotros" class="nav-link">Nosotros</a>
             </nav>
 
@@ -1371,6 +1551,7 @@
             <a href="#inicio">Inicio</a>
             <a href="#categorias">Categorías</a>
             <a href="#catalogo">Catálogo</a>
+            <a href="#contacto">Contacto</a>
             <a href="#nosotros">Nosotros</a>
             <a href="{{ route('login') }}">Acceso empleados</a>
         </div>
@@ -1405,8 +1586,8 @@
                             Explorar catálogo <span>→</span>
                         </a>
 
-                        <a href="#nosotros" class="button-secondary">
-                            Conócenos
+                        <a href="#contacto" class="button-secondary">
+                            Contactar servicio técnico
                         </a>
                     </div>
                 </div>
@@ -1650,6 +1831,115 @@
         </section>
 
 
+        <!-- CONTACTO SERVICIO TÉCNICO -->
+        <section id="contacto" class="section contacto-section">
+            <div class="container-main section-content">
+
+                <div class="section-heading reveal">
+                    <span class="section-label">Servicio técnico</span>
+
+                    <h2 class="section-title">
+                        ¿Necesitas soporte? <span class="gradient-text">Contáctanos</span>
+                    </h2>
+
+                    <p class="section-description">
+                        Si eres cliente de Ewiflor Importaciones y necesitas asistencia técnica,
+                        completa el formulario con tus datos. Un técnico se comunicará contigo.
+                    </p>
+                </div>
+
+                <div class="contacto-grid reveal">
+
+                    <div class="contacto-info">
+                        <h3>Atención al cliente</h3>
+                        <p>
+                            Si tienes una compra registrada con nosotros, puedes solicitar servicio técnico
+                            para tu equipo. Completa el formulario con tu nombre y número de celular tal como
+                            aparecen en tu factura de compra.
+                        </p>
+
+                        <div class="contacto-dato">
+                            <span>📞</span>
+                            <div>
+                                <strong>Llamada:</strong>
+                                <span>Línea de servicio técnico</span>
+                            </div>
+                        </div>
+
+                        <div class="contacto-dato">
+                            <span>✉</span>
+                            <div>
+                                <strong>Correo:</strong>
+                                <span>soporte@ewiflor.com</span>
+                            </div>
+                        </div>
+
+                        <div class="contacto-dato">
+                            <span>🕒</span>
+                            <div>
+                                <strong>Horario:</strong>
+                                <span>Lunes a viernes, 8:00 a 17:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="contacto-form">
+                        <h3>Solicitar asistencia técnica</h3>
+                        @if (session('error'))
+                        <div class="mb-4 p-3 rounded border border-red-500/30 bg-red-500/10 text-red-300">
+                            {{ session('error') }}
+                        </div>
+                        @endif
+                        @if (session('success'))
+                        <div class="mb-4 p-3 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+                            {{ session('success') }}
+                        </div>
+                        @endif
+                        <form method="POST" action="{{ route('publico.contactar.servicio.tecnico') }}">
+                            @csrf
+
+                            <div class="form-group">
+                                <label for="nombre">Nombre completo</label>
+                                <input
+                                    type="text"
+                                    id="nombre"
+                                    name="nombre"
+                                    value="{{ old('nombre') }}"
+                                    placeholder="Juan Pérez"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="telefono">Número de celular</label>
+                                <input
+                                    type="tel"
+                                    id="telefono"
+                                    name="telefono"
+                                    value="{{ old('telefono') }}"
+                                    placeholder="71234567"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="mensaje">Describe el problema o solicitud</label>
+                                <textarea
+                                    id="mensaje"
+                                    name="mensaje"
+                                    rows="4"
+                                    placeholder="Ej: El horno no enciende, ¿pueden revisarlo?"
+                                    required></textarea>
+                                <p class="form-hint">Debes estar registrado como cliente con compras previas.</p>
+                            </div>
+
+                            <button type="submit">Enviar solicitud</button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
         <!-- VENTAJAS DEMOSTRATIVAS -->
         <section class="section advantages-section">
             <div class="container-main section-content">
@@ -1796,6 +2086,7 @@
                     <a href="#inicio">Inicio</a>
                     <a href="#categorias">Categorías</a>
                     <a href="#catalogo">Catálogo</a>
+                    <a href="#contacto">Contacto</a>
                     <a href="#nosotros">Nosotros</a>
                 </div>
 
@@ -1861,7 +2152,7 @@
         </div>
     </div>
 
-    <script id="product-data" type="application/json">{!! json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script id="product-data" type="application/json">{!! json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPE_UNICODE) !!}</script>
 
     <!-- JAVASCRIPT -->
     <script>
