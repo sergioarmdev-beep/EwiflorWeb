@@ -397,3 +397,27 @@ Nuevo módulo `Modules/Publico/` que expone el catálogo público en la raíz `/
 - `GET /servicio-tecnico/panel` → panel del cliente carga sin errores SQL.
 - `php artisan view:cache` → vistas compilan sin errores.
 - `php -l` → todos los PHP sin errores de sintaxis.
+
+---
+
+## 2026-11-16 — Fix: botón cerrar sesión en vista pública de servicio técnico
+
+### Qué se hizo
+- Reemplazado el enlace `<a>` por un botón `<button>` dentro del formulario POST en
+  `Modules/ServicioTecnico/Views/publico/layout.blade.php`.
+- El botón "Cerrar sesión" ahora envía el token CSRF correctamente y limpia la
+  sesión del cliente público (`SesionCliente::limpiar()`).
+- Eliminado el formulario duplicado oculto que quedaba al final del layout.
+
+### Archivos modificados
+- `Modules/ServicioTecnico/Views/publico.blade.php` — botón de cierre de sesión dentro del formulario.
+
+### Decisión de diseño
+- Se usó un botón tipo submit dentro del formulario en lugar de un enlace con JavaScript
+  (`this.closest('form')` fallaba porque el `<a>` no estaba dentro del formulario).
+- Esto garantiza que el token CSRF se envíe correctamente con la petición POST.
+
+### Verificación
+- `GET /servicio-tecnico/panel` → cerrar sesión limpia la sesión y redirige a identificar.
+- `php artisan view:cache` → vistas compilan sin errores.
+- `php -l` → todos los PHP sin errores de sintaxis.
