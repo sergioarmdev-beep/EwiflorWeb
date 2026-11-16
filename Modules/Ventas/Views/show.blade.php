@@ -67,6 +67,7 @@ $saldo = $venta->saldoBs();
                     <th class="px-4 py-2 text-right">Cant.</th>
                     <th class="px-4 py-2 text-right">P. Unit. USD</th>
                     <th class="px-4 py-2 text-right">Desc. %</th>
+                    <th class="px-4 py-2 text-right">Garantía (meses)</th>
                     <th class="px-4 py-2 text-right">Subtotal USD</th>
                 </tr>
             </thead>
@@ -78,21 +79,33 @@ $saldo = $venta->saldoBs();
                     <td class="px-4 py-2 text-right">{{ $d->cantidad }}</td>
                     <td class="px-4 py-2 text-right">{{ number_format((float) $d->precio_unitario_usd, 2) }}</td>
                     <td class="px-4 py-2 text-right">{{ number_format((float) $d->descuento_pct, 2) }}</td>
+                    <td class="px-4 py-2 text-right">
+                        @php
+                            $gm = $d->garantia_meses;
+                            if ($gm === null && $d->variante?->producto) {
+                                $gm = $d->variante->producto->garantia_meses;
+                            }
+                        @endphp
+                        {{ $gm ?? '—' }}
+                        @if ($d->garantia && $d->garantia->duracion_meses)
+                            <span class="text-xs text-sky-600 ml-1">(registrada: {{ $d->garantia->duracion_meses }}m)</span>
+                        @endif
+                    </td>
                     <td class="px-4 py-2 text-right">{{ number_format($d->subtotalUsd(), 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
             <tfoot class="bg-gray-50 border-t font-semibold">
                 <tr>
-                    <td colspan="5" class="px-4 py-2 text-right">Total USD</td>
+                    <td colspan="6" class="px-4 py-2 text-right">Total USD</td>
                     <td class="px-4 py-2 text-right">$ {{ number_format($totales->total_usd ?? 0, 2) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="5" class="px-4 py-2 text-right">Total Bs</td>
+                    <td colspan="6" class="px-4 py-2 text-right">Total Bs</td>
                     <td class="px-4 py-2 text-right">Bs {{ number_format($totales->total_bs ?? 0, 2) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="5" class="px-4 py-2 text-right">Pagado</td>
+                    <td colspan="6" class="px-4 py-2 text-right">Pagado</td>
                     <td class="px-4 py-2 text-right">Bs {{ number_format($venta->totalPagadoBs(), 2) }}</td>
                 </tr>
                 <tr class="{{ $saldo > 0 ? 'text-red-700' : 'text-green-700' }}">

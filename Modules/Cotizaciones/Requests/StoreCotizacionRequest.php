@@ -35,6 +35,7 @@ class StoreCotizacionRequest extends FormRequest
             'lineas.*.precio_unitario_usd' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
             'lineas.*.descuento_tipo' => ['nullable', Rule::in(['PCT', 'USD'])],
             'lineas.*.descuento_valor' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
+            'lineas.*.garantia_meses' => ['nullable', 'integer', 'min:0', 'max:1200'],
         ];
     }
 

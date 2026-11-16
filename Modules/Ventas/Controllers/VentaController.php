@@ -49,10 +49,19 @@ class VentaController extends Controller
     {
         $modo = $request->boolean('desde_cotizacion') ? 'cotizacion' : 'directa';
 
+        $variantes = $this->variantesActivas();
+        $precios = $variantes->mapWithKeys(
+            fn ($v) => [(string) $v->id_variante => $v->precio_usd !== null ? (float) $v->precio_usd : null]
+        );
+        $garantias = $variantes->mapWithKeys(
+            fn ($v) => [(string) $v->id_variante => (int) ($v->producto?->garantia_meses ?? 0)]
+        );
+
         $data = [
             'modo' => $modo,
             'almacenes' => Almacen::where('estado', 'ACTIVO')->orderBy('nombre')->get(),
-            'precios' => [],
+            'precios' => $precios,
+            'garantias' => $garantias,
         ];
 
         if ($modo === 'cotizacion') {
@@ -68,10 +77,7 @@ class VentaController extends Controller
             $data['cotizacion'] = $cot;
         } else {
             $data['clientes'] = Cliente::activos()->orderBy('nombre')->get();
-            $data['variantes'] = $this->variantesActivas();
-            $data['precios'] = $data['variantes']->mapWithKeys(
-                fn ($v) => [(string) $v->id_variante => $v->precio_usd !== null ? (float) $v->precio_usd : null]
-            );
+            $data['variantes'] = $variantes;
             $data['lineas'] = old('lineas', []);
         }
 

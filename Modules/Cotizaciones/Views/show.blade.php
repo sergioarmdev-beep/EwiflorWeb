@@ -69,6 +69,7 @@ $rol = auth()->user()->nombre_rol;
                     <th class="px-4 py-2 text-right">Cant.</th>
                     <th class="px-4 py-2 text-right">P. Unit. USD</th>
                     <th class="px-4 py-2 text-right">Desc. %</th>
+                    <th class="px-4 py-2 text-right">Garantía (meses)</th>
                     <th class="px-4 py-2 text-right">Subtotal USD</th>
                 </tr>
             </thead>
@@ -86,17 +87,18 @@ $rol = auth()->user()->nombre_rol;
                     <td class="px-4 py-2 text-right">{{ $d->cantidad }}</td>
                     <td class="px-4 py-2 text-right">{{ number_format((float) $d->precio_unitario_usd, 2) }}</td>
                     <td class="px-4 py-2 text-right">{{ number_format((float) $d->descuento_pct, 2) }}</td>
+                    <td class="px-4 py-2 text-right">{{ $d->garantia_meses ?? ($d->variante?->producto?->garantia_meses ?? '—') }}</td>
                     <td class="px-4 py-2 text-right">{{ number_format($sub, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
             <tfoot class="bg-gray-50 border-t font-semibold">
                 <tr>
-                    <td colspan="5" class="px-4 py-2 text-right">Total USD</td>
+                    <td colspan="6" class="px-4 py-2 text-right">Total USD</td>
                     <td class="px-4 py-2 text-right">$ {{ number_format($cotizacion->totalUsd(), 2) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="5" class="px-4 py-2 text-right">Total Bs (al T/C congelado)</td>
+                    <td colspan="6" class="px-4 py-2 text-right">Total Bs (al T/C congelado)</td>
                     <td class="px-4 py-2 text-right">Bs {{ number_format($cotizacion->totalBs(), 2) }}</td>
                 </tr>
             </tfoot>

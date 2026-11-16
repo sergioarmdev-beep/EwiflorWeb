@@ -200,3 +200,62 @@ Modules/Sistema/
 - `php artisan route:list --path=auditoria` → 1 ruta OK.
 - `php artisan view:cache` → vista compila sin errores.
 - Acceso restringido: cualquier rol distinto de GERENTE recibe 403 vía `CheckRole`.
+
+---
+
+## 2026-11-15 — Refactor: Garantía editable por línea en venta y cotización
+
+### Qué se hizo
+Se agregó la columna `garantia_meses` a `detalle_venta` y `detalle_cotizacion` para permitir editar la duración de garantía por línea al realizar una venta o cotización. El trigger PostgreSQL `fn_crear_garantias_venta()` ahora usa `COALESCE(dv.garantia_meses, p.garantia_meses)` y la vista `v_garantia_vigente` se enriqueció con datos de venta, cliente y producto para el futuro módulo de servicio técnico.
+
+### Archivos creados
+- `database/migrations/2026_11_15_000002_add_garantia_meses_to_detalle_venta_and_cotizacion.php` — columnas + reemplazo de `registrar_venta()`, `convertir_cotizacion_a_venta()`, `fn_crear_garantias_venta()` y `v_garantia_vigente` (DROP + CREATE). Se ejecuta con `--database=pgsql_migrator`.
+- `Modules/Garantias/Models/Garantia.php` — modelo read-only con relación a `DetalleVenta`.
+
+### Archivos modificados
+**Modelos:**
+- `Modules/Ventas/Models/DetalleVenta.php` — `garantia_meses` en `$fillable` + cast `int` + relación `garantia()`.
+- `Modules/Cotizaciones/Models/DetalleCotizacion.php` — idem.
+
+**Requests:**
+- `Modules/Ventas/Requests/StoreVentaRequest.php` — `lineas.*.garantia_meses` (nullable|int|min:0|max:1200).
+- `Modules/Cotizaciones/Requests/StoreCotizacionRequest.php` — idem.
+- `Modules/Cotizaciones/Requests/UpdateCotizacionRequest.php` — idem.
+
+**Services:**
+- `Modules/Ventas/Services/VentaService.php` — `construirLineasJson()` incluye `garantia_meses` en el JSON a `registrar_venta()`.
+- `Modules/Cotizaciones/Services/CotizacionService.php` — `syncLineas()` persiste `garantia_meses` en `detalle_cotizacion`.
+
+**Controladores:**
+- `Modules/Ventas/Controllers/VentaController.php` — `create()` expone mapa `garantias` (id_variante → meses) a la vista.
+- `Modules/Cotizaciones/Controllers/CotizacionController.php` — `create()`/`edit()` exponen `garantias` y mapean `garantia_meses` en líneas al editar.
+
+**Vistas:**
+- `Modules/Ventas/Views/create.blade.php` — columna “Garantía (meses)” editable, prellenada desde catálogo; incluida en plantilla JS de fila dinámica.
+- `Modules/Cotizaciones/Views/_form.blade.php` — misma columna y comportamiento.
+- `Modules/Ventas/Views/show.blade.php` — muestra garantía por línea (meses + vencimiento si ya existe fila en `garantia`).
+- `Modules/Ventas/Views/comprobante.blade.php` — muestra garantía por línea.
+- `Modules/Cotizaciones/Views/show.blade.php` — muestra duración pactada por línea.
+
+### Decisiones de diseño
+- **Solo meses** (no días/meses): reutiliza `duracion_meses` y `producto.garantia_meses` existente.
+- **Solo duración editable por línea:** fecha de inicio sigue siendo la fecha de la venta (trigger PG).
+- **Por línea de producto:** una garantía por `detalle_venta` (ya definido en esquema).
+- **Fase 1 como migración Laravel** (no parche SQL) en `database/migrations/` con `$connection = 'pgsql_migrator'`, idempotente.
+- **`down()` restaura funciones/vista originales de `v5-MVP.sql` antes de quitar columnas** (orden crítico).
+- **Vista `v_garantia_vigente` enriquecida** con `id_venta`, `id_cliente`, `sku`, `producto` para habilitar alertas y consultas en `SERVICIO_TECNICO` futuro.
+- `producto.garantia_meses` sigue siendo el **default** en Catálogo.
+
+### Gotchas descubiertos
+- `CREATE OR REPLACE VIEW` no permite cambiar orden/nombre de columnas existentes → migración usa `DROP VIEW IF EXISTS` + `CREATE VIEW`.
+- El trigger `fn_crear_garantias_venta()` se dispara al actualizar `venta.estado` a `REGISTRADA`; lee `COALESCE(dv.garantia_meses, p.garantia_meses)` y solo inserta si > 0.
+- `convertir_cotizacion_a_venta()` ahora incluye `dc.garantia_meses` en el JSON que pasa a `registrar_venta()`.
+- La migración debe correr con `--database=pgsql_migrator` (rol `ewiflor_migrator`/`ewiflor_owner`); la conexión por defecto `ewiflor_app` lanza `42501`.
+- En `show.blade.php`, si `detalle_venta.garantia_meses` es NULL, se cae al default `producto.garantia_meses`; si ya existe fila en `garantia`, se muestra `duracion_meses` registrada con badge.
+- `Garantia` modelo en `Modules/Garantias/` (módulo vacío hasta ahora) para lectura; `DetalleVenta::garantia()` relación `hasOne`.
+
+### Verificación
+- Migración aplicada OK: `detalle_venta.garantia_meses` y `detalle_cotizacion.garantia_meses` existen.
+- `php artisan view:cache` → vistas compilan sin errores.
+- `route:list --path=ventas` / `--path=cotizaciones` → 7 rutas cada uno.
+- Pint aplicado sobre todos los archivos creados/modificados.

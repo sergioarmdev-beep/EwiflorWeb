@@ -57,6 +57,7 @@ class CotizacionController extends Controller
             'clientes' => Cliente::activos()->orderBy('nombre')->get(),
             'variantes' => $variantes,
             'precios' => $this->precios($variantes),
+            'garantias' => $this->garantias($variantes),
             'lineas' => [],
         ]);
     }
@@ -93,12 +94,14 @@ class CotizacionController extends Controller
             'clientes' => Cliente::activos()->orderBy('nombre')->get(),
             'variantes' => $variantes,
             'precios' => $this->precios($variantes),
+            'garantias' => $this->garantias($variantes),
             'lineas' => $cotizacion->detalles->map(fn ($d) => [
                 'id_variante' => $d->id_variante,
                 'cantidad' => $d->cantidad,
                 'precio_unitario_usd' => $d->precio_unitario_usd,
                 'descuento_tipo' => 'PCT',
                 'descuento_valor' => $d->descuento_pct,
+                'garantia_meses' => $d->garantia_meses,
             ])->all(),
         ]);
     }
@@ -135,6 +138,14 @@ class CotizacionController extends Controller
     {
         return $variantes
             ->mapWithKeys(fn ($v) => [(string) $v->id_variante => $v->precio_usd !== null ? (float) $v->precio_usd : null])
+            ->all();
+    }
+
+    /** @return array<string, int> id_variante => garantia_meses (0 si no tiene) */
+    private function garantias($variantes): array
+    {
+        return $variantes
+            ->mapWithKeys(fn ($v) => [(string) $v->id_variante => (int) ($v->producto?->garantia_meses ?? 0)])
             ->all();
     }
 }

@@ -194,6 +194,7 @@ class VentaService
                     $cantidad
                 ),
                 'id_almacen' => $v->producto?->modalidad === 'BAJO_PEDIDO' ? null : $idAlmacen,
+                'garantia_meses' => (int) ($l['garantia_meses'] ?? 0),
             ];
         })->values()->all();
     }

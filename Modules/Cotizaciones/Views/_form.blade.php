@@ -44,6 +44,7 @@ $nextIdx = count($lineas);
             <th class="px-3 py-2 text-left">Variante</th>
             <th class="px-3 py-2 text-right w-20">Cantidad</th>
             <th class="px-3 py-2 text-right w-28">Precio USD</th>
+            <th class="px-3 py-2 text-right w-20">Garantía (meses)</th>
             <th class="px-3 py-2 text-right w-24">Tipo desc.</th>
             <th class="px-3 py-2 text-right w-28">Descuento</th>
             <th class="px-3 py-2 text-right w-28">Subtotal USD</th>
@@ -75,6 +76,7 @@ $nextIdx = count($lineas);
                     step="0.01" value="{{ $l['precio_unitario_usd'] ?? '' }}"
                     class="w-full border rounded px-2 py-1 text-right bg-gray-100 text-gray-600 cursor-not-allowed">
             </td>
+            <td class="px-3 py-2"><input type="number" name="lineas[{{ $i }}][garantia_meses]" min="0" value="{{ $l['garantia_meses'] ?? $garantias[$l['id_variante']] ?? 0 }}" class="w-full border rounded px-2 py-1 text-right" placeholder="0"></td>
             <td class="px-3 py-2">
                 <select name="lineas[{{ $i }}][descuento_tipo]" class="w-full border rounded px-2 py-1">
                     <option value="PCT" @selected(($l['descuento_tipo'] ?? 'PCT') === 'PCT')>%</option>
@@ -97,7 +99,8 @@ $nextIdx = count($lineas);
 </table>
 
 <p class="text-xs text-gray-500 mt-2">
-    El precio se toma del catálogo y no puede editarse. Solo se permite un descuento por línea,
+    El precio se toma del catálogo y no puede editarse. La garantía por defecto viene del catálogo
+    y puede editarse por línea. Solo se permite un descuento por línea,
     en porcentaje o en monto USD sobre el total de la línea.
 </p>
 
@@ -127,6 +130,7 @@ $nextIdx = count($lineas);
                 step="0.01"
                 class="w-full border rounded px-2 py-1 text-right bg-gray-100 text-gray-600 cursor-not-allowed">
         </td>
+        <td class="px-3 py-2"><input type="number" data-name="garantia_meses" min="0" value="0" class="w-full border rounded px-2 py-1 text-right" placeholder="0"></td>
         <td class="px-3 py-2">
             <select data-name="descuento_tipo" class="w-full border rounded px-2 py-1">
                 <option value="PCT">%</option>

@@ -10,7 +10,9 @@ class DetalleCotizacion extends Model
     protected $table = 'detalle_cotizacion';
 
     protected $primaryKey = 'id_cotizacion';
+
     public $incrementing = false;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -19,12 +21,14 @@ class DetalleCotizacion extends Model
         'cantidad',
         'precio_unitario_usd',
         'descuento_pct',
+        'garantia_meses',
     ];
 
     protected $casts = [
         'cantidad' => 'int',
         'precio_unitario_usd' => 'decimal:2',
         'descuento_pct' => 'decimal:2',
+        'garantia_meses' => 'int',
     ];
 
     public function variante()

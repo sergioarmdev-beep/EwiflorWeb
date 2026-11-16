@@ -83,6 +83,7 @@
                 <th class="right">Cant.</th>
                 <th class="right">P. Unit. USD</th>
                 <th class="right">Desc. %</th>
+                <th class="right">Garantía (meses)</th>
                 <th class="right">Subtotal USD</th>
             </tr>
         </thead>
@@ -94,17 +95,26 @@
                 <td class="right">{{ $d->cantidad }}</td>
                 <td class="right">{{ number_format((float) $d->precio_unitario_usd, 2) }}</td>
                 <td class="right">{{ number_format((float) $d->descuento_pct, 2) }}</td>
+                <td class="right">
+                    @php
+                        $gm = $d->garantia_meses;
+                        if ($gm === null && $d->variante?->producto) {
+                            $gm = $d->variante->producto->garantia_meses;
+                        }
+                    @endphp
+                    {{ $gm ?? '—' }}
+                </td>
                 <td class="right">{{ number_format($d->subtotalUsd(), 2) }}</td>
             </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr class="total">
-                <td colspan="5" class="right">Total USD</td>
+                <td colspan="6" class="right">Total USD</td>
                 <td class="right">$ {{ number_format($totales->total_usd ?? 0, 2) }}</td>
             </tr>
             <tr class="total">
-                <td colspan="5" class="right">Total Bs (T/C {{ number_format((float) $venta->tipoCambio?->valor, 4) }})</td>
+                <td colspan="6" class="right">Total Bs (T/C {{ number_format((float) $venta->tipoCambio?->valor, 4) }})</td>
                 <td class="right">Bs {{ number_format($totales->total_bs ?? 0, 2) }}</td>
             </tr>
         </tfoot>

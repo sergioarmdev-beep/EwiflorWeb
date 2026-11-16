@@ -131,6 +131,7 @@ class CotizacionService
                     $precio,
                     $cantidad
                 ),
+                'garantia_meses' => (int) ($l['garantia_meses'] ?? 0),
             ]);
         }
         $cot->unsetRelation('detalles');
