@@ -2,6 +2,7 @@
 
 use App\Exceptions\BusinessRuleException;
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\SesionClientePublica;
 use App\Http\Middleware\SessionTimeout;
 use App\Http\Middleware\SetDatabaseUser;
 use Illuminate\Foundation\Application;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'role' => CheckRole::class,
+            'sesion.cliente.publica' => SesionClientePublica::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

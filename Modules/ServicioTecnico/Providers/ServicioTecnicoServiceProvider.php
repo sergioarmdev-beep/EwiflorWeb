@@ -1,0 +1,15 @@
+<?php
+
+namespace Modules\ServicioTecnico\Providers;
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+
+class ServicioTecnicoServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        Route::middleware('web')->group(__DIR__.'/../Routes/web.php');
+        $this->loadViewsFrom(__DIR__.'/../Views', 'serviciotecnico');
+    }
+}

@@ -58,6 +58,8 @@ class DashboardStatsService
         $data['ultimos_movimientos'] = $this->ultimosMovimientos();
         $data['ultimas_cotizaciones'] = $this->ultimasCotizaciones();
         $data['alertas_sistema'] = $this->alertasSistema();
+        $data['solicitudes_servicio_pendientes'] = $this->solicitudesServicioPendientes();
+        $data['ultimas_solicitudes_servicio'] = $this->ultimasSolicitudesServicio();
     }
 
     private function totalProductos(): int
@@ -127,6 +129,27 @@ class DashboardStatsService
             }
         } catch (\Throwable $e) {
             Log::warning('No fue posible comprobar la sincronización del tipo de cambio.', [
+                'exception' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $pendientesServicio = DB::table('solicitud_servicio')
+                ->where('estado', 'PENDIENTE')
+                ->whereNull('id_tecnico')
+                ->count();
+
+            if ($pendientesServicio > 0) {
+                $alertas[] = [
+                    'tipo' => 'servicio_tecnico',
+                    'titulo' => 'Encargos de servicio técnico sin asignar',
+                    'mensaje' => "Hay {$pendientesServicio} solicitud(es) de servicio técnico pendiente(s) de aceptación.",
+                    'url' => route('serviciotecnico.gestion'),
+                    'url_texto' => 'Ver gestión',
+                ];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('No fue posible comprobar solicitudes de servicio técnico.', [
                 'exception' => $e->getMessage(),
             ]);
         }
@@ -302,5 +325,35 @@ class DashboardStatsService
             ->whereDate('fecha_vencimiento', '>=', now()->toDateString())
             ->whereDate('fecha_vencimiento', '<=', now()->addDays($dias)->toDateString())
             ->count();
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Servicio técnico (gerencia)
+     * ------------------------------------------------------------------ */
+
+    private function solicitudesServicioPendientes(): int
+    {
+        return DB::table('solicitud_servicio')
+            ->where('estado', 'PENDIENTE')
+            ->whereNull('id_tecnico')
+            ->count();
+    }
+
+    private function ultimasSolicitudesServicio(int $limite = 6): array
+    {
+        return DB::table('solicitud_servicio as s')
+            ->join('cliente as c', 'c.id_cliente', '=', 's.id_cliente')
+            ->leftJoin('usuario as u', 'u.id_usuario', '=', 's.id_tecnico')
+            ->orderByDesc('s.fecha_solicitud')
+            ->limit($limite)
+            ->get([
+                's.id_solicitud',
+                's.estado',
+                's.descripcion_falla',
+                's.fecha_solicitud',
+                'c.nombre as cliente',
+                'u.nombre_completo as tecnico',
+            ])
+            ->toArray();
     }
 }

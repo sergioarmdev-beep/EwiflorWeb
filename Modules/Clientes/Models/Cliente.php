@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Cotizaciones\Models\Cotizacion;
+use Modules\Garantias\Models\SolicitudServicio;
 use Modules\Ventas\Models\Venta;
 
 class Cliente extends Model
@@ -81,6 +82,18 @@ class Cliente extends Model
     {
         return $this->hasMany(
             Venta::class,
+            'id_cliente',
+            'id_cliente'
+        );
+    }
+
+    /**
+     * Solicitudes de servicio técnico asociadas al cliente.
+     */
+    public function solicitudesServicio(): HasMany
+    {
+        return $this->hasMany(
+            SolicitudServicio::class,
             'id_cliente',
             'id_cliente'
         );

@@ -203,6 +203,66 @@ Modules/Sistema/
 
 ---
 
+## 2026-11-16 — Feature: Módulo Servicio Técnico
+
+### Qué se hizo
+Nuevo módulo `Modules/ServicioTecnico/` con tres superficies totalmente separadas:
+1. **Pública** (`/servicio-tecnico`, sin login): cliente se identifica con nombre+celular (sesión propia, no toca `auth`). Puede ver sus compras y estado de garantías, crear solicitud de servicio y ver el estado de sus propias solicitudes. Nunca puede editar/borrar ni ver el panel interno.
+2. **Interna — Vendedor** (`auth` + `role:VENDEDOR,GERENTE,ADMINISTRADOR`): crea solicitud en nombre de un cliente (`origen='INTERNO'`).
+3. **Interna — Técnico** (`auth` + `role:SERVICIO_TECNICO`): bandeja de encargos, aceptar (bloqueo contra doble asignación), cerrar con resultado + diagnóstico + costo.
+4. **Interna — Gerente/Administrador** (`auth` + `role:GERENTE,ADMINISTRADOR`): gestión global de movimientos, filtros, quién aceptó cada encargo, si está en garantía, resultado y costo.
+
+### Archivos creados
+**Migración:**
+- `database/migrations/2026_11_16_000004_solicitud_servicio_publica.php` — `id_usuario_registra` nullable, columna `origen` (PUBLICO/INTERNO), índice por cliente, trigger de auditoría. Se ejecuta con `--database=pgsql_migrator`.
+
+**Módulo ServicioTecnico:**
+- `Providers/ServicioTecnicoServiceProvider.php` — rutas + vistas `serviciotecnico::`
+- `Routes/web.php` — 14 rutas (públicas + internas por rol)
+- `Controllers/PublicoController.php` — identificar, panel, solicitar, guardar, detalle, salir
+- `Controllers/SolicitudController.php` — bandeja, aceptar, cerrar, nueva, guardarInterna, gestion, show
+- `Services/ConsultaPublicaService.php` — compras con garantía del cliente, solicitudes del cliente
+- `Services/SolicitudService.php` - crearPublica, crearInterna, aceptar, cerrar, buscarCliente, pendientesParaTecnico, todas, tecnicos
+- `Support/SesionCliente.php` — gestión de sesión pública del cliente
+- `Requests/RegistrarSolicitudRequest.php`, `Requests/CerrarSolicitudRequest.php`
+- `Views/public/{layout,identificar,panel,solicitar,detalle}.blade.php`
+- `Views/solicitudes/{bandeja,gestion,nueva,show}.blade.php`
+
+**Modelo (dueño en Garantias):**
+- `Modules/Garantias/Models/SolicitudServicio.php` — relaciones cliente/garantia/tecnico/registra, estados y resultados
+
+**Archivos modificados:**
+- `bootstrap/providers.php` — registrado `ServicioTecnicoServiceProvider`
+- `bootstrap/app.php` — alias middleware `sesion.cliente.publica`
+- `Modules/Clientes/Models/Cliente.php` — relación `solicitudesServicio()`
+- `Modules/Sistema/Services/DashboardStatsService.php` — `solicitudes_servicio_pendientes`, `ultimas_solicitudes_servicio` para gerente; alerta de sistema para encargos sin asignar
+- `resources/views/layouts/app.blade.php` — ítems sidebar: Bandeja (técnico), Gestión (gerente/admin), Nueva solicitud (vendedor/gerente/admin)
+- `memory.md` — esta entrada
+
+### Decisiones de diseño
+- **Superficies separadas:** la web pública tiene su propio layout y sesión propia (`serviciotecnico.cliente_id`), nunca se mezcla con `auth` ni con el panel de trabajadores.
+- **Cliente inexistente:** se bloquea y se avisa (no se crean clientes automáticamente).
+- **Dueño del modelo:** `SolicitudServicio` vive en `Garantias` (respeta `ubicacion-modelos.md`); `ServicioTecnico` lo importa.
+- **Aceptación segura:** `UPDATE ... WHERE estado='PENDIENTE' AND id_tecnico IS NULL` evita que dos técnicos acepten el mismo encargo.
+- **Cierre:** respeta el CHECK de la tabla (`estado<>'CERRADA' OR (fecha_cierre IS NOT NULL AND resultado IS NOT NULL)`).
+- **Auditoría:** 100% por trigger PG `fn_auditar_cambio('id_solicitud')`, sin Observers.
+- **Dashboard:** alerta de sistema cuando hay encargos sin asignar; datos para gerente y técnico.
+
+### Verificación
+- Migración aplicada OK con `--database=pgsql_migrator`.
+- `php artisan view:cache` → vistas compilan sin errores.
+- `route:list --path=servicio-tecnico` → 14 rutas OK.
+- `php -l` → todos los PHP sin errores de sintaxis.
+- Pint aplicado sobre todos los archivos creados/modificados.
+
+### Gotchas descubiertos
+- `@foreach (...) @empty @endforeach` vacío en Blade causa ParseError; se removió el bloque innecesario en `nueva.blade.php`.
+- `SolicitudService::todas()` no puede declarar `: array` porque `paginate()` devuelve `LengthAwarePaginator`; se removió el tipo de retorno.
+- Las relaciones Eloquent cargadas con `->with()` pueden venir como **array** en lugar de objeto en algunas vistas; se usa `data_get($sol, 'relacion.campo', 'default')` en lugar de `->?->` para acceder de forma segura a `registra`, `tecnico` y `cliente` en las vistas `gestion.blade.php` y `show.blade.php`.
+- `$tecnicos` (de `SolicitudService::tecnicos()` que hace `->get()->toArray()`) es un **array de arrays**; en `gestion.blade.php` se accede con `$tec['id_usuario']` y `$tec['nombre_completo']` en lugar de `->id_usuario` / `->nombre_completo`.
+
+---
+
 ## 2026-11-15 — Refactor: Garantía editable por línea en venta y cotización
 
 ### Qué se hizo
