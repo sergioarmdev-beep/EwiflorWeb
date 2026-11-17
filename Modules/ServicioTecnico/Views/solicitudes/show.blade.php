@@ -4,9 +4,9 @@
 
 @section('content')
 @php
-    $rol = auth()->user()->nombre_rol;
-    $puedeCerrar = in_array($rol, ['SERVICIO_TECNICO', 'GERENTE', 'ADMINISTRADOR'], true);
-    $esMia = $solicitud->id_tecnico === auth()->id();
+$rol = auth()->user()->nombre_rol;
+$puedeCerrar = in_array($rol, ['SERVICIO_TECNICO', 'GERENTE', 'ADMINISTRADOR'], true);
+$esMia = $solicitud->id_tecnico === auth()->id();
 @endphp
 
 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
@@ -20,7 +20,7 @@
                 {{ $solicitud->estado }}
             </span>
         </h1>
-        <a href="{{ url()->previous() }}" class="text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline">← Volver</a>
+        <a href="{{ route('dashboard')  }}" class="text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline">← Volver</a>
     </div>
 
     @if (session('success'))
@@ -40,9 +40,9 @@
         <div class="md:col-span-2">
             <span class="text-slate-500">Garantía:</span>
             @if ($solicitud->estaEnGarantia())
-                <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Dentro de garantía (sin costo)</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Dentro de garantía (sin costo)</span>
             @else
-                <span class="text-amber-600 dark:text-amber-400 font-semibold">Fuera de garantía (servicio pagado)</span>
+            <span class="text-amber-600 dark:text-amber-400 font-semibold">Fuera de garantía (servicio pagado)</span>
             @endif
         </div>
         <div class="md:col-span-2">
@@ -56,7 +56,7 @@
         <h2 class="font-semibold text-emerald-700 dark:text-emerald-300 mb-2">Servicio cerrado</h2>
         <p class="text-emerald-800 dark:text-emerald-200"><span class="font-semibold">Resultado:</span> {{ \Str::ucfirst(\Str::replace('_', ' ', $solicitud->resultado)) }}</p>
         @if ($solicitud->costo_servicio_bs)
-            <p class="text-emerald-800 dark:text-emerald-200"><span class="font-semibold">Costo:</span> Bs {{ number_format((float) $solicitud->costo_servicio_bs, 2) }}</p>
+        <p class="text-emerald-800 dark:text-emerald-200"><span class="font-semibold">Costo:</span> Bs {{ number_format((float) $solicitud->costo_servicio_bs, 2) }}</p>
         @endif
         <p class="text-emerald-800 dark:text-emerald-200 mt-2"><span class="font-semibold">Diagnóstico:</span> {{ $solicitud->diagnostico }}</p>
         <p class="text-emerald-700 dark:text-emerald-300 mt-2 text-xs">Cerrada el {{ $solicitud->fecha_cierre?->format('d/m/Y H:i') }}</p>

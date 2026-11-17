@@ -5,6 +5,7 @@ use Modules\Auth\Providers\AuthServiceProvider;
 use Modules\Catalogo\Providers\CatalogoServiceProvider;
 use Modules\Clientes\Providers\ClientesServiceProvider;
 use Modules\Cotizaciones\Providers\CotizacionesServiceProvider;
+use Modules\Dashboard\Providers\DashboardServiceProvider;
 use Modules\Inventario\Providers\InventarioServiceProvider;
 use Modules\Precios\Providers\PreciosServiceProvider;
 use Modules\Promociones\Providers\PromocionesServiceProvider;
@@ -21,6 +22,7 @@ return [
     InventarioServiceProvider::class,
     PreciosServiceProvider::class,
     PromocionesServiceProvider::class,
+    DashboardServiceProvider::class,
     PublicoServiceProvider::class,
     SistemaServiceProvider::class,
     ServicioTecnicoServiceProvider::class,

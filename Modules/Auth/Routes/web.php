@@ -20,9 +20,6 @@ Route::middleware('web')->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-        Route::get('/dashboard', function () {
-            return view('dashboard');
-        })->name('dashboard');
 
         // Mi perfil (cualquier usuario autenticado). El middleware ForzarCambioContrasena
         // deja pasar estas rutas aunque el cambio de contraseña esté pendiente.
