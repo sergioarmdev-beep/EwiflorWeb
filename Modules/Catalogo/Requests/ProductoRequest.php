@@ -24,7 +24,7 @@ class ProductoRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:150'],
             'categoria' => ['required', Rule::in(Producto::CATEGORIAS)],
             'id_marca' => ['required', 'exists:marca,id_marca'],
-            'tipo_producto' => ['required', Rule::in(Producto::TIPOS)],
+            'tipo_producto' => ['required', Rule::in(Producto::tiposCatalogo())],
             'modalidad' => ['required', Rule::in(['INVENTARIABLE', 'BAJO_PEDIDO'])],
             'modelo' => ['nullable', 'string', 'max:60'],
             'garantia_meses' => ['required', 'integer', 'min:0'],
@@ -89,6 +89,7 @@ class ProductoRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'tipo_producto.in' => 'Los combos se crean desde el módulo de Promociones.',
             'imagenes.max' => 'Puede subir un máximo de 10 imágenes por vez.',
             'imagenes.*.max' => 'Cada imagen no puede superar los 2 MB.',
             'imagenes.*.image' => 'Los archivos deben ser imágenes.',

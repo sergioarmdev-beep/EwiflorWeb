@@ -25,6 +25,10 @@ class StoreClienteRequest extends FormRequest
             'correo' => ['nullable', 'email', 'max:100'],
             'tipo_cliente' => ['nullable', Rule::in(Cliente::TIPOS)],
             'es_mayorista' => ['sometimes', 'boolean'],
+
+            // Alta rápida desde cotizaciones/ventas: permite crear un cliente
+            // aunque ya exista otro con el mismo teléfono.
+            'forzar_creacion' => ['sometimes', 'boolean'],
         ];
     }
 

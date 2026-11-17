@@ -10,6 +10,7 @@ use Modules\Catalogo\Support\BuscadorVariantes;
 use Modules\Clientes\Models\Cliente;
 use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Inventario\Models\Almacen;
+use Modules\Promociones\Services\PromocionService;
 use Modules\Ventas\Models\Pago;
 use Modules\Ventas\Models\Venta;
 use Modules\Ventas\Requests\CancelarVentaRequest;
@@ -19,7 +20,7 @@ use Modules\Ventas\Services\VentaService;
 
 class VentaController extends Controller
 {
-    public function __construct(private VentaService $service) {}
+    public function __construct(private VentaService $service, private PromocionService $promociones) {}
 
     public function index(Request $request)
     {
@@ -59,12 +60,17 @@ class VentaController extends Controller
             fn ($v) => [(string) $v->id_variante => (int) ($v->producto?->garantia_meses ?? 0)]
         );
 
+        // Promociones vigentes por variante (se precargan como descuento sugerido).
+        $promociones = $this->promociones->mapaVigente($variantes);
+
         $data = [
             'modo' => $modo,
             'almacenes' => Almacen::where('estado', 'ACTIVO')->orderBy('nombre')->get(),
             'precios' => $precios,
             'garantias' => $garantias,
-            'variantesBusqueda' => BuscadorVariantes::payload($variantes),
+            'promociones' => $promociones,
+            'puedeEditarDescuento' => $this->promociones->puedeEditar($request->user()),
+            'variantesBusqueda' => BuscadorVariantes::payload($variantes, $promociones),
         ];
 
         if ($modo === 'cotizacion') {

@@ -4,12 +4,14 @@ namespace Modules\Catalogo\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Promociones\Models\ComboComponente;
 
 class Producto extends Model
 {
     public const CATEGORIAS = ['ALIMENTARIA', 'PANADERIA', 'REPOSTERIA', 'CARNICA'];
 
-    public const TIPOS = ['MAQUINARIA', 'REPUESTO', 'ACCESORIO'];
+    /** Los COMBO solo se crean desde el módulo de Promociones (ver tiposCatalogo). */
+    public const TIPOS = ['MAQUINARIA', 'REPUESTO', 'ACCESORIO', 'COMBO'];
 
     protected $table = 'producto';
 
@@ -88,7 +90,24 @@ class Producto extends Model
         return $this->hasOne(ProductoImagen::class, 'id_producto', 'id_producto')->where('es_principal', true);
     }
 
+    /** Productos incluidos en este combo (tabla `combo_componente`, dueño: Promociones). */
+    public function componentesCombo()
+    {
+        return $this->hasMany(ComboComponente::class, 'id_producto', 'id_producto');
+    }
+
     /* ---------- Scopes ---------- */
+
+    /** Tipos de producto que se pueden crear desde Catálogo (los combos viven en Promociones). */
+    public static function tiposCatalogo(): array
+    {
+        return array_values(array_diff(self::TIPOS, ['COMBO']));
+    }
+
+    public function esCombo(): bool
+    {
+        return $this->tipo_producto === 'COMBO';
+    }
 
     public function scopePublicos(Builder $query): Builder
     {

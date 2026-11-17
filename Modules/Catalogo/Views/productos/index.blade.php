@@ -30,7 +30,7 @@
     </div>
 
     <!-- Resumen -->
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-900 border border-sky-500/40 rounded-2xl px-5 py-4 shadow-xl">
             <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Productos registrados</p>
             <p class="mt-1 text-2xl font-bold text-white font-mono">{{ $resumen['total'] }}</p>
@@ -40,6 +40,12 @@
             <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Activos</p>
             <p class="mt-1 text-2xl font-bold text-emerald-300 font-mono">{{ $resumen['activos'] }}</p>
         </div>
+
+        <a href="{{ route('catalogo.productos.index', ['promocion' => 1]) }}"
+            class="bg-slate-900 border {{ $resumen['con_promocion'] ? 'border-fuchsia-500/50' : 'border-sky-500/40' }} rounded-2xl px-5 py-4 shadow-xl hover:bg-slate-800/60 transition-colors">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Con promoción</p>
+            <p class="mt-1 text-2xl font-bold font-mono {{ $resumen['con_promocion'] ? 'text-fuchsia-300' : 'text-slate-200' }}">{{ $resumen['con_promocion'] }}</p>
+        </a>
 
         <a href="{{ route('catalogo.productos.index', ['stock_bajo' => 1]) }}"
             class="col-span-2 lg:col-span-1 bg-slate-900 border {{ $resumen['stock_bajo'] ? 'border-amber-500/50' : 'border-sky-500/40' }} rounded-2xl px-5 py-4 shadow-xl hover:bg-slate-800/60 transition-colors">
@@ -102,11 +108,19 @@
 
         <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
-            <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                <input type="checkbox" name="stock_bajo" value="1" {{ !empty($filtros['stock_bajo']) ? 'checked' : '' }}
-                    class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900">
-                Solo productos con stock bajo
-            </label>
+            <div class="flex flex-wrap items-center gap-5">
+                <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" name="stock_bajo" value="1" {{ !empty($filtros['stock_bajo']) ? 'checked' : '' }}
+                        class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-slate-900">
+                    Solo productos con stock bajo
+                </label>
+
+                <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" name="promocion" value="1" {{ !empty($filtros['promocion']) ? 'checked' : '' }}
+                        class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-fuchsia-500 focus:ring-fuchsia-500 focus:ring-offset-slate-900">
+                    Solo productos con promoción vigente
+                </label>
+            </div>
 
             <div class="flex items-center gap-3">
                 @if($hayFiltros)
@@ -159,6 +173,16 @@
 
                         <td class="py-3.5 px-5 font-semibold text-slate-100">
                             {{ $producto->nombre }}
+                            @if($producto->tipo_producto === 'COMBO')
+                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-sky-950/60 text-sky-300 border-sky-500/30">
+                                COMBO
+                            </span>
+                            @endif
+                            @if($producto->variantes->pluck('id_variante')->intersect(collect($promocionesVigentes)->keys())->isNotEmpty())
+                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-fuchsia-950/60 text-fuchsia-300 border-fuchsia-500/30">
+                                PROMO
+                            </span>
+                            @endif
                             @if($producto->stock_bajo)
                             <span class="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-950/60 text-amber-300 border-amber-500/30">
                                 <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>

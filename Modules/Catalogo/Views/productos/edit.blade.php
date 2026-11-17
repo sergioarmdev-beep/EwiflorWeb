@@ -267,6 +267,16 @@
 
                                 </select>
 
+                                @if($producto->tipo_producto === 'COMBO')
+                                <p class="mt-2 text-xs text-sky-300 flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                    Este producto es un combo: se edita desde
+                                    <a href="{{ route('promociones.combos.edit', $producto->id_producto) }}" class="font-semibold underline hover:text-sky-200">Promociones → Combos</a>.
+                                </p>
+                                @endif
+
                                 @error('tipo_producto')
                                 <span class="form-error">{{ $message }}</span>
                                 @enderror

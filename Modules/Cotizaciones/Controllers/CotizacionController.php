@@ -11,10 +11,14 @@ use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Cotizaciones\Requests\StoreCotizacionRequest;
 use Modules\Cotizaciones\Requests\UpdateCotizacionRequest;
 use Modules\Cotizaciones\Services\CotizacionService;
+use Modules\Promociones\Services\PromocionService;
 
 class CotizacionController extends Controller
 {
-    public function __construct(private CotizacionService $service) {}
+    public function __construct(
+        private CotizacionService $service,
+        private PromocionService $promociones,
+    ) {}
 
     public function index(Request $request)
     {
@@ -53,6 +57,7 @@ class CotizacionController extends Controller
     public function create()
     {
         $variantes = $this->variantes();
+        $promociones = $this->promociones->mapaVigente($variantes);
 
         return view('cotizaciones::create', [
             'cotizacion' => new Cotizacion(['vigencia_dias' => 14, 'estado' => 'EMITIDA']),
@@ -60,7 +65,9 @@ class CotizacionController extends Controller
             'variantes' => $variantes,
             'precios' => $this->precios($variantes),
             'garantias' => $this->garantias($variantes),
-            'variantesBusqueda' => BuscadorVariantes::payload($variantes),
+            'promociones' => $promociones,
+            'puedeEditarDescuento' => $this->promociones->puedeEditar(request()->user()),
+            'variantesBusqueda' => BuscadorVariantes::payload($variantes, $promociones),
             'lineas' => [],
         ]);
     }
@@ -93,6 +100,7 @@ class CotizacionController extends Controller
 
         $cotizacion->load('detalles');
         $variantes = $this->variantes();
+        $promociones = $this->promociones->mapaVigente($variantes);
 
         return view('cotizaciones::edit', [
             'cotizacion' => $cotizacion,
@@ -100,7 +108,9 @@ class CotizacionController extends Controller
             'variantes' => $variantes,
             'precios' => $this->precios($variantes),
             'garantias' => $this->garantias($variantes),
-            'variantesBusqueda' => BuscadorVariantes::payload($variantes),
+            'promociones' => $promociones,
+            'puedeEditarDescuento' => $this->promociones->puedeEditar(request()->user()),
+            'variantesBusqueda' => BuscadorVariantes::payload($variantes, $promociones),
             'lineas' => $cotizacion->detalles->map(fn ($d) => [
                 'id_variante' => $d->id_variante,
                 'cantidad' => $d->cantidad,
@@ -114,7 +124,7 @@ class CotizacionController extends Controller
 
     public function update(UpdateCotizacionRequest $request, Cotizacion $cotizacion)
     {
-        $this->service->actualizar($cotizacion, $request->validated());
+        $this->service->actualizar($cotizacion, $request->validated(), $request->user());
 
         return redirect()
             ->route('cotizaciones.show', $cotizacion)

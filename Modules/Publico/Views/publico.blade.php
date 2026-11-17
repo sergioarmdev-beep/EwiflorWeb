@@ -1194,6 +1194,61 @@
             transform: translateX(3px);
         }
 
+        /* --- Promociones y combos (catálogo público) --- */
+        .promo-badge {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #e879f9, #d946ef);
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+            box-shadow: 0 6px 18px rgba(217, 70, 239, .35);
+        }
+
+        .combo-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border: 1px solid #38bdf8;
+            border-radius: 999px;
+            background: color-mix(in srgb, #38bdf8 12%, transparent);
+            color: #38bdf8;
+            font-size: .68rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+        }
+
+        .combo-chip + .combo-componentes {
+            display: block;
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: .76rem;
+            line-height: 1.5;
+        }
+
+        .pm-variant-precio {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-top: 4px;
+            font-size: .8rem;
+        }
+
+        .pm-variant-precio del {
+            color: var(--muted);
+        }
+
+        .pm-variant-precio ins {
+            color: #d946ef;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
         .pm {
             position: fixed;
             inset: 0;
@@ -1734,6 +1789,18 @@
                         $producto->categoria,
                         $producto->descripcion,
                     ])));
+                    // Promoción vigente de alguna variante del producto (para el badge).
+                    $promoProducto = null;
+                    foreach ($producto->variantes as $v) {
+                        if ($promo = ($promociones[$v->id_variante] ?? null)) {
+                            $promoProducto = $promo;
+                            break;
+                        }
+                    }
+                    $esCombo = $producto->tipo_producto === 'COMBO';
+                    $componentesCombo = $esCombo
+                        ? $producto->componentesCombo->map(fn ($c) => ($c->componente?->nombre ?? 'Producto #'.$c->id_componente).' ×'.$c->cantidad)->implode(', ')
+                        : null;
                     @endphp
 
                     <article class="product-card reveal"
@@ -1759,6 +1826,12 @@
                             </div>
                             @endif
 
+                            @if($promoProducto)
+                            <span class="promo-badge">
+                                {{ $promoProducto['tipo'] === 'PCT' ? 'OFERTA −'.rtrim(rtrim(number_format((float) $promoProducto['pct'], 2, '.', ''), '0'), '.').' %' : 'OFERTA' }}
+                            </span>
+                            @endif
+
                             @if($producto->imagenes->count() > 1)
                             <span class="product-photos" aria-hidden="true">{{ $producto->imagenes->count() }} fotos</span>
                             @endif
@@ -1776,6 +1849,15 @@
                             <h3 class="product-title">
                                 {{ $producto->nombre }}
                             </h3>
+
+                            @if($esCombo)
+                            <span class="combo-chip" style="margin-top: 8px;">COMBO</span>
+                            @if($componentesCombo)
+                            <span class="combo-componentes">
+                                Incluye: {{ $componentesCombo }}
+                            </span>
+                            @endif
+                            @endif
 
                             <p class="product-description">
                                 {{ $producto->descripcion ?: 'Consulta las características de este producto.' }}
@@ -2321,7 +2403,7 @@
 
                     const tags = document.getElementById('pm-tags');
                     tags.replaceChildren();
-                    [p.categoria, p.tipo].filter(Boolean).forEach(t => tags.appendChild(el('span', 'pm-tag', t)));
+                    [p.categoria, p.tipo, p.es_combo ? 'COMBO' : null].filter(Boolean).forEach(t => tags.appendChild(el('span', 'pm-tag', t)));
 
                     const specs = document.getElementById('pm-specs');
                     specs.replaceChildren();
@@ -2330,6 +2412,7 @@
                         ['Origen', p.pais],
                         ['Modelo', p.modelo],
                         ['Garantía', p.garantia ? `${p.garantia} meses` : 'Según producto'],
+                        ['Incluye', p.es_combo ? p.componentes : null],
                     ].filter(([, v]) => v);
 
                     filas.forEach(([k, v]) => {
@@ -2349,6 +2432,19 @@
                         li.appendChild(el('strong', null, v.color || v.sku));
                         const detalle = [v.color ? v.sku : null, v.caracteristicas].filter(Boolean).join(' · ');
                         if (detalle) li.appendChild(el('span', null, detalle));
+
+                        // Precio con promoción: solo en variantes con promo vigente.
+                        if (v.promo && v.precio) {
+                            const ahora = v.promo.tipo === 'USD'
+                                ? Math.max(0, v.precio - v.promo.valor)
+                                : Math.max(0, v.precio * (1 - (v.promo.pct ?? 0) / 100));
+
+                            const precio = el('span', 'pm-variant-precio');
+                            precio.appendChild(el('del', null, `USD ${Number(v.precio).toFixed(2)}`));
+                            precio.appendChild(el('ins', null, `USD ${Number(ahora).toFixed(2)}`));
+                            li.appendChild(precio);
+                        }
+
                         lista.appendChild(li);
                     });
 

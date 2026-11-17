@@ -10,13 +10,17 @@ use Modules\Auth\Models\User;
 use Modules\Catalogo\Models\VarianteProducto;
 use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Precios\Services\TipoCambioService;
+use Modules\Promociones\Services\PromocionService;
 use Modules\Ventas\Models\Comprobante;
 use Modules\Ventas\Models\Pago;
 use Modules\Ventas\Models\Venta;
 
 class VentaService
 {
-    public function __construct(private TipoCambioService $tipoCambio) {}
+    public function __construct(
+        private TipoCambioService $tipoCambio,
+        private PromocionService $promociones,
+    ) {}
 
     /**
      * Convierte una cotización EMITIDA y VIGENTE en venta.
@@ -71,7 +75,7 @@ class VentaService
         // NUEVO: valida stock ANTES de llamar a la función, para dar un mensaje útil por variante.
         $this->validarDisponibilidad($data['lineas'], (int) $data['id_almacen']);
 
-        $payload = $this->construirLineasJson($data['lineas'], (int) $data['id_almacen']);
+        $payload = $this->construirLineasJson($data['lineas'], (int) $data['id_almacen'], $actor);
 
         return DB::transaction(function () use ($data, $actor, $tc, $payload) {
             $rows = DbFunction::query(
@@ -153,7 +157,7 @@ class VentaService
         ]);
     }
 
-    private function construirLineasJson(array $lineas, int $idAlmacen): array
+    private function construirLineasJson(array $lineas, int $idAlmacen, User $actor): array
     {
         // Si el producto es BAJO_PEDIDO, la línea va sin id_almacen (lo exige registrar_venta).
         $variantes = VarianteProducto::with('producto:id_producto,modalidad')
@@ -181,21 +185,33 @@ class VentaService
             ));
         }
 
-        return collect($lineas)->map(function ($l) use ($idAlmacen, $variantes) {
+        // Mapa de promociones vigentes para autorizar los descuentos por rol.
+        $promociones = $this->promociones->mapaVigente($variantes->collect());
+
+        return collect($lineas)->map(function ($l) use ($idAlmacen, $variantes, $promociones, $actor) {
             $v = $variantes[(int) $l['id_variante']];
             $precio = round((float) $v->precio_usd, 2);
             $cantidad = (int) $l['cantidad'];
+
+            $descuentoPct = Descuento::aPorcentaje(
+                $l['descuento_tipo'] ?? 'PCT',
+                $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0),
+                $precio,
+                $cantidad
+            );
+
+            $this->promociones->validarDescuento(
+                $actor,
+                $descuentoPct,
+                $promociones[(int) $l['id_variante']] ?? null,
+                sprintf('Línea %s', $v->sku)
+            );
 
             return [
                 'id_variante' => (int) $l['id_variante'],
                 'cantidad' => $cantidad,
                 'precio_unitario_usd' => $precio,
-                'descuento_pct' => Descuento::aPorcentaje(
-                    $l['descuento_tipo'] ?? 'PCT',
-                    $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0),
-                    $precio,
-                    $cantidad
-                ),
+                'descuento_pct' => $descuentoPct,
                 'id_almacen' => $v->producto?->modalidad === 'BAJO_PEDIDO' ? null : $idAlmacen,
                 'garantia_meses' => (int) ($l['garantia_meses'] ?? 0),
             ];

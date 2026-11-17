@@ -3,6 +3,7 @@
 namespace Modules\Catalogo\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Modules\Promociones\Models\Promocion;
 
 class VarianteProducto extends Model
 {
@@ -21,5 +22,16 @@ class VarianteProducto extends Model
     public function producto()
     {
         return $this->belongsTo(Producto::class, 'id_producto', 'id_producto');
+    }
+
+    /** Promociones (dueño: Promociones) que cubren esta variante. */
+    public function promociones()
+    {
+        return $this->belongsToMany(
+            Promocion::class,
+            'promocion_variante',
+            'id_variante',
+            'id_promocion'
+        );
     }
 }

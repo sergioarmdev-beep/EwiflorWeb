@@ -5,6 +5,7 @@ namespace Modules\Publico\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Catalogo\Models\Producto;
+use Modules\Promociones\Services\PromocionService;
 use Modules\ServicioTecnico\Services\SolicitudService;
 
 class PublicoController extends Controller
@@ -12,7 +13,10 @@ class PublicoController extends Controller
     /**
      * Catálogo público sin autenticación.
      */
-    public function __construct(private SolicitudService $solicitudes) {}
+    public function __construct(
+        private SolicitudService $solicitudes,
+        private PromocionService $promociones,
+    ) {}
 
     public function catalogoPublico()
     {
@@ -25,8 +29,13 @@ class PublicoController extends Controller
             ->orderBy('nombre')
             ->get();
 
+        // Promociones vigentes por variante (precios con descuento del público).
+        $promociones = $this->promociones->mapaVigente(
+            $productos->flatMap(fn (Producto $p) => $p->variantes)
+        );
+
         // Datos que consume el modal de detalle (se serializan como JSON en la vista).
-        $detalle = $productos->mapWithKeys(function (Producto $p) {
+        $detalle = $productos->mapWithKeys(function (Producto $p) use ($promociones) {
             return [$p->id_producto => [
                 'id' => $p->id_producto,
                 'nombre' => $p->nombre,
@@ -37,6 +46,10 @@ class PublicoController extends Controller
                 'tipo' => $p->tipo_producto,
                 'garantia' => (int) $p->garantia_meses,
                 'descripcion' => $p->descripcion,
+                'es_combo' => $p->esCombo(),
+                'componentes' => $p->esCombo()
+                    ? $p->componentesCombo->map(fn ($c) => ($c->componente?->nombre ?? 'Producto #'.$c->id_componente).' ×'.$c->cantidad)->implode(', ')
+                    : null,
                 'imagenes' => $p->imagenes->map(fn ($i) => [
                     'url' => $i->url,
                     'alt' => $i->texto_alternativo ?: $p->nombre,
@@ -45,11 +58,13 @@ class PublicoController extends Controller
                     'sku' => $v->sku,
                     'color' => $v->color,
                     'caracteristicas' => $v->caracteristicas,
+                    'precio' => $v->precio_usd !== null ? (float) $v->precio_usd : null,
+                    'promo' => $promociones[$v->id_variante] ?? null,
                 ])->values(),
             ]];
         });
 
-        return view('publico::publico', compact('productos', 'detalle'));
+        return view('publico::publico', compact('productos', 'detalle', 'promociones'));
     }
 
     /**

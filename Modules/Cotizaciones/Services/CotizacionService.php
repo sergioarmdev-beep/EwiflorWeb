@@ -10,10 +10,14 @@ use Modules\Catalogo\Models\VarianteProducto;
 use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Cotizaciones\Models\DetalleCotizacion;
 use Modules\Precios\Services\TipoCambioService;
+use Modules\Promociones\Services\PromocionService;
 
 class CotizacionService
 {
-    public function __construct(private TipoCambioService $tipoCambio) {}
+    public function __construct(
+        private TipoCambioService $tipoCambio,
+        private PromocionService $promociones,
+    ) {}
 
     public function crear(array $data, User $actor): Cotizacion
     {
@@ -40,25 +44,25 @@ class CotizacionService
                 'observacion' => $data['observacion'] ?? null,
             ]);
 
-            $this->syncLineas($cot, $data['lineas']);
+            $this->syncLineas($cot, $data['lineas'], $actor);
 
             return $cot->refresh();
         });
     }
 
-    public function actualizar(Cotizacion $cot, array $data): Cotizacion
+    public function actualizar(Cotizacion $cot, array $data, User $actor): Cotizacion
     {
         if (! $this->puedeEditarse($cot)) {
             throw new BusinessRuleException('Solo se pueden editar cotizaciones EMITIDAS.');
         }
 
-        return DB::transaction(function () use ($cot, $data) {
+        return DB::transaction(function () use ($cot, $data, $actor) {
             $cot->update([
                 'id_cliente' => $data['id_cliente'],
                 'vigencia_dias' => $data['vigencia_dias'],
                 'observacion' => $data['observacion'] ?? null,
             ]);
-            $this->syncLineas($cot, $data['lineas']);
+            $this->syncLineas($cot, $data['lineas'], $actor);
 
             return $cot->refresh();
         });
@@ -87,7 +91,7 @@ class CotizacionService
         return $c->estado === 'EMITIDA' && $c->condicionTemporal() === 'VIGENTE';
     }
 
-    private function syncLineas(Cotizacion $cot, array $lineas): void
+    private function syncLineas(Cotizacion $cot, array $lineas, User $actor): void
     {
         $variantes = VarianteProducto::whereIn('id_variante', array_column($lineas, 'id_variante'))
             ->get(['id_variante', 'sku', 'precio_usd'])
@@ -113,6 +117,9 @@ class CotizacionService
             ));
         }
 
+        // Autorización de descuentos por rol (el Vendedor no pasa del promo).
+        $promociones = $this->promociones->mapaVigente($variantes->collect());
+
         // Sin trigger de "no update" en detalle_cotizacion: reemplazo total dentro de tx.
         $cot->detalles()->delete();
         foreach ($lineas as $l) {
@@ -120,17 +127,26 @@ class CotizacionService
             $precio = round((float) $v->precio_usd, 2);
             $cantidad = (int) $l['cantidad'];
 
+            $descuentoPct = Descuento::aPorcentaje(
+                $l['descuento_tipo'] ?? 'PCT',
+                $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0),
+                $precio,
+                $cantidad
+            );
+
+            $this->promociones->validarDescuento(
+                $actor,
+                $descuentoPct,
+                $promociones[(int) $l['id_variante']] ?? null,
+                sprintf('Línea %s', $v->sku)
+            );
+
             DetalleCotizacion::create([
                 'id_cotizacion' => $cot->id_cotizacion,
                 'id_variante' => (int) $l['id_variante'],
                 'cantidad' => $cantidad,
                 'precio_unitario_usd' => $precio,
-                'descuento_pct' => Descuento::aPorcentaje(
-                    $l['descuento_tipo'] ?? 'PCT',
-                    $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0),
-                    $precio,
-                    $cantidad
-                ),
+                'descuento_pct' => $descuentoPct,
                 'garantia_meses' => (int) ($l['garantia_meses'] ?? 0),
             ]);
         }

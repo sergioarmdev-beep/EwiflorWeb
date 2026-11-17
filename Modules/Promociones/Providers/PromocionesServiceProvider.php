@@ -1,0 +1,19 @@
+<?php
+
+namespace Modules\Promociones\Providers;
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+
+class PromocionesServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // Aplicamos el grupo 'web' a todas las rutas del módulo
+        Route::middleware('web')
+            ->group(__DIR__.'/../Routes/web.php');
+
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+        $this->loadViewsFrom(__DIR__.'/../Views', 'promociones');
+    }
+}

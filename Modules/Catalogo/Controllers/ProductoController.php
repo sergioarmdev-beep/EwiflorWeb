@@ -5,28 +5,19 @@ namespace Modules\Catalogo\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Modules\Catalogo\Models\Marca;
 use Modules\Catalogo\Models\Producto;
-use Modules\Catalogo\Models\ProductoImagen;
 use Modules\Catalogo\Requests\ProductoRequest;
+use Modules\Catalogo\Services\ProductoService;
+use Modules\Promociones\Services\PromocionService;
 use Throwable;
 
 class ProductoController extends Controller
 {
-    /**
-     * Stock por producto, calculado desde `existencia` (que se guarda por variante y almacén).
-     * - total:      suma de cantidad_total
-     * - disponible: total - reservado (es lo que se puede vender; es el mismo criterio
-     *               que usa la vista v_reporte_existencias para la alerta REPONER)
-     */
-    private const SQL_STOCK_TOTAL = '(select COALESCE(SUM(e.cantidad_total), 0) from existencia e join variante_producto vp on vp.id_variante = e.id_variante where vp.id_producto = producto.id_producto)';
-
-    private const SQL_STOCK_DISPONIBLE = '(select COALESCE(SUM(e.cantidad_total - e.cantidad_reservada), 0) from existencia e join variante_producto vp on vp.id_variante = e.id_variante where vp.id_producto = producto.id_producto)';
-
     private const POR_PAGINA = 15;
+
+    public function __construct(private ProductoService $productoService, private PromocionService $promociones) {}
 
     /* =========================================================
      |  LISTADO (panel)
@@ -41,23 +32,30 @@ class ProductoController extends Controller
             'tipo' => 'nullable|in:'.implode(',', Producto::TIPOS),
             'estado' => 'nullable|in:ACTIVO,INACTIVO',
             'stock_bajo' => 'nullable|boolean',
+            'promocion' => 'nullable|boolean',
         ]);
 
         $query = Producto::query()
             ->select('producto.*')
-            ->with(['marca', 'imagenPrincipal'])
+            ->with(['marca', 'imagenPrincipal', 'variantes:id_variante,id_producto'])
             ->buscar($filtros['q'] ?? null)
             ->when($filtros['marca'] ?? null, fn ($q, $v) => $q->where('producto.id_marca', $v))
             ->when($filtros['categoria'] ?? null, fn ($q, $v) => $q->where('producto.categoria', $v))
             ->when($filtros['tipo'] ?? null, fn ($q, $v) => $q->where('producto.tipo_producto', $v))
             ->when($filtros['estado'] ?? null, fn ($q, $v) => $q->where('producto.estado', $v))
             ->orderBy('producto.nombre')
-            ->selectRaw(self::SQL_STOCK_TOTAL.' as stock_total')
-            ->selectRaw(self::SQL_STOCK_DISPONIBLE.' as stock_actual');
+            ->selectRaw(ProductoService::SQL_STOCK_TOTAL.' as stock_total')
+            ->selectRaw(ProductoService::SQL_STOCK_DISPONIBLE.' as stock_actual');
 
         if (! empty($filtros['stock_bajo'])) {
             $query->where('producto.modalidad', 'INVENTARIABLE')
-                ->whereRaw(self::SQL_STOCK_DISPONIBLE.' <= producto.stock_minimo');
+                ->whereRaw(ProductoService::SQL_STOCK_DISPONIBLE.' <= producto.stock_minimo');
+        }
+
+        // Productos con alguna promoción vigente en alguna de sus variantes.
+        if (! empty($filtros['promocion'])) {
+            $query->whereHas('variantes', fn ($q) => $q
+                ->whereHas('promociones', fn ($p) => $p->vigentes()));
         }
 
         $productos = $query->paginate(self::POR_PAGINA)->withQueryString();
@@ -67,7 +65,11 @@ class ProductoController extends Controller
             'activos' => Producto::where('estado', 'ACTIVO')->count(),
             'stock_bajo' => Producto::where('estado', 'ACTIVO')
                 ->where('modalidad', 'INVENTARIABLE')
-                ->whereRaw(self::SQL_STOCK_DISPONIBLE.' <= producto.stock_minimo')
+                ->whereRaw(ProductoService::SQL_STOCK_DISPONIBLE.' <= producto.stock_minimo')
+                ->count(),
+            'con_promocion' => Producto::where('estado', 'ACTIVO')
+                ->whereHas('variantes', fn ($q) => $q
+                    ->whereHas('promociones', fn ($p) => $p->vigentes()))
                 ->count(),
         ];
 
@@ -78,6 +80,10 @@ class ProductoController extends Controller
             'tipos' => Producto::TIPOS,
             'filtros' => $filtros,
             'resumen' => $resumen,
+            // id_variante => promo vigente, para pintar los badges del listado
+            'promocionesVigentes' => $this->promociones->mapaVigente(
+                $productos->getCollection()->flatMap(fn ($p) => $p->variantes)
+            ),
         ]);
     }
 
@@ -90,7 +96,8 @@ class ProductoController extends Controller
         return view('catalogo::productos.create', [
             'marcas' => Marca::orderBy('nombre')->get(),
             'categorias' => Producto::CATEGORIAS,
-            'tipos' => Producto::TIPOS,
+            // Los combos se crean desde el módulo de Promociones.
+            'tipos' => Producto::tiposCatalogo(),
         ]);
     }
 
@@ -109,13 +116,17 @@ class ProductoController extends Controller
             DB::transaction(function () use ($request, $datos, &$rutasNuevas) {
                 $producto = Producto::create($datos);
 
-                $rutasNuevas = $this->guardarImagenes($producto, $request->file('imagenes', []));
-                
+                $rutasNuevas = $this->productoService->guardarImagenes($producto, $request->file('imagenes', []));
+
                 // Guardar documentos
-                $documentosNuevos = $this->guardarDocumentos($producto, $request->file('documentos', []));
+                $documentosNuevos = $this->productoService->guardarDocumentos($producto, $request->file('documentos', []));
                 $rutasNuevas = array_merge($rutasNuevas, $documentosNuevos);
 
-                $this->sincronizarVariantes($producto, $request->input('variantes', []));
+                $this->productoService->sincronizarVariantes(
+                    $producto,
+                    $request->input('variantes', []),
+                    $this->puedeEditarPrecio()
+                );
 
                 // Sincronizar repuestos (si es maquinaria)
                 if ($producto->tipo_producto === 'MAQUINARIA') {
@@ -124,7 +135,7 @@ class ProductoController extends Controller
             });
         } catch (Throwable $e) {
             // Si algo falla no dejamos archivos huérfanos en el disco.
-            $this->borrarArchivos($rutasNuevas);
+            $this->productoService->borrarArchivos($rutasNuevas);
             throw $e;
         }
 
@@ -139,7 +150,11 @@ class ProductoController extends Controller
             'producto' => $producto,
             'marcas' => Marca::orderBy('nombre')->get(),
             'categorias' => Producto::CATEGORIAS,
-            'tipos' => Producto::TIPOS,
+            // Los combos se gestionan desde el módulo de Promociones.
+            'tipos' => $producto->tipo_producto === 'COMBO'
+                ? ['COMBO']
+                : Producto::tiposCatalogo(),
+            'promocionesVigentes' => $this->promociones->mapaVigente($producto->variantes),
         ]);
     }
 
@@ -169,13 +184,17 @@ class ProductoController extends Controller
                 }
 
                 // 2) Imágenes nuevas
-                $rutasNuevas = $this->guardarImagenes($producto, $request->file('imagenes', []));
+                $rutasNuevas = $this->productoService->guardarImagenes($producto, $request->file('imagenes', []));
 
                 // 3) Imagen principal elegida (y garantía de que siempre haya una)
-                $this->asegurarPrincipal($producto, $request->integer('imagen_principal') ?: null);
+                $this->productoService->asegurarPrincipal($producto, $request->integer('imagen_principal') ?: null);
 
                 // 4) Variantes
-                $this->sincronizarVariantes($producto, $request->input('variantes', []));
+                $this->productoService->sincronizarVariantes(
+                    $producto,
+                    $request->input('variantes', []),
+                    $this->puedeEditarPrecio()
+                );
 
                 // 5) Documentos marcados para eliminar
                 $documentosEliminar = array_map('intval', $request->input('eliminar_documentos', []));
@@ -188,7 +207,7 @@ class ProductoController extends Controller
                 }
 
                 // 6) Documentos nuevos
-                $documentosRutas = $this->guardarDocumentos($producto, $request->file('documentos', []));
+                $documentosRutas = $this->productoService->guardarDocumentos($producto, $request->file('documentos', []));
                 $rutasNuevas = array_merge($rutasNuevas, $documentosRutas);
 
                 // 7) Repuestos (si es maquinaria)
@@ -200,12 +219,12 @@ class ProductoController extends Controller
                 }
             });
         } catch (Throwable $e) {
-            $this->borrarArchivos($rutasNuevas);
+            $this->productoService->borrarArchivos($rutasNuevas);
             throw $e;
         }
 
         // Solo se borran del disco cuando la transacción ya se confirmó.
-        $this->borrarArchivos($rutasABorrar);
+        $this->productoService->borrarArchivos($rutasABorrar);
 
         return redirect()->route('catalogo.productos.index')->with('success', 'Producto actualizado correctamente.');
     }
@@ -245,8 +264,8 @@ class ProductoController extends Controller
             return back()->with('error', 'No se puede eliminar el producto porque tiene ventas o movimientos de inventario asociados. Intente desactivarlo en su lugar.');
         }
 
-        $this->borrarArchivos($rutas);
-        $this->borrarArchivos($rutasDocumentos);
+        $this->productoService->borrarArchivos($rutas);
+        $this->productoService->borrarArchivos($rutasDocumentos);
 
         return back()->with('success', 'Producto, variantes, imágenes, documentos y repuestos eliminados correctamente.');
     }
@@ -255,150 +274,13 @@ class ProductoController extends Controller
      |  HELPERS PRIVADOS
      * ========================================================= */
 
-    /**
-     * Guarda las imágenes subidas. La primera pasa a ser la principal solo si
-     * el producto todavía no tiene una. Devuelve las rutas guardadas.
-     *
-     * @param  array<int, UploadedFile>  $archivos
-     * @return string[]
-     */
-    private function guardarImagenes(Producto $producto, array $archivos): array
+    /** El precio de lista solo lo pueden modificar Gerente y Administrador (RN-004). */
+    private function puedeEditarPrecio(): bool
     {
-        if (! $archivos) {
-            return [];
-        }
-
-        // Se consulta el modelo directo (sin el orderBy de la relación) porque
-        // PostgreSQL no permite ORDER BY junto a una función de agregado.
-        $existentes = ProductoImagen::where('id_producto', $producto->id_producto);
-        $tienePrincipal = (clone $existentes)->where('es_principal', true)->exists();
-        $maxOrden = (clone $existentes)->max('orden');
-        $orden = $maxOrden === null ? 0 : ((int) $maxOrden + 1);
-        $rutas = [];
-
-        foreach (array_values($archivos) as $i => $archivo) {
-            $ruta = $archivo->store('productos', 'public');
-            $rutas[] = $ruta;
-
-            $producto->imagenes()->create([
-                'ruta_imagen' => $ruta,
-                'es_principal' => ! $tienePrincipal && $i === 0,
-                'orden' => $orden + $i,
-            ]);
-        }
-
-        return $rutas;
-    }
-
-    /**
-     * Guarda los archivos de documentación subidos (.txt, .doc, .docx).
-     * Devuelve las rutas guardadas.
-     *
-     * @param  array<int, UploadedFile>  $archivos
-     * @return string[]
-     */
-    private function guardarDocumentos(Producto $producto, array $archivos): array
-    {
-        if (! $archivos) {
-            return [];
-        }
-
-        $rutas = [];
-
-        foreach (array_values($archivos) as $archivo) {
-            $ruta = $archivo->store('documentos-productos', 'public');
-            $rutas[] = $ruta;
-
-            $producto->documentos()->create([
-                'id_producto' => $producto->id_producto,
-                'nombre_original' => $archivo->getClientOriginalName(),
-                'ruta_archivo' => $ruta,
-                'extension' => $archivo->getClientOriginalExtension(),
-                'fecha_subida' => now(),
-            ]);
-        }
-
-        return $rutas;
-    }
-
-    /** Deja exactamente una imagen principal (la elegida, o la primera si no hay). */
-    private function asegurarPrincipal(Producto $producto, ?int $idElegida): void
-    {
-        $imagenes = $producto->imagenes()->get();
-        if ($imagenes->isEmpty()) {
-            return;
-        }
-
-        $principal = $idElegida ? $imagenes->firstWhere('id_imagen', $idElegida) : null;
-        $principal ??= $imagenes->firstWhere('es_principal', true) ?? $imagenes->first();
-
-        ProductoImagen::where('id_producto', $producto->id_producto)
-            ->where('id_imagen', '!=', $principal->id_imagen)
-            ->where('es_principal', true)
-            ->update(['es_principal' => false]);
-
-        if (! $principal->es_principal) {
-            $principal->update(['es_principal' => true]);
-        }
-    }
-
-    /**
-     * Sincroniza las variantes con lo enviado en el formulario:
-     * actualiza las existentes, crea las nuevas y retira las que se quitaron.
-     * Si una variante quitada tiene movimientos asociados (FK), se desactiva en vez de borrarse.
-     */
-    private function sincronizarVariantes(Producto $producto, array $variantes): void
-    {
-        // El precio de lista solo lo pueden modificar Gerente y Administrador (RN-004).
-        $puedeEditarPrecio = in_array(
+        return in_array(
             auth()->user()?->nombre_rol,
-            ['GERENTE', 'ADMINISTRADOR'],
+            ProductoService::ROLES_EDITAN_PRECIO,
             true
         );
-
-        $conservadas = [];
-
-        foreach ($variantes as $v) {
-            $datos = [
-                'sku' => trim($v['sku']),
-                'color' => ($v['color'] ?? null) ?: null,
-                'caracteristicas' => ($v['caracteristicas'] ?? null) ?: null,
-                'estado' => $v['estado'] ?? 'ACTIVO',
-            ];
-
-            if ($puedeEditarPrecio && array_key_exists('precio_usd', $v)) {
-                $precio = $v['precio_usd'];
-                $datos['precio_usd'] = ($precio === null || $precio === '') ? null : $precio;
-            }
-
-            $existente = ! empty($v['id_variante'])
-                ? $producto->variantes()->where('id_variante', $v['id_variante'])->first()
-                : null;
-
-            if ($existente) {
-                $existente->update($datos);
-                $conservadas[] = $existente->id_variante;
-            } else {
-                $conservadas[] = $producto->variantes()->create($datos)->id_variante;
-            }
-        }
-
-        $sobrantes = $producto->variantes()->whereNotIn('id_variante', $conservadas)->get();
-
-        foreach ($sobrantes as $variante) {
-            try {
-                // Transacción anidada = savepoint: un fallo de FK no aborta la transacción externa.
-                DB::transaction(fn () => $variante->delete());
-            } catch (QueryException $e) {
-                $variante->update(['estado' => 'INACTIVO']);
-            }
-        }
-    }
-
-    private function borrarArchivos(array $rutas): void
-    {
-        foreach ($rutas as $ruta) {
-            Storage::disk('public')->delete($ruta);
-        }
     }
 }

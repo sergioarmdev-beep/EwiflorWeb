@@ -77,7 +77,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium">Cliente *</label>
-                <select name="id_cliente" required class="w-full border rounded px-3 py-2">
+                <select name="id_cliente" id="id_cliente" required class="w-full border rounded px-3 py-2">
                     <option value="">— Selecciona cliente —</option>
                     @foreach ($clientes as $c)
                     <option value="{{ $c->id_cliente }}" @selected((string) old('id_cliente')===(string) $c->id_cliente)>
@@ -85,6 +85,8 @@
                     </option>
                     @endforeach
                 </select>
+
+                @include('clientes::partials.quick-create')
             </div>
             <div>
                 <label class="block text-sm font-medium">Almacén de salida *</label>
@@ -149,6 +151,8 @@
             El precio se toma del catálogo y no puede editarse. La garantía por defecto viene del catálogo
             y puede editarse por línea. Solo se permite un descuento por línea,
             en porcentaje o en monto USD sobre el total de la línea.
+            Si la variante tiene promoción vigente, el descuento se precarga al elegirla;
+            el Vendedor no puede aplicar un descuento mayor al de la promoción (solo Gerente o Administrador).
             Si una variante aparece como «sin precio», un Gerente o Administrador debe asignarlo en Catálogo.
         </p>
         <button type="button" id="add-linea" class="text-blue-600 hover:underline text-sm">+ Agregar línea</button>
@@ -198,6 +202,8 @@
         const tpl = document.getElementById('linea-tpl');
         const precios = @json($precios ?? []);
         const garantias = @json($garantias ?? []);
+        const promociones = @json($promociones ?? []);
+        const puedeEditarDescuento = @json($puedeEditarDescuento ?? true);
         let idx = Number(tbody.dataset.next || 0);
 
         const numero = (valor) => {
@@ -263,6 +269,43 @@
             input.value = Number(garantias[id] ?? 0);
         }
 
+        /**
+         * Al cambiar de variante se precarga el descuento de la promoción
+         * vigente. Para VENDEDOR los controles quedan bloqueados: solo puede
+         * aplicar el descuento de la promo (o ninguno), nunca más.
+         */
+        function aplicarPromo(tr) {
+            const id = campo(tr, 'id_variante')?.value;
+            const tipoSel = campo(tr, 'descuento_tipo');
+            const inputDesc = campo(tr, 'descuento_valor');
+            if (!id || !tipoSel || !inputDesc) return;
+
+            const promo = promociones[id];
+
+            if (promo) {
+                tipoSel.value = promo.tipo;
+                inputDesc.value = promo.valor;
+                inputDesc.title = `Promoción vigente: ${promo.nombre}`;
+            } else {
+                inputDesc.value = 0;
+                inputDesc.title = '';
+            }
+
+            if (!puedeEditarDescuento) {
+                inputDesc.readOnly = true;
+                [...tipoSel.options].forEach((o) => {
+                    o.disabled = !promo || o.value !== promo.tipo;
+                });
+            } else {
+                inputDesc.readOnly = false;
+                [...tipoSel.options].forEach((o) => {
+                    o.disabled = false;
+                });
+            }
+
+            recalcular(tr);
+        }
+
         function addRow() {
             const tr = tpl.content.cloneNode(true).querySelector('tr');
             tr.querySelectorAll('[data-name]').forEach(el => {
@@ -282,6 +325,7 @@
             if (e.target.matches('[name$="[id_variante]"], [data-name="id_variante"]')) {
                 aplicarPrecio(tr);
                 aplicarGarantia(tr);
+                aplicarPromo(tr);
             } else {
                 recalcular(tr);
             }

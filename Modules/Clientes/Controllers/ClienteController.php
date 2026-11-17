@@ -51,7 +51,37 @@ class ClienteController extends Controller
 
     public function store(StoreClienteRequest $request)
     {
-        $cliente = Cliente::create($request->validated() + ['estado' => 'ACTIVO']);
+        $data = $request->safe()->except('forzar_creacion');
+
+        // Alta rápida desde el formulario de cotización/venta: se responde JSON
+        // y, si el teléfono ya pertenece a un cliente activo, se devuelve ese
+        // cliente para reutilizarlo sin crear un duplicado.
+        if ($request->expectsJson()) {
+            $existente = Cliente::activos()
+                ->where('telefono', trim((string) $data['telefono']))
+                ->first();
+
+            if ($existente && ! $request->boolean('forzar_creacion')) {
+                return response()->json([
+                    'existente' => true,
+                    'id_cliente' => $existente->id_cliente,
+                    'nombre' => $existente->nombre,
+                    'telefono' => $existente->telefono,
+                    'etiqueta' => "{$existente->nombre} — {$existente->telefono}",
+                ]);
+            }
+        }
+
+        $cliente = Cliente::create($data + ['estado' => 'ACTIVO']);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'id_cliente' => $cliente->id_cliente,
+                'nombre' => $cliente->nombre,
+                'telefono' => $cliente->telefono,
+                'etiqueta' => "{$cliente->nombre} — {$cliente->telefono}",
+            ], 201);
+        }
 
         return redirect()
             ->route('clientes.show', $cliente)
