@@ -2,6 +2,7 @@
 
 namespace Modules\Ventas\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
@@ -37,6 +38,31 @@ class Venta extends Model
     public function getRouteKeyName(): string
     {
         return 'id_venta';
+    }
+
+    /**
+     * Alcance de consulta: GERENTE/ADMINISTRADOR ven todo; el resto, solo
+     * las ventas que registró. Sin usuario no se ve nada (fail-closed).
+     */
+    public function scopeVisiblesPara(Builder $query, ?User $user): Builder
+    {
+        if ($user === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->puedeVerTodosLosDocumentos()) {
+            return $query;
+        }
+
+        return $query->where($query->qualifyColumn('id_usuario'), $user->id_usuario);
+    }
+
+    /** ¿Este usuario puede consultar esta venta concreta? */
+    public function puedeVer(?User $user): bool
+    {
+        return $user !== null
+            && ($user->puedeVerTodosLosDocumentos()
+                || (int) $this->id_usuario === (int) $user->id_usuario);
     }
 
     public function cliente()

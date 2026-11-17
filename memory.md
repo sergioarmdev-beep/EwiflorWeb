@@ -676,3 +676,46 @@ Se enriqueció la vista `clientes::show` con tres nuevas secciones para dar al c
 - `php -l` → ClienteController sin errores de sintaxis ✅
 - Pint → pasando ✅
 - `php artisan view:cache` → vistas compiladas correctamente ✅
+
+---
+
+## 2026-11-17 — Feature: Alcance por vendedor en cotizaciones, ventas y detalle de cliente
+
+### Qué se hizo
+Un usuario con rol `VENDEDOR` solo puede consultar (y operar) las cotizaciones y ventas que él mismo emitió/registró. `GERENTE` y `ADMINISTRADOR` siguen viendo todo. Sin sesión no se ve nada (fail-closed). Antes cualquier vendedor veía el listado completo y podía abrir por URL el documento de otro.
+
+### Regla aplicada
+
+| Rol | Cotizaciones | Ventas |
+| --- | --- | --- |
+| GERENTE, ADMINISTRADOR | todas | todas |
+| VENDEDOR (y cualquier otro rol que llegue a las rutas) | solo `id_usuario = auth()->id()` | solo `id_usuario = auth()->id()` |
+
+### Archivos modificados
+- `Modules/Auth/Models/User.php` — nuevo `puedeVerTodosLosDocumentos(): bool` (GERENTE/ADMINISTRADOR). Fuente única de la regla para ambos módulos.
+- `Modules/Cotizaciones/Models/Cotizacion.php` — `scopeVisiblesPara(Builder, ?User)` y `puedeVer(?User)`. El filtro usa `qualifyColumn('id_usuario')` → `cotizacion.id_usuario`.
+- `Modules/Ventas/Models/Venta.php` — mismo par de métodos (`venta.id_usuario`; el qualify es obligatorio porque Clientes consulta `venta` con joins).
+- `Modules/Cotizaciones/Controllers/CotizacionController.php` — `index()` aplica `visiblesPara()`; `show(Request, Cotizacion)` llama a `autorizarLectura()` → 403.
+- `Modules/Ventas/Controllers/VentaController.php` — `index()` aplica `visiblesPara()`; `show`, `comprobante` y `registrarPago` pasan por `autorizarVenta()` (acepta `Venta|Cotizacion`) → 403; `create()` en modo cotización bloquea convertir una cotización ajena.
+- `Modules/Ventas/Services/VentaService.php` — `convertirCotizacion()` valida `$cot->puedeVer($actor)` y lanza `BusinessRuleException` (defensa en profundidad para el POST con `id_cotizacion`).
+- `Modules/Clientes/Controllers/ClienteController.php` — `show()` acepta `Request`; para `VENDEDOR` filtra `$cotizaciones`, `$ventas`, `$resumenCotizaciones`, `$resumenVentas` y `$garantiasActivas` (esta última por `gv.id_venta`). Pasa `$soloDocumentosPropios` a la vista.
+- `Modules/Clientes/Views/show.blade.php` — aviso de alcance cuando `$soloDocumentosPropios`.
+- `Modules/Ventas/Views/index.blade.php` y `Modules/Cotizaciones/Views/index.blade.php` — aviso "solo tus ventas/cotizaciones".
+
+### Decisiones de diseño
+- **Regla en el modelo dueño de la tabla**, no en un helper compartido: evita acoplar Cotizaciones ↔ Ventas y sigue el principio de un único dueño por tabla.
+- **403 con `abort_unless`**, igual que el middleware `CheckRole`: no revela si el registro existe. El POST de conversión sí usa `BusinessRuleException` porque es un flujo de negocio con flash de error.
+- **Clientes:** el filtro se aplica solo al rol `VENDEDOR`. `SERVICIO_TECNICO` conserva el historial completo del cliente (lo necesita para garantías/servicios) y no tiene acceso a las rutas de Ventas/Cotizaciones.
+- **Garantías en el detalle de cliente:** también se filtran por venta propia del vendedor, porque la tabla muestra `#id_venta` y esa venta ya no es consultable por él.
+- **Rutas y middleware sin cambios:** el alcance es por registro, no por endpoint; `CheckRole` sigue decidiendo qué roles entran.
+- `Venta.id_usuario` es el actor que ejecuta `registrar_venta` / `convertir_cotizacion_a_venta` (comportamiento existente, no se alteró).
+
+### Verificación
+- `php -l` → 7 archivos PHP sin errores ✅
+- Pint (`--dirty`) → pasando ✅
+- `php artisan view:cache` → vistas compiladas ✅
+- Consultas verificadas con `artisan tinker` contra la BD real (solo lectura): vendedor u7 ve 1 de 9 cotizaciones y 0 de 11 ventas; gerente ve todas; `puedeVer()` devuelve `false` para documentos ajenos y `true` para los propios; el SQL del listado de Clientes queda con `"venta"."id_usuario" = ?`.
+- Sin tests automatizados: `phpunit.xml` usa SQLite en memoria y estas consultas dependen de PostgreSQL (`ilike`, vistas, joins).
+
+### Gotcha
+- Los documentos históricos con `id_usuario` NULL quedan invisibles para los vendedores por diseño (fail-closed); un gerente o administrador sí los ve.

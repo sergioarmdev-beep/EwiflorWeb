@@ -23,7 +23,8 @@ class VentaController extends Controller
 
     public function index(Request $request)
     {
-        $q = Venta::with(['cliente', 'usuario', 'pagos']);
+        $q = Venta::with(['cliente', 'usuario', 'pagos'])
+            ->visiblesPara($request->user());
 
         if ($e = $request->input('estado')) {
             $q->where('estado', $e);
@@ -76,6 +77,8 @@ class VentaController extends Controller
                     ->with('error', 'Esta cotización no puede convertirse (debe estar EMITIDA y vigente).');
             }
 
+            $this->autorizarVenta($request, $cot, 'Solo puedes convertir tus propias cotizaciones.');
+
             $data['cotizacion'] = $cot;
         } else {
             $data['clientes'] = Cliente::activos()->orderBy('nombre')->get();
@@ -100,8 +103,10 @@ class VentaController extends Controller
             ->with('ok', "Venta {$venta->numero_factura} registrada correctamente.");
     }
 
-    public function show(Venta $venta)
+    public function show(Request $request, Venta $venta)
     {
+        $this->autorizarVenta($request, $venta, 'Solo puedes consultar tus propias ventas.');
+
         $venta->load([
             'cliente',
             'usuario',
@@ -129,6 +134,8 @@ class VentaController extends Controller
 
     public function registrarPago(RegistrarPagoRequest $request, Venta $venta)
     {
+        $this->autorizarVenta($request, $venta, 'Solo puedes registrar pagos de tus propias ventas.');
+
         try {
             $this->service->registrarPago($venta, $request->validated());
 
@@ -151,14 +158,25 @@ class VentaController extends Controller
         }
     }
 
-    public function comprobante(Venta $venta)
+    public function comprobante(Request $request, Venta $venta)
     {
+        $this->autorizarVenta($request, $venta, 'Solo puedes consultar tus propias ventas.');
+
         $venta->load(['cliente', 'usuario', 'sucursal', 'detalles.variante.producto', 'pagos', 'comprobantes']);
 
         return view('ventas::comprobante', [
             'venta' => $venta,
             'totales' => $venta->totales(),
         ]);
+    }
+
+    /**
+     * Bloquea el acceso a ventas/cotizaciones ajenas para los roles que no
+     * gestionan todo (hoy: VENDEDOR). Gerente y Administrador ven todo.
+     */
+    private function autorizarVenta(Request $request, Venta|Cotizacion $documento, string $mensaje): void
+    {
+        abort_unless($documento->puedeVer($request->user()), 403, $mensaje);
     }
 
     private function servicePuedeConvertir(Cotizacion $c): bool

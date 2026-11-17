@@ -58,14 +58,22 @@ class ClienteController extends Controller
             ->with('ok', 'Cliente registrado correctamente.');
     }
 
-    public function show(Cliente $cliente)
+    public function show(Request $request, Cliente $cliente)
     {
+        $user = $request->user();
+
+        // Solo el VENDEDOR queda limitado a sus propias operaciones; Gerente y
+        // Administrador ven todo y Servicio técnico conserva el historial
+        // completo (lo necesita para atender garantías y servicios).
+        $soloDocumentosPropios = $user !== null && $user->nombre_rol === 'VENDEDOR';
+
         // Historial de cotizaciones
         $cotizaciones = $cliente->cotizaciones()
             ->with([
                 'tipoCambio',
                 'detalles',
             ])
+            ->when($soloDocumentosPropios, fn ($q) => $q->visiblesPara($user))
             ->orderByDesc('fecha_emision')
             ->orderByDesc('id_cotizacion')
             ->limit(10)
@@ -79,6 +87,7 @@ class ClienteController extends Controller
 
         // Historial de ventas, incluyendo total y saldo
         $ventas = $cliente->ventas()
+            ->when($soloDocumentosPropios, fn ($q) => $q->visiblesPara($user))
             ->leftJoin(
                 'v_venta_total as vt',
                 'venta.id_venta',
@@ -106,6 +115,7 @@ class ClienteController extends Controller
 
         // Indicadores generales de cotizaciones
         $resumenCotizaciones = $cliente->cotizaciones()
+            ->when($soloDocumentosPropios, fn ($q) => $q->visiblesPara($user))
             ->selectRaw("
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE estado = 'EMITIDA') AS emitidas,
@@ -131,6 +141,7 @@ class ClienteController extends Controller
             )
             ->where('venta.id_cliente', $cliente->id_cliente)
             ->where('venta.estado', 'REGISTRADA')
+            ->when($soloDocumentosPropios, fn ($q) => $q->where('venta.id_usuario', $user->id_usuario))
             ->selectRaw('
             COUNT(*) AS total,
             COALESCE(SUM(vt.total_usd), 0) AS total_usd,
@@ -149,6 +160,10 @@ class ClienteController extends Controller
             ->where('gv.vigente', true)
             ->where('gv.fecha_vencimiento', '>=', now()->startOfDay())
             ->where('gv.fecha_vencimiento', '<=', now()->startOfDay()->addDays(30))
+            ->when($soloDocumentosPropios, fn ($q) => $q->whereIn(
+                'gv.id_venta',
+                DB::table('venta')->select('id_venta')->where('id_usuario', $user->id_usuario)
+            ))
             ->orderBy('gv.fecha_vencimiento')
             ->get([
                 'gv.id_garantia',
@@ -181,7 +196,8 @@ class ClienteController extends Controller
             'resumenVentas',
             'garantiasActivas',
             'garantiasPorVencer',
-            'solicitudesServicio'
+            'solicitudesServicio',
+            'soloDocumentosPropios'
         ));
     }
 

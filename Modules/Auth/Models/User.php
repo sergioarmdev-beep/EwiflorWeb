@@ -103,6 +103,15 @@ class User extends Authenticatable
         return in_array($this->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true);
     }
 
+    /**
+     * ¿Puede consultar los documentos comerciales (ventas y cotizaciones)
+     * de todos los usuarios? Los demás roles solo ven los suyos.
+     */
+    public function puedeVerTodosLosDocumentos(): bool
+    {
+        return in_array($this->nombre_rol, ['GERENTE', 'ADMINISTRADOR'], true);
+    }
+
     public function sucursal(): BelongsTo
     {
         return $this->belongsTo(Sucursal::class, 'id_sucursal', 'id_sucursal');

@@ -196,6 +196,25 @@ true
         </div>
     </section>
 
+    {{-- Aviso de alcance: el vendedor solo ve sus propias operaciones --}}
+    @if ($soloDocumentosPropios ?? false)
+    <div class="flex items-start gap-3 p-4 rounded-xl
+                border border-sky-200 bg-sky-50 text-sky-900
+                dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300">
+        <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="1.8"
+                d="M13 16h-1v-4h-1m1-4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" />
+        </svg>
+
+        <p class="text-sm font-medium">
+            Este resumen muestra solo tus cotizaciones y ventas con este cliente.
+            Un gerente o administrador ve el historial completo.
+        </p>
+    </div>
+    @endif
+
     {{-- Resumen comercial --}}
     <section class="space-y-4">
 

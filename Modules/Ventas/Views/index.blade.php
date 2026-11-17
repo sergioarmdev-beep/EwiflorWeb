@@ -14,6 +14,12 @@
     @if (session('ok')) <div class="bg-green-100 text-green-800 px-4 py-2 rounded">{{ session('ok') }}</div> @endif
     @if (session('error')) <div class="bg-red-100 text-red-800 px-4 py-2 rounded">{{ session('error') }}</div> @endif
 
+    @unless (auth()->user()->puedeVerTodosLosDocumentos())
+    <div class="bg-sky-50 border border-sky-200 text-sky-900 px-4 py-2 rounded text-sm">
+        Solo se muestran las ventas que tú registraste.
+    </div>
+    @endunless
+
     <form method="GET" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-5 gap-3">
         <input type="text" name="buscar" value="{{ request('buscar') }}"
             placeholder="Factura o cliente" class="border rounded px-3 py-2">

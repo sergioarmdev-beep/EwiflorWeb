@@ -2,6 +2,7 @@
 
 namespace Modules\Cotizaciones\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
@@ -35,6 +36,31 @@ class Cotizacion extends Model
     public function getRouteKeyName(): string
     {
         return 'id_cotizacion';
+    }
+
+    /**
+     * Alcance de consulta: GERENTE/ADMINISTRADOR ven todo; el resto, solo
+     * las cotizaciones que emitió. Sin usuario no se ve nada (fail-closed).
+     */
+    public function scopeVisiblesPara(Builder $query, ?User $user): Builder
+    {
+        if ($user === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->puedeVerTodosLosDocumentos()) {
+            return $query;
+        }
+
+        return $query->where($query->qualifyColumn('id_usuario'), $user->id_usuario);
+    }
+
+    /** ¿Este usuario puede consultar esta cotización concreta? */
+    public function puedeVer(?User $user): bool
+    {
+        return $user !== null
+            && ($user->puedeVerTodosLosDocumentos()
+                || (int) $this->id_usuario === (int) $user->id_usuario);
     }
 
     public function cliente()

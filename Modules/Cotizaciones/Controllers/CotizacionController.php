@@ -18,7 +18,8 @@ class CotizacionController extends Controller
 
     public function index(Request $request)
     {
-        $q = Cotizacion::with(['cliente', 'usuario', 'detalles']);
+        $q = Cotizacion::with(['cliente', 'usuario', 'detalles'])
+            ->visiblesPara($request->user());
 
         if ($e = $request->input('estado')) {
             $q->where('estado', $e);
@@ -73,8 +74,10 @@ class CotizacionController extends Controller
             ->with('ok', "Cotización #{$cot->id_cotizacion} emitida correctamente.");
     }
 
-    public function show(Cotizacion $cotizacion)
+    public function show(Request $request, Cotizacion $cotizacion)
     {
+        $this->autorizarLectura($request, $cotizacion);
+
         $cotizacion->load(['cliente', 'usuario', 'sucursal', 'tipoCambio', 'detalles.variante.producto']);
 
         return view('cotizaciones::show', compact('cotizacion'));
@@ -125,6 +128,15 @@ class CotizacionController extends Controller
         return redirect()
             ->route('cotizaciones.show', $cotizacion)
             ->with('ok', 'Cotización anulada.');
+    }
+
+    private function autorizarLectura(Request $request, Cotizacion $cotizacion): void
+    {
+        abort_unless(
+            $cotizacion->puedeVer($request->user()),
+            403,
+            'Solo puedes consultar tus propias cotizaciones.'
+        );
     }
 
     private function variantes()

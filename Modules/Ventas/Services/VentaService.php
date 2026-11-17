@@ -32,6 +32,9 @@ class VentaService
         if (! $cot) {
             throw new BusinessRuleException("La cotización #{$idCotizacion} no existe.");
         }
+        if (! $cot->puedeVer($actor)) {
+            throw new BusinessRuleException('Solo puedes convertir tus propias cotizaciones.');
+        }
         if ($cot->estado !== 'EMITIDA') {
             throw new BusinessRuleException("La cotización #{$idCotizacion} no está EMITIDA (estado: {$cot->estado}).");
         }
