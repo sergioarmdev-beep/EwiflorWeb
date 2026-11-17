@@ -77,9 +77,20 @@
                             x-text="item.nombre + (item.color ? ' · ' + item.color : '') + (item.marca ? ' · ' + item.marca : '')"></span>
                     </span>
 
-                    <span class="shrink-0 text-xs font-semibold"
-                        :class="item.precio ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'"
-                        x-text="item.precio ? 'USD ' + Number(item.precio).toFixed(2) : 'sin precio'"></span>
+                    <span class="shrink-0 flex flex-col items-end gap-1">
+                        <span class="text-xs font-semibold"
+                            :class="item.precio ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'"
+                            x-text="item.precio ? 'USD ' + Number(item.precio).toFixed(2) : 'sin precio'"></span>
+
+                        <template x-if="promoEtiqueta(item)">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-fuchsia-600/15 text-fuchsia-600 border border-fuchsia-500/30 dark:text-fuchsia-300"
+                                x-text="promoEtiqueta(item)"></span>
+                        </template>
+
+                        <template x-if="item.es_combo">
+                            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-600/15 text-sky-600 border border-sky-500/30 dark:text-sky-300">COMBO</span>
+                        </template>
+                    </span>
 
                 </button>
             </template>

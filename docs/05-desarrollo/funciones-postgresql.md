@@ -123,3 +123,27 @@ class DbFunction
     }
 }
 ```
+
+---
+
+## Nota: `registrar_venta` y la guarda de descuento para Vendedor
+
+El módulo **Promociones** redefine `registrar_venta` (migración
+`2026_11_17_000001_promociones_y_combos`) para aplicar una guarda de negocio
+en PostgreSQL:
+
+- En **ventas directas** (`p_id_cotizacion IS NULL`), un usuario con rol
+  `VENDEDOR` solo puede aplicar un `descuento_pct` menor o igual al de la
+  promoción vigente de la variante (tolerancia 0,005). Si lo supera, la
+  función lanza `RAISE EXCEPTION` (SQLSTATE `P0001`) que se convierte en
+  `BusinessRuleException` → 422 / flash `error`.
+- En **conversiones de cotización** (`p_id_cotizacion IS NOT NULL`) no se
+  revalida el descuento, porque ya fue autorizado al emitir el documento.
+
+Las nuevas tablas (`promocion`, `promocion_variante`, `combo_componente`)
+llegan con triggers de solape (`fn_validar_solape_promocion`,
+`fn_check_promo_variante`, `fn_check_promo_actualizada`) y de auditoría
+(`fn_auditar_cambio` → `fn_modulo_auditoria` con módulo `PROMOCIONES` /
+`PRODUCTOS`).
+
+```

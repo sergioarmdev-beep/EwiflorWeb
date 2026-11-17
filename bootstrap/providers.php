@@ -7,6 +7,7 @@ use Modules\Clientes\Providers\ClientesServiceProvider;
 use Modules\Cotizaciones\Providers\CotizacionesServiceProvider;
 use Modules\Inventario\Providers\InventarioServiceProvider;
 use Modules\Precios\Providers\PreciosServiceProvider;
+use Modules\Promociones\Providers\PromocionesServiceProvider;
 use Modules\Publico\Providers\PublicoServiceProvider;
 use Modules\ServicioTecnico\Providers\ServicioTecnicoServiceProvider;
 use Modules\Sistema\Providers\SistemaServiceProvider;
@@ -19,6 +20,7 @@ return [
     CatalogoServiceProvider::class,
     InventarioServiceProvider::class,
     PreciosServiceProvider::class,
+    PromocionesServiceProvider::class,
     PublicoServiceProvider::class,
     SistemaServiceProvider::class,
     ServicioTecnicoServiceProvider::class,

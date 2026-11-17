@@ -719,3 +719,125 @@ Un usuario con rol `VENDEDOR` solo puede consultar (y operar) las cotizaciones y
 
 ### Gotcha
 - Los documentos históricos con `id_usuario` NULL quedan invisibles para los vendedores por diseño (fail-closed); un gerente o administrador sí los ve.
+
+---
+
+## 2026-11-17 — Feature: Alta rápida de cliente desde cotizaciones y ventas
+
+### Qué se hizo
+Antes había que ir al módulo Clientes a registrar un cliente y volver a Cotizaciones, perdiendo las líneas ya capturadas. Ahora el formulario de cotización (crear y editar) y el de venta directa tienen un botón “+ Registrar cliente nuevo” que abre un modal, crea el cliente sin recargar la página y lo deja seleccionado en el `<select>`.
+
+### Flujo implementado
+1. El modal (`<dialog>`) pide nombre*, teléfono*, correo, tipo de cliente y mayorista.
+2. `fetch` POST JSON a `clientes.store` con `X-CSRF-TOKEN` del `<meta>` del layout.
+3. **201** → agrega la opción con `new Option(etiqueta, id)` (sin recargar: las líneas se conservan), la selecciona y cierra el modal.
+4. **200 `{existente: true}`** → el teléfono ya pertenece a un cliente activo: panel con "Usar este cliente" (lo selecciona sin crear nada) y "Registrar de todas formas" (reenvía con `forzar_creacion = 1`).
+5. **422** → errores por campo bajo cada input; el modal no se cierra y conserva los datos.
+
+### Archivos creados
+- `Modules/Clientes/Views/partials/quick-create.blade.php` — botón + `<dialog>` + JS (sin dependencias). Incluye `<noscript>` con enlace a `clientes.create`.
+
+### Archivos modificados
+- `Modules/Clientes/Controllers/ClienteController.php` — `store()` conserva el flujo HTML y añade la rama JSON: detecta duplicado activo por teléfono (`Cliente::activos()`) antes de crear y devuelve el existente, salvo `forzar_creacion`. Usa `$request->safe()->except('forzar_creacion')` para no pasar la bandera al modelo.
+- `Modules/Clientes/Requests/StoreClienteRequest.php` — nueva regla `forzar_creacion` (`sometimes|boolean`).
+- `Modules/Cotizaciones/Views/_form.blade.php` — `id="id_cliente"` + `@include('clientes::partials.quick-create')` (aplica a crear y editar).
+- `Modules/Ventas/Views/create.blade.php` — mismo id + include, dentro de la rama de venta directa.
+
+### Decisiones de diseño
+- **Modal en lugar de redirección:** una redirección a Clientes perdería las líneas de la cotización/venta ya capturadas.
+- **No se crea endpoint nuevo:** se reutiliza `clientes.store` y `StoreClienteRequest`; el comportamiento HTML (redirect a `clientes.show`) queda intacto porque el contrato JSON solo se activa con `Accept: application/json`.
+- **Duplicados:** solo se comparan clientes **ACTIVOS** (el `<select>` lista únicamente esos). La comparación es exacta tras `trim()`; normalizar guiones/espacios queda como mejora futura.
+- **Reutilizar por defecto, crear con confirmación:** evita duplicados accidentales sin impedir dos clientes que compartan teléfono.
+- Sin Alpine ni librerías nuevas: `<script>` inline, igual que el resto del proyecto; inserción con `new Option()` (sin concatenar HTML con datos del servidor).
+
+### Verificación
+- `php -l` en `ClienteController` y `StoreClienteRequest` ✅ · Pint (`--dirty`) ✅ · `view:cache` ✅
+- Parcial renderizado con `view()`: 10 345 bytes, `<dialog>` y URL de `clientes.store` presentes.
+- Endpoint probado contra PostgreSQL real con un probe temporal (transacciones + rollback, sin dejar datos):
+  - teléfono existente → `HTTP 200 {"existente":true,...}`
+  - alta nueva → `HTTP 201` con `id_cliente`/`etiqueta` y fila visible en la transacción
+  - `forzar_creacion=1` → crea el duplicado (`HTTP 201`)
+  - formulario HTML normal → `redirect /clientes/{id}`
+  - nombres vacíos → `HTTP 422` con `errors.nombre`/`errors.telefono`
+  - tras los rollbacks: 0 filas de prueba en `cliente`.
+- Sin tests automatizados: `phpunit.xml` usa SQLite en memoria; el probe se ejecutó fuera del repo con `bootstrap/app.php` y rollback.
+
+### Gotcha
+- Para probar peticiones sin pasar por CSRF desde un script CLI, desactivar `ValidateCsrfToken` (Laravel 13 ya no usa `VerifyCsrfToken` en el grupo `web`) o, más simple, invocar el controlador con un `FormRequest` construido a mano (`createFrom` + `validateResolved`).
+
+### Corrección — el botón no abría el modal (17/11)
+Reporte del usuario: “al presionar el botón de agregar nuevo cliente en ambos casos no se despliega ningún formulario”.
+
+**Causa raíz:** el partial se incluye dentro del formulario de la cotización/venta y traía su propio `<form id="form-cliente-rapido">`. El HTML no permite formularios anidados, así que el parser **descarta** el interno; además su `</form>` podía cerrar antes de tiempo el formulario padre. Resultado: `document.getElementById('form-cliente-rapido')` era `null`, el JS abortaba en la guarda (`if (!abrir || !dialogo || !form) return;`) y el clic no hacía nada. Sin errores en consola.
+
+**Solución:** el modal ya no tiene formulario propio ni atributos `name`:
+- Contenedor `<div id="qc-campos">` con entradas `data-campo="nombre|telefono|correo|tipo_cliente|es_mayorista"`.
+- Recolección manual del payload (`datosDelFormulario()`), `reset()` manual (`reiniciar()`) y todos los botones `type="button"` (el “Guardar” ahora también, ya no es submit).
+- `keydown` en el contenedor para que Enter dispare el alta con `preventDefault()` y **no** envíe el formulario padre.
+- Al no haber `name`, los campos del modal tampoco se envían al guardar la cotización/venta.
+
+**Verificación en navegador real** (Chromium del IDE, snapshot HTML servido por `php -S`, `fetch` stubbeado):
+- Clic en “+ Registrar cliente nuevo” → `#dlg-cliente-rapido.open === true`, sin errores de consola.
+- 201 → opción creada con `new Option()`, `<select>` con el cliente nuevo, modal cerrado y campos limpios; payload correcto (`es_mayorista` 1/0, sin `name` heredados).
+- 200 `{existente:true}` → panel ámbar visible, “Guardar” oculto; “Usar este cliente” selecciona y cierra.
+- “Registrar de todas formas” → segunda petición con `forzar_creacion: 1` y alta 201.
+- 422 → mensajes por campo visibles, modal abierto y botón re-habilitado.
+- Enter en un campo → 1 sola petición, **0** submits del formulario padre, URL sin cambios.
+- Mismo flujo verificado en `ventas::create` (modo directa): 3 aperturas de `<form>` en el HTML, todas reales salvo un comentario JS (ya reescrito).
+- `view:cache` ✅ · Pint (`--dirty`) ✅.
+
+**Gotcha de las pruebas:** al renderizar vistas por CLI no hay sesión, así que `csrf_token()` y `@csrf` salen vacíos (`content=""`); el `X-CSRF-TOKEN` vacío del snapshot es un artefacto del render fuera de HTTP, no un fallo del modal. En una petición real el `<meta name="csrf-token">` del layout llega con token.
+
+---
+
+## 2026-11-17 — Módulo Promociones (descuentos por variante + combos)
+
+**Qué se hizo:** módulo completo `Promociones` con integración en Ventas, Cotizaciones y catálogo público.
+
+**Archivos creados:**
+- `Modules/Promociones/Database/Migrations/2026_11_17_000001_promociones_y_combos.php` (migración del módulo, no parche): tablas `promocion`, `promocion_variante`, `combo_componente`; amplía CHECK de `producto.tipo_producto` con `COMBO`; triggers de solape `fn_validar_solape_promocion`/`fn_check_promo_variante`/`fn_check_promo_actualizada`; `fn_modulo_auditoria` ampliada (`PROMOCIONES`/`PRODUCTOS`); triggers de auditoría; redefine `registrar_venta` con guarda de Vendedor (versión original guardada en `down()`).
+- Modelos: `Promocion`, `PromocionVariante`, `ComboComponente`.
+- Services: `PromocionService` (mapaVigente, porcentajeEquivalente, validarDescuento, CRUD, solape), `ComboService` (reusa `ProductoService` de Catalogo).
+- Requests: `PromocionRequest`, `ComboRequest`.
+- Controllers: `PromocionController`, `ComboController`.
+- Routes: `Modules/Promociones/Routes/web.php` (prefijo /promociones, role:GERENTE,ADMINISTRADOR, estáticas antes de dinámicas).
+- Provider: `PromocionesServiceProvider` + línea en `bootstrap/providers.php`.
+- Vistas: `promociones/{index,form}`, `combos/{index,form}` (dark Tailwind, `@push('styles')` vars `--promo-*`/`--combo-*`, picker producto→checkboxes variantes, filas componente+cantidad).
+- JS: `resources/js/components/promocion-form.js`, `combo-form.js`; `variant-search.js` + blade con chips promo/COMBO y `promoEtiqueta()`; registrados en `resources/js/app.js`.
+
+**Archivos modificados:**
+- `bootstrap/providers.php`: `PromocionesServiceProvider::class` tras `PreciosServiceProvider::class`.
+- `resources/views/layouts/app.blade.php`: nav grupo "Promociones" (Descuentos + Combos) solo GERENTE/ADMINISTRADOR tras Catálogo.
+- `Modules/Catalogo/Services/ProductoService.php`: extraído (SQL_STOCK, imágenes, variantes, documentos, principal).
+- `Modules/Catalogo/Controllers/ProductoController.php`: delega en service; expone `promocionesVigentes` y `resumen.con_promocion`.
+- `Modules/Catalogo/Models/Producto.php`: TIPOS + COMBO, `tiposCatalogo()`, `esCombo()`, `componentesCombo()`.
+- `Modules/Catalogo/Models/VarianteProducto.php`: relación `promociones()`.
+- `Modules/Catalogo/Support/BuscadorVariantes.php`: payload con `promo`, `es_combo`, `combo` (promos pasadas como arg, evita ciclo).
+- `Modules/Catalogo/Requests/ProductoRequest.php`: tipo vs `tiposCatalogo()`.
+- `Modules/Catalogo/Views/productos/index.blade.php`: badge PROMO/COMBO, checkbox filtro `promocion`, tarjeta resumen "Con promoción".
+- `Modules/Catalogo/Views/productos/edit.blade.php`: aviso combo (se edita desde Promociones→Combos).
+- `Modules/Ventas/Controllers/VentaController.php` + `Services/VentaService.php`: `construirLineasJson(..., User $actor)` con `validarDescuento` por línea; `promociones` + `puedeEditarDescuento` en create.
+- `Modules/Ventas/Views/create.blade.php`: prefill promo al cambiar variante; VENDEDOR readonly/disabled en descuento.
+- `Modules/Cotizaciones/Controllers/CotizacionController.php` + `Services/CotizacionService.php`: `syncLineas(..., User $actor)` con validación de descuento; `promociones` + `puedeEditarDescuento` en create/edit.
+- `Modules/Cotizaciones/Views/_form.blade.php`: mismo patrón de promo que Ventas.
+- `Modules/Publico/Controllers/PublicoController.php`: promo por variante + componentes en `$detalle`.
+- `Modules/Publico/Views/publico.blade.php`: badge "OFERTA −X%" sobre imagen, chip "COMBO" + componentes bajo título, precio "antes→ahora" solo variantes con promo en `llenar()`.
+
+**Decisiones confirmadas:**
+- DDL vía migración del módulo (no parche A-03).
+- SKU del combo = `strtoupper(codigo)`; combo tiene una única variante con `precio_usd`.
+- Regla Vendedor: `pct_solicitado <= pct_promo` (≤, tolerancia 0.005); informado en el plan.
+- `promocionesVigentes` en Catálogo se construye con `mapaVigente` sobre las variantes de la página paginada.
+
+**Verificación:**
+- `php -l` ✅ (28 archivos).
+- Pint `--test` → fix aplicado en `ComboService.php` y `BuscadorVariantes.php`.
+- `view:cache` ✅.
+- Migración `--database=pgsql_migrator` ✅ (tablas, CHECK con COMBO, triggers de solape y auditoría creados).
+- Probe solape (rollback) ✅: dos promos activas solapadas → `P0001`, transacción revertida, 0 filas restantes.
+- Probe `registrar_venta` guarda Vendedor ✅: descuento 11% > promo 10% → `P0001` "solo puede aplicar el descuento de la promoción vigente"; descuento 10% == 10% → pasa la guarda (falló solo por stock, no por descuento).
+
+**Docs actualizadas:** `docs/05-desarrollo/ubicacion-modelos.md` (mapa Promociones), `docs/05-desarrollo/funciones-postgresql.md` (nota guarda Vendedor en registrar_venta).
+
+**Pendiente (fuera de scope de esta entrada):** tests de negocio (phpunit forza SQLite, no ejerce funciones PG).
+

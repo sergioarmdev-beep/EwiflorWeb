@@ -37,6 +37,9 @@ Nunca se duplica un modelo.
 | `auditoria`              | `Auditoria`             | Sistema      | —                                         |
 | `parametro_sistema`      | `ParametroSistema`      | Sistema      | todos los que lean parámetros             |
 | `permiso`, `rol_permiso` | `Permiso`, `RolPermiso` | Auth         | —                                         |
+| `promocion`              | `Promocion`             | Promociones  | Ventas, Cotizaciones, Publico, Catalogo   |
+| `promocion_variante`     | `PromocionVariante`     | Promociones  | Catalogo (variantes.promociones)          |
+| `combo_componente`       | `ComboComponente`       | Promociones  | Catalogo (Producto::componentesCombo)     |
 
 \* `Sucursal` vive temporalmente en `Modules/Auth` hasta que Dev 2 cree el
 módulo Inventario. Ver sección 3.

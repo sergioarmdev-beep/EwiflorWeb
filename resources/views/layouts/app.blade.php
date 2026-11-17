@@ -90,6 +90,24 @@
                         </div>
                     </details>
 
+                    @if (in_array($rolActual, ['GERENTE', 'ADMINISTRADOR'], true))
+                    <details class="nav-group group mt-1" {{ request()->routeIs('promociones.*') ? 'open' : '' }}>
+                        <summary class="flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80 [&::-webkit-details-marker]:hidden">
+                            <svg class="h-5 w-5 shrink-0 text-fuchsia-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.8.9.9a3.5 3.5 0 0 0 2.1.7 2.6 2.6 0 0 0 2.6-2.6 2.4 2.4 0 0 0-1.2-2.2l-2.9-1.4a2.4 2.4 0 0 1-1.2-2.2A2.6 2.6 0 0 1 11.9 6a3.5 3.5 0 0 1 2.1.7l.9.9" />
+                            </svg>
+                            <span class="flex-1">Promociones</span>
+                            <svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                            </svg>
+                        </summary>
+                        <div class="ml-5 mt-1 space-y-1 border-l border-slate-200 pl-4 dark:border-slate-700">
+                            <a href="{{ route('promociones.index') }}" class="nav-link {{ request()->routeIs('promociones.index', 'promociones.create', 'promociones.edit', 'promociones.update', 'promociones.toggle', 'promociones.destroy') ? 'nav-link-active' : '' }}">Descuentos</a>
+                            <a href="{{ route('promociones.combos.index') }}" class="nav-link {{ request()->routeIs('promociones.combos.*') ? 'nav-link-active' : '' }}">Combos</a>
+                        </div>
+                    </details>
+                    @endif
+
                     <details class="nav-group group mt-1" {{ request()->routeIs('inventario.existencias.*', 'inventario.movimientos.*') ? 'open' : '' }}>
                         <summary class="flex cursor-pointer list-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/80 [&::-webkit-details-marker]:hidden">
                             <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

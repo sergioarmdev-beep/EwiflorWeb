@@ -115,8 +115,22 @@ export function registerVariantSearch(Alpine) {
             }
 
             const extra = item.color ? ` (${item.color})` : '';
+            const promo = this.promoEtiqueta(item);
 
-            return `${item.sku} — ${item.nombre}${extra}`;
+            return `${item.sku} — ${item.nombre}${extra}${promo ? ` · ${promo}` : ''}`;
+        },
+
+        /** Texto del chip de promoción («−15 %», «USD −10») de la variante. */
+        promoEtiqueta(item) {
+            const promo = item?.promo;
+
+            if (!promo || !promo.valor) {
+                return '';
+            }
+
+            return promo.tipo === 'USD'
+                ? `USD −${Number(promo.valor).toFixed(2)}`
+                : `−${Number(promo.pct ?? promo.valor).toFixed(2).replace(/\.?0+$/, '')} %`;
         },
 
         /** Selecciona una variante y notifica el cambio al formulario. */
