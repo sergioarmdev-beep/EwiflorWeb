@@ -1,4 +1,4 @@
-        <section id="contacto" class="section contacto-section">
+                <section id="contacto" class="section contacto-section {{ ($pagina ?? false) ? 'section-page' : '' }}">
             <div class="container-main section-content">
 
                 <div class="section-heading reveal">
@@ -61,6 +61,11 @@
                             {{ session('success') }}
                         </div>
                         @endif
+                        @if ($errors->any())
+                        <div class="mb-4 p-3 rounded border border-red-500/30 bg-red-500/10 text-red-300">
+                            {{ $errors->first() }}
+                        </div>
+                        @endif
                         <form method="POST" action="{{ route('publico.contactar.servicio.tecnico') }}">
                             @csrf
 
@@ -93,7 +98,7 @@
                                     name="mensaje"
                                     rows="4"
                                     placeholder="Ej: El horno no enciende, ¿pueden revisarlo?"
-                                    required></textarea>
+                                    required>{{ old('mensaje') }}</textarea>
                                 <p class="form-hint">Debes estar registrado como cliente con compras previas.</p>
                             </div>
 

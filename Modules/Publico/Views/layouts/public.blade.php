@@ -1302,6 +1302,18 @@
             text-decoration: none;
         }
 
+        /* Páginas internas: espacio para la barra de navegación flotante */
+        .section-page {
+            min-height: 72vh;
+            padding-top: 150px;
+        }
+
+        @media (max-width: 760px) {
+            .section-page {
+                padding-top: 120px;
+            }
+        }
+
         [hidden] {
             display: none !important;
         }
@@ -1561,6 +1573,14 @@
 </head>
 
 <body>
+    @php
+        $esInicio   = request()->routeIs('catalogo.publico');
+        $enCatalogo = request()->routeIs('publico.catalogo');
+        $enServicio = request()->routeIs('publico.servicio.tecnico');
+        $enNosotros = request()->routeIs('publico.nosotros');
+        // En el inicio los anclajes son locales (#seccion); en otras páginas vuelven al inicio.
+        $base = $esInicio ? '' : route('catalogo.publico');
+    @endphp
     @include('publico::partials.navbar')
 
     <main>
@@ -1571,11 +1591,7 @@
     @include('publico::partials.product-modal')
 
     {{-- Datos del modal como JSON válido. Antes: `{ !!json_encode(...) !! }` → texto literal roto. --}}
-    <script id="product-data" type="application/json">
-        {
-            !!json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!
-        }
-    </script>
+    <script id="product-data" type="application/json">{!! json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -1642,38 +1658,13 @@
                 if (icon) icon.textContent = 'menu';
             }));
 
-            /* ===================== BÚSQUEDA ===================== */
-            const searchInput = document.getElementById('product-search');
-            const productCards = document.querySelectorAll('.product-card[data-product-id]');
-            const resultsText = document.getElementById('search-results');
-            const noResults = document.getElementById('no-search-results');
-
-            if (searchInput) {
-                const total = productCards.length;
-                if (resultsText) resultsText.textContent = `${total} producto(s) disponibles`;
-
-                const filterProducts = () => {
-                    const query = searchInput.value.trim().toLocaleLowerCase('es');
-                    let visible = 0;
-                    productCards.forEach(card => {
-                        const content = (card.dataset.search || card.textContent).toLocaleLowerCase('es');
-                        const matches = content.includes(query);
-                        card.hidden = !matches;
-                        if (matches) visible++;
-                    });
-                    if (resultsText) resultsText.textContent = query ?
-                        `${visible} producto(s) encontrado(s)` :
-                        `${total} producto(s) disponibles`;
-                    if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
-                };
-                searchInput.addEventListener('input', filterProducts);
-            }
+            /* La búsqueda y el filtro por categoría viven en partials/products-grid. */
 
             /* ===================== NAV ACTIVO ===================== */
             const sectionObserver = new IntersectionObserver(entries => {
                 entries.forEach(entry => {
                     if (!entry.isIntersecting) return;
-                    document.querySelectorAll('.nav-link').forEach(link => {
+                    document.querySelectorAll('.nav-link:not([data-page])').forEach(link => {
                         link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`);
                     });
                 });

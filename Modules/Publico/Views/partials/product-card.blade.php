@@ -31,6 +31,7 @@
 
                     <article class="product-card reveal"
                         data-product-id="{{ $producto->id_producto }}"
+                        data-categoria="{{ $producto->categoria }}"
                         data-search="{{ $textoBusqueda }}"
                         role="button"
                         tabindex="0"

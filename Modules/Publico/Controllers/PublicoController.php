@@ -8,27 +8,70 @@ use Illuminate\Support\Collection;
 use Modules\Catalogo\Models\Producto;
 use Modules\Promociones\Services\PromocionService;
 use Modules\ServicioTecnico\Services\SolicitudService;
+use Modules\Catalogo\Models\Categoria;
 
 class PublicoController extends Controller
 {
+    /** Cuántos productos se muestran como vista previa en el inicio. */
+    private const PRODUCTOS_EN_INICIO = 6;
+
     public function __construct(
         private SolicitudService $solicitudes,
         private PromocionService $promociones,
     ) {}
 
+    /** Inicio: vista previa del catálogo (primeros N productos) + categorías. */
     public function catalogoPublico()
     {
-        $productos = Producto::publicos()
+        return view('publico::publico', $this->datosCatalogo(self::PRODUCTOS_EN_INICIO));
+    }
+
+    /** Página completa del catálogo, con filtro por categoría (?categoria=slug). */
+    public function catalogo(Request $request)
+    {
+        $datos = $this->datosCatalogo();
+
+        $slug = strtoupper((string) $request->query('categoria', ''));
+        $cat  = $datos['categorias']->firstWhere('slug', $slug);
+
+        // Solo se preselecciona si existe y tiene productos.
+        $datos['categoriaActiva'] = ($cat && $cat['total'] > 0) ? $slug : null;
+
+        return view('publico::catalogo', $datos);
+    }
+
+    /** Página "Nosotros" (solo vista). */
+    public function nosotros()
+    {
+        return view('publico::nosotros');
+    }
+
+    /** Página independiente de servicio técnico (solo vista; el POST ya existe). */
+    public function servicioTecnico()
+    {
+        return view('publico::servicio-tecnico');
+    }
+
+    /**
+     * Datos compartidos por inicio y catálogo.
+     * $limite: si se indica, solo se muestran/serializan esos productos,
+     * pero las categorías siguen contando TODOS los productos públicos.
+     */
+    private function datosCatalogo(?int $limite = null): array
+    {
+        $todos = Producto::publicos()
             ->with([
                 'marca',
                 'imagenes',
+                'componentesCombo.componente',
                 'variantes' => fn($q) => $q->where('estado', 'ACTIVO'),
             ])
             ->orderBy('nombre')
             ->get();
 
-        // 🔽 NUEVO: categorías con conteo + imagen de ejemplo
-        $categorias = $this->construirCategorias($productos);
+        $categorias = $this->construirCategorias($todos);
+
+        $productos = $limite ? $todos->take($limite)->values() : $todos;
 
         $promociones = $this->promociones->mapaVigente(
             $productos->flatMap(fn(Producto $p) => $p->variantes)
@@ -63,7 +106,14 @@ class PublicoController extends Controller
             ]];
         });
 
-        return view('publico::publico', compact('productos', 'detalle', 'promociones', 'categorias'));
+        return [
+            'productos'       => $productos,
+            'totalProductos'  => $todos->count(),
+            'detalle'         => $detalle,
+            'promociones'     => $promociones,
+            'categorias'      => $categorias,
+            'categoriaActiva' => null,
+        ];
     }
 
     /**
@@ -72,52 +122,56 @@ class PublicoController extends Controller
      */
     private function construirCategorias(Collection $productos): Collection
     {
-        $meta = [
-            'ALIMENTARIA' => [
-                'titulo'      => 'Línea alimentaria',
-                'descripcion' => 'Equipamiento para preparación, proceso y conservación de alimentos.',
-                'imagen'      => '/images/catalog/categoria-alimentaria.jpg',
-            ],
-            'PANADERIA' => [
-                'titulo'      => 'Panadería',
-                'descripcion' => 'Maquinaria para procesos de producción de panadería y masas.',
-                'imagen'      => '/images/catalog/categoria-panaderia.jpg',
-            ],
-            'REPOSTERIA' => [
-                'titulo'      => 'Repostería',
-                'descripcion' => 'Equipos para elaboración de repostería, dulces y postres.',
-                'imagen'      => '/images/catalog/categoria-reposteria.jpg',
-            ],
-            'CARNICA' => [
-                'titulo'      => 'Línea cárnica',
-                'descripcion' => 'Soluciones para procesamiento de carnes y embutidos.',
-                'imagen'      => '/images/catalog/categoria-carnica.jpg',
-            ],
-        ];
-
         $agrupados = $productos->groupBy('categoria');
 
-        return collect(Producto::CATEGORIAS)->map(function (string $slug) use ($agrupados, $meta) {
-            $grupo  = $agrupados->get($slug, collect());
-            $config = $meta[$slug] ?? [
-                'titulo'      => ucfirst(mb_strtolower($slug)),
-                'descripcion' => '',
-                'imagen'      => null,
-            ];
+        // Lee metadata de DB; si la tabla está vacía, cae a defaults seguros.
+        $registros = Categoria::activas()->get()->keyBy('slug');
 
-            // Imagen representativa: primer producto de la categoría con imagen.
+        $slugs = $registros->isNotEmpty()
+            ? $registros->keys()->all()
+            : Producto::CATEGORIAS; // fallback si no corrió el seeder
+
+        return collect($slugs)->map(function (string $slug) use ($agrupados, $registros) {
+            $grupo = $agrupados->get($slug, collect());
+            $cat   = $registros->get($slug);
+
+            // Imagen de respaldo: primer producto de la categoría con imagen.
             $conImagen = $grupo->first(fn($p) => $p->imagenes->isNotEmpty());
-            $imagen    = $conImagen?->imagenes->first()?->url ?: $config['imagen'];
 
             return [
                 'slug'        => $slug,
-                'titulo'      => $config['titulo'],
-                'descripcion' => $config['descripcion'],
-                'imagen'      => $imagen,
+                'titulo'      => $cat?->titulo      ?? ucfirst(mb_strtolower($slug)),
+                'descripcion' => $cat?->descripcion ?? '',
+                'imagen'      => $cat?->imagen ?: $conImagen?->imagenes->first()?->url,
                 'total'       => $grupo->count(),
             ];
         })->values();
     }
 
-    // ... contactarServicioTecnico() queda igual
+
+    public function contactarServicioTecnico(Request $request)
+    {
+        $validado = $request->validate([
+            'nombre' => ['required', 'string', 'min:2', 'max:100'],
+            'telefono' => ['required', 'string', 'min:7', 'max:20'],
+            'mensaje' => ['nullable', 'string', 'min:5', 'max:1000'],
+        ]);
+
+        $cliente = $this->solicitudes->buscarCliente($validado['nombre'], $validado['telefono']);
+
+        if ($cliente === null) {
+            return back()
+                ->withInput()
+                ->with('error', 'No se encontró un cliente con ese nombre y número de celular. Asegúrate de estar registrado con compras previas.');
+        }
+
+        $solicitud = $this->solicitudes->crearPublica($cliente->id_cliente, [
+            'descripcion_falla' => $validado['mensaje'] ?? 'Solicitud de contacto desde la web pública.',
+            'id_garantia' => null,
+        ]);
+
+        return redirect()
+            ->route('serviciotecnico.publico.panel')
+            ->with('success', 'Tu solicitud de contacto ha sido registrada. Un técnico la revisará pronto.');
+    }
 }

@@ -5,6 +5,21 @@
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
 
+    a.category-card,
+    .category-card {
+        display: block;
+    }
+
+    a.category-card:focus-visible {
+        outline: 3px solid var(--green);
+        outline-offset: 3px;
+    }
+
+    .category-count .material-symbols-rounded {
+        margin-left: 6px;
+        font-size: 15px;
+    }
+
     .category-overlay .category-count {
         display: inline-flex;
         align-items: center;
@@ -46,7 +61,13 @@
         @else
         <div class="category-grid">
             @foreach($categorias as $cat)
-            <article class="category-card reveal">
+            @php
+                $enlace = $cat['total'] > 0
+                    ? route('publico.catalogo', ['categoria' => strtolower($cat['slug'])])
+                    : null;
+                $tag = $enlace ? 'a' : 'article';
+            @endphp
+            <{{ $tag }} class="category-card reveal" @if($enlace) href="{{ $enlace }}" aria-label="Ver {{ $cat['titulo'] }} en el catálogo" @endif>
                 @if($cat['imagen'])
                 <img
                     src="{{ $cat['imagen'] }}"
@@ -61,9 +82,10 @@
                     <p>{{ $cat['descripcion'] }}</p>
                     <span class="category-count">
                         {{ $cat['total'] }} {{ \Illuminate\Support\Str::plural('producto', $cat['total']) }}
+                        @if($enlace)<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>@endif
                     </span>
                 </div>
-            </article>
+            </{{ $tag }}>
             @endforeach
         </div>
         @endif

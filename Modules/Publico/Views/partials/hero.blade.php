@@ -7,8 +7,8 @@
                     <h1>Equipamos tus ideas. <span class="gradient-text">Impulsamos tu negocio.</span></h1>
                     <p class="hero-description">Descubre soluciones y equipamiento para el sector gastronómico. Explora nuestro catálogo de maquinaria y encuentra productos pensados para acompañar el crecimiento de tu negocio.</p>
                     <div class="hero-actions">
-                        <a href="#catalogo" class="button-primary">Explorar catálogo <span class="material-symbols-rounded">arrow_forward</span></a>
-                        <a href="#contacto" class="button-secondary">Contactar servicio técnico</a>
+                        <a href="{{ route('publico.catalogo') }}" class="button-primary">Explorar catálogo <span class="material-symbols-rounded">arrow_forward</span></a>
+                        <a href="{{ route('publico.servicio.tecnico') }}" class="button-secondary">Contactar servicio técnico</a>
                     </div>
                 </div>
             </div>

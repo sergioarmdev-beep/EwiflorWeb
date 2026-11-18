@@ -1,4 +1,4 @@
-        <section id="nosotros" class="section">
+        <section id="nosotros" class="section {{ ($pagina ?? false) ? 'section-page' : '' }}">
             <div class="container-main section-content about-grid">
 
                 <div class="about-image reveal">
@@ -30,7 +30,7 @@
                         información corporativa verificada.
                     </p>
 
-                    <a href="#catalogo" class="button-primary" style="margin-top: 15px;">
+                    <a href="{{ route('publico.catalogo') }}" class="button-primary" style="margin-top: 15px;">
                         Ver productos <span class="material-symbols-rounded">arrow_forward</span>
                     </a>
                 </div>

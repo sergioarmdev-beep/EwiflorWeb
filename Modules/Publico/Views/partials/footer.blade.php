@@ -4,7 +4,7 @@
             <div class="footer-grid">
 
                 <div class="footer-brand-column">
-                    <a href="#inicio" class="brand">
+                    <a href="{{ $base }}#inicio" class="brand">
                         <div class="brand-icon">E</div>
                         <div>
                             <span class="brand-name">EWIFLOR</span>
@@ -20,17 +20,17 @@
 
                 <div class="footer-column">
                     <h4>Navegación</h4>
-                    <a href="#inicio">Inicio</a>
-                    <a href="#categorias">Categorías</a>
-                    <a href="#catalogo">Catálogo</a>
-                    <a href="#contacto">Contacto</a>
-                    <a href="#nosotros">Nosotros</a>
+                    <a href="{{ $base }}#inicio">Inicio</a>
+                    <a href="{{ $base }}#categorias">Categorías</a>
+                    <a href="{{ route('publico.catalogo') }}">Catálogo</a>
+                    <a href="{{ route('publico.servicio.tecnico') }}">Servicio técnico</a>
+                    <a href="{{ route('publico.nosotros') }}">Nosotros</a>
                 </div>
 
                 <div class="footer-column">
                     <h4>Acceso</h4>
                     <a href="{{ route('login') }}">Acceso empleados</a>
-                    <a href="#catalogo">Productos</a>
+                    <a href="{{ route('publico.catalogo') }}">Productos</a>
                 </div>
 
             </div>

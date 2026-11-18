@@ -13,7 +13,7 @@
                         diferentes alternativas de equipamiento gastronómico.
                     </p>
 
-                    <a href="#catalogo" class="button-primary">
+                    <a href="{{ route('publico.catalogo') }}" class="button-primary">
                         Explorar productos <span class="material-symbols-rounded">arrow_forward</span>
                     </a>
                 </div>
