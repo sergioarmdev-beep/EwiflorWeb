@@ -8,6 +8,7 @@ use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
 use Modules\Inventario\Models\Sucursal;
 use Modules\Precios\Models\TipoCambio;
+use Modules\Sucursales\Support\AlcanceDocumentos;
 
 class Cotizacion extends Model
 {
@@ -39,8 +40,11 @@ class Cotizacion extends Model
     }
 
     /**
-     * Alcance de consulta: GERENTE/ADMINISTRADOR ven todo; el resto, solo
-     * las cotizaciones que emitió. Sin usuario no se ve nada (fail-closed).
+     * Alcance de consulta por sucursal/autor (ver AlcanceDocumentos):
+     *  - GERENTE        → todas las sucursales.
+     *  - ADMINISTRADOR  → solo su sucursal.
+     *  - VENDEDOR       → solo las que emitió, dentro de su sucursal.
+     * Sin usuario o sin sucursal no se ve nada (fail-closed).
      */
     public function scopeVisiblesPara(Builder $query, ?User $user): Builder
     {
@@ -48,19 +52,32 @@ class Cotizacion extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        if ($user->puedeVerTodosLosDocumentos()) {
+        if (AlcanceDocumentos::esGerente($user)) {
             return $query;
         }
 
-        return $query->where($query->qualifyColumn('id_usuario'), $user->id_usuario);
+        $sucursal = AlcanceDocumentos::sucursalDelUsuario($user);
+        if ($sucursal === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $query->where($query->qualifyColumn('id_sucursal'), $sucursal);
+
+        if (AlcanceDocumentos::soloSusDocumentos($user)) {
+            $query->where($query->qualifyColumn('id_usuario'), $user->id_usuario);
+        }
+
+        return $query;
     }
 
     /** ¿Este usuario puede consultar esta cotización concreta? */
     public function puedeVer(?User $user): bool
     {
-        return $user !== null
-            && ($user->puedeVerTodosLosDocumentos()
-                || (int) $this->id_usuario === (int) $user->id_usuario);
+        return AlcanceDocumentos::puedeVerDocumento(
+            $user,
+            (int) $this->id_sucursal,
+            $this->id_usuario !== null ? (int) $this->id_usuario : null
+        );
     }
 
     public function cliente()

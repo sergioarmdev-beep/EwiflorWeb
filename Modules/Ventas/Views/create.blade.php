@@ -94,10 +94,13 @@
                     <option value="">— Selecciona almacén —</option>
                     @foreach ($almacenes as $a)
                     <option value="{{ $a->id_almacen }}" @selected((string) old('id_almacen')===(string) $a->id_almacen)>
-                        {{ $a->nombre }}
+                        {{ $a->nombre }} — {{ $a->sucursal?->nombre ?? '' }}
                     </option>
                     @endforeach
                 </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    La venta se registra en la sucursal del almacén elegido.
+                </p>
             </div>
         </div>
 

@@ -4,6 +4,7 @@ use App\Providers\AppServiceProvider;
 use Modules\Auth\Providers\AuthServiceProvider;
 use Modules\Catalogo\Providers\CatalogoServiceProvider;
 use Modules\Clientes\Providers\ClientesServiceProvider;
+use Modules\Comisiones\Providers\ComisionesServiceProvider;
 use Modules\Cotizaciones\Providers\CotizacionesServiceProvider;
 use Modules\Dashboard\Providers\DashboardServiceProvider;
 use Modules\Inventario\Providers\InventarioServiceProvider;
@@ -30,4 +31,5 @@ return [
     CotizacionesServiceProvider::class,
     VentasServiceProvider::class,
     SucursalesServiceProvider::class,
+    ComisionesServiceProvider::class,
 ];

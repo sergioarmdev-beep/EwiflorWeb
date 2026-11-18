@@ -4,6 +4,8 @@ namespace Modules\Ventas\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
+use Modules\Sucursales\Support\AlcanceDocumentos;
 
 class StoreVentaRequest extends FormRequest
 {
@@ -20,7 +22,7 @@ class StoreVentaRequest extends FormRequest
     {
         return [
             'modo' => ['required', Rule::in(['directa', 'cotizacion'])],
-            'id_almacen' => ['required', 'integer', 'exists:almacen,id_almacen'],
+            'id_almacen' => ['required', 'integer', $this->reglaAlmacen()],
 
             // Modo cotización
             'id_cotizacion' => ['required_if:modo,cotizacion', 'integer', 'exists:cotizacion,id_cotizacion'],
@@ -41,6 +43,44 @@ class StoreVentaRequest extends FormRequest
             'lineas.*.descuento_valor' => ['nullable', 'numeric', 'min:0', 'max:9999999.99'],
             'lineas.*.garantia_meses' => ['nullable', 'integer', 'min:0', 'max:1200'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'id_almacen.exists' => $this->sinSucursal()
+                ? 'Tu usuario no tiene sucursal asignada: no puedes registrar ventas.'
+                : 'El almacén indicado no existe o no está activo.',
+        ];
+    }
+
+    /**
+     * Almacén ACTIVO y, para quien no es Gerente, de su propia sucursal.
+     * Es solo validación de entrada: la autoridad sigue siendo VentaService
+     * y la guarda de la función PostgreSQL registrar_venta().
+     */
+    private function reglaAlmacen(): Exists
+    {
+        $rule = Rule::exists('almacen', 'id_almacen')->where('estado', 'ACTIVO');
+
+        $user = $this->user();
+        if ($user === null || AlcanceDocumentos::esGerente($user)) {
+            return $rule;
+        }
+
+        // Sin sucursal asignada no existe ningún almacén válido (-1 nunca existe).
+        $rule->where('id_sucursal', AlcanceDocumentos::sucursalDelUsuario($user) ?? -1);
+
+        return $rule;
+    }
+
+    private function sinSucursal(): bool
+    {
+        $user = $this->user();
+
+        return $user !== null
+            && ! AlcanceDocumentos::esGerente($user)
+            && AlcanceDocumentos::sucursalDelUsuario($user) === null;
     }
 
     protected function prepareForValidation(): void

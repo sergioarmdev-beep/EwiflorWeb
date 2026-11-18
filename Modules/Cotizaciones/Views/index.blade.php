@@ -18,13 +18,13 @@
     <div class="bg-red-100 text-red-800 px-4 py-2 rounded">{{ session('error') }}</div>
     @endif
 
-    @unless (auth()->user()->puedeVerTodosLosDocumentos())
+    @if ($aviso ?? null)
     <div class="bg-sky-50 border border-sky-200 text-sky-900 px-4 py-2 rounded text-sm">
-        Solo se muestran las cotizaciones que tú emitiste.
+        {{ $aviso }}
     </div>
-    @endunless
+    @endif
 
-    <form method="GET" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-4 gap-3">
+    <form method="GET" class="bg-white p-4 rounded shadow grid grid-cols-1 md:grid-cols-5 gap-3">
         <input type="text" name="buscar" value="{{ request('buscar') }}"
             placeholder="Cliente o teléfono" class="border rounded px-3 py-2">
         <select name="estado" class="border rounded px-3 py-2">
@@ -38,6 +38,29 @@
             <option value="VIGENTE" @selected(request('condicion')==='VIGENTE' )>Vigente</option>
             <option value="VENCIDA" @selected(request('condicion')==='VENCIDA' )>Vencida</option>
         </select>
+
+        @if (($sucursales ?? collect())->isNotEmpty())
+        <select name="id_sucursal" class="border rounded px-3 py-2">
+            <option value="">— Todas las sucursales —</option>
+            @foreach ($sucursales as $s)
+            <option value="{{ $s->id_sucursal }}" @selected((string) request('id_sucursal')===(string) $s->id_sucursal)>
+                {{ $s->nombre }}
+            </option>
+            @endforeach
+        </select>
+        @endif
+
+        @if (($usuarios ?? collect())->isNotEmpty())
+        <select name="id_usuario" class="border rounded px-3 py-2">
+            <option value="">— Todos los vendedores —</option>
+            @foreach ($usuarios as $u)
+            <option value="{{ $u->id_usuario }}" @selected((string) request('id_usuario')===(string) $u->id_usuario)>
+                {{ $u->nombre_completo }}
+            </option>
+            @endforeach
+        </select>
+        @endif
+
         <div class="flex gap-2">
             <button class="bg-gray-800 text-white px-4 py-2 rounded">Filtrar</button>
             <a href="{{ route('cotizaciones.index') }}" class="border px-4 py-2 rounded">Limpiar</a>
@@ -52,6 +75,7 @@
                     <th class="px-4 py-2 text-left">Fecha</th>
                     <th class="px-4 py-2 text-left">Cliente</th>
                     <th class="px-4 py-2 text-left">Vendedor</th>
+                    <th class="px-4 py-2 text-left">Sucursal</th>
                     <th class="px-4 py-2 text-right">Total USD</th>
                     <th class="px-4 py-2 text-left">Estado</th>
                     <th class="px-4 py-2 text-left">Condición</th>
@@ -65,6 +89,7 @@
                     <td class="px-4 py-2">{{ $c->fecha_emision->format('d/m/Y') }}</td>
                     <td class="px-4 py-2">{{ $c->cliente?->nombre ?? '—' }}</td>
                     <td class="px-4 py-2">{{ $c->usuario?->nombre_completo ?? '—' }}</td>
+                    <td class="px-4 py-2">{{ $c->sucursal?->nombre ?? '—' }}</td>
                     <td class="px-4 py-2 text-right">$ {{ number_format($c->totalUsd(), 2) }}</td>
                     <td class="px-4 py-2">
                         <span class="px-2 py-1 rounded text-xs
@@ -89,7 +114,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" class="px-4 py-6 text-center text-gray-500">Sin cotizaciones.</td>
+                    <td colspan="9" class="px-4 py-6 text-center text-gray-500">Sin cotizaciones.</td>
                 </tr>
                 @endforelse
             </tbody>

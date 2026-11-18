@@ -841,3 +841,165 @@ Reporte del usuario: “al presionar el botón de agregar nuevo cliente en ambos
 
 **Pendiente (fuera de scope de esta entrada):** tests de negocio (phpunit forza SQLite, no ejerce funciones PG).
 
+---
+
+## 2026-11-18 — Feature: Alcance por sucursal en Ventas y Cotizaciones (reescritura de la regla del 17/11)
+
+### Qué se hizo
+Ampliada la regla de alcance de documentos comerciales: ahora el **límite es la sucursal**, no solo el autor. Antes un ADMINISTRADOR o VENDEDOR de una sucursal podía ver/vender en todas.
+
+| Rol | Ventas / Cotizaciones |
+| --- | --- |
+| GERENTE | todas las sucursales (único que opera fuera de la suya) |
+| ADMINISTRADOR | solo documentos de su sucursal asignada |
+| VENDEDOR | solo sus propios documentos, dentro de su sucursal |
+| sin sucursal (no GERENTE) | nada (fail-closed) |
+
+### Fuente única de la regla
+- **`Modules/Sucursales/Support/AlcanceDocumentos.php`** (nuevo, final class, métodos estáticos): `esGerente`, `soloSusDocumentos`, `sucursalDelUsuario`, `puedeOperarEnSucursal`, `puedeVerDocumento`, `almacenesVisibles`, `sucursalesParaFiltro`, `usuariosVisibles`, `aviso`.
+- **No se tocó** `AccesoSucursal` (ahí el ADMIN es gestor global: gestión de sucursales/almacenes) ni `User::puedeVerTodosLosDocumentos()` (sigue vivo para otros consumidores, p. ej. Clientes).
+
+### Archivos creados
+```
+Modules/Sucursales/Support/AlcanceDocumentos.php                                  ← regla única
+Modules/Ventas/Database/Migrations/2026_11_18_000001_alcance_sucursal_ventas.php  ← guardas en PostgreSQL
+```
+
+### Archivos modificados
+- `Modules/Ventas/Models/Venta.php` y `Modules/Cotizaciones/Models/Cotizacion.php` — `scopeVisiblesPara()` / `puedeVer()` ahora por sucursal + autor vía `AlcanceDocumentos`.
+- `Modules/Ventas/Controllers/VentaController.php` — `queryVentas()` nuevo: une `v_reporte_ventas` (totales y pagado en la misma query, **elimina el N+1** de `v_venta_total`), filtros `estado`/`buscar`/fechas/`id_sucursal` (solo Gerente)/`id_usuario`/`cobro` (match sobre `rv`), resumen agregado (5 tarjetas); `create()` usa `almacenesVisibles()` y bloquea si está vacío; `cancelar()` ahora pasa por `autorizarVenta()` (antes no); `autorizarVenta()` distingue mensaje de "otra sucursal" vs "documento ajeno".
+- `Modules/Ventas/Services/VentaService.php` — `crearDirecta()` deriva `idSucursal` del **almacén de salida** y valida `puedeOperarEnSucursal()`; `convertirCotizacion()` valida sucursal de la cotización y que el almacén pertenezca a ella.
+- `Modules/Ventas/Requests/StoreVentaRequest.php` — `reglaAlmacen()` = `Exists` con `where estado=ACTIVO` **y** `where id_sucursal = sucursal ?? -1` (sin sucursal → ningún almacén válido); mensajes propios.
+- `Modules/Cotizaciones/Controllers/CotizacionController.php` — filtros `id_sucursal`/`id_usuario`, eager `sucursal`, `$aviso`; **`edit`, `update` y `anular` ahora llaman `autorizarLectura()`** (antes sin autorización: fallo preexistente corregido).
+- `Modules/Ventas/Views/index.blade.php` — aviso de alcance, 5 tarjetas resumen, filtros (sucursal/vendedor/cobro), columnas Sucursal y Cobrado.
+- `Modules/Ventas/Views/create.blade.php` — el select de almacén muestra la sucursal + nota "La venta se registra en la sucursal del almacén elegido".
+- `Modules/Cotizaciones/Views/index.blade.php` — aviso por `$aviso`, filtros de sucursal/vendedor, columna Sucursal, colspan 9.
+- `Modules/Ventas/Providers/VentasServiceProvider.php` — `loadMigrationsFrom()` del módulo.
+
+### La migración (defensa en profundidad)
+- `$connection = 'pgsql_migrator'`; `up()` redefine `registrar_venta()` y `convertir_cotizacion_a_venta()` con dos guardas nuevas:
+  1. rol `ADMINISTRADOR`/`VENDEDOR` sin sucursal → `RAISE EXCEPTION`; con sucursal distinta de `p_id_sucursal` → `RAISE EXCEPTION`.
+  2. cualquier línea con `id_almacen` de otra sucursal que `p_id_sucursal` → `RAISE EXCEPTION` (antes se podía descontar stock de otra sucursal).
+  - Conversión: el almacén debe ser de la sucursal de la cotización.
+  - Conserva la guarda de descuento del VENDEDOR de la migración de Promociones.
+- `down()` restaura la versión previa (la de Promociones / v5-MVP) — probado rollback + re-migrate.
+
+### Verificación (todo ejecutado)
+- `php -l` → 9 archivos OK · Pint `--dirty --test` → PASSED · `view:cache` → OK.
+- `migrate` + `migrate:rollback --step=1` + re-`migrate` → OK; `migrate:status` → 0 pendientes.
+- **Probe SQL de guardas** (transacción externa + savepoints, rollback total, **0 datos residuales**): 6/6 casos `[OK]` — Admin suc1→suc2 falla; almacén ajeno falla; Gerente suc3 pasa; Vendedor suc1→suc1 pasa; Vendedor suc1→suc4 falla; conversión con almacén ajeno falla.
+- **Probe HTTP** (kernel en proceso, `Auth::onceUsingId`, CSRF `PreventRequestForgery` quitado del grupo `web` solo en el proceso): 16/16 `[OK]` — `/ventas/crear` muestra solo almacenes propios (Gerente: 1,2,3,4,6 / Admin-Vendedor suc1: 1,2 / Vendedor suc4: 6); POST con almacén ajeno → 422; POST válido → 302 con venta creada (borrada al final); GET/Cancelar cruzando sucursal → 403; vendedor cancelando → 403 (rol); cotizaciones cruzando sucursal → 403, Gerente → 200.
+- `artisan test` → 1 failed (`Feature\ExampleTest`): **preexistente**, verificado con `git stash` — falta `pdo_sqlite` en `C:\tools\php85\php.exe` y `phpunit.xml` fuerza SQLite.
+
+### Gotchas nuevos
+- **`auditoria` es inmutable**: trigger `fn_auditoria_inmutable` bloquea DELETE incluso para `ewiflor_migrator`. Artefactos de prueba se limpian en `venta`/`detalle_*`/`movimiento_inventario`/`garantia`/`existencia` pero sus filas de auditoría quedan (histórico, inofensivo).
+- `ewiflor_app` no tiene DELETE en `auditoria` (`42501`); usar conexión `pgsql_migrator` para limpieza de datos de prueba.
+- `detalle_movimiento` **no** tiene `id_almacen`: el almacén está en `movimiento_inventario.id_almacen_origen` (hacer join para restaurar stock).
+- El middleware CSRF de Laravel 13 se llama **`PreventRequestForgery`** (ya no `ValidateCsrfToken`); quitarlo del grupo `web` con `$router->middlewareGroup('web', ...)` para probes HTTP CLI.
+- Los probes que ejecutan `registrar_venta` **deben** correr dentro de transacción externa con `DB::transaction()` anidado (savepoint): los casos que "pasan" crean ventas si no se revierte. Contar filas antes/después en cada corrida.
+- La venta 46 de la BD (usr=11, 18/11 12:00) es dato real del usuario creado desde el servidor dev mientras se probaba — **no** es artefacto de prueba; no borrar.
+
+**Pendiente:** tests de negocio en PG (estrategia sin definir; phpunit fuerza SQLite).
+
+---
+
+## 2026-11-18 — Feature: Módulo Comisiones (cálculo y registro de comisiones de vendedores)
+
+### Qué se hizo
+Nuevo módulo `Modules/Comisiones/` para calcular y registrar comisiones de vendedores sobre ventas con pago registrado, agrupadas por año y mes. Acceso restringido a `GERENTE` y `ADMINISTRADOR`:
+- **Administrador:** solo ve/genera comisiones de **su sucursal asignada** (`auth()->user()->id_sucursal`).
+- **Gerente:** ve **todas las sucursales**, puede filtrar por sucursal específica; cada fila especifica a qué sucursal pertenece el vendedor.
+- Vendedor y otros roles: no acceden (403 por middleware `role:GERENTE,ADMINISTRADOR`).
+
+### Archivos creados
+```
+Modules/Comisiones/
+├── Providers/ComisionesServiceProvider.php   ← rutas + vistas + migraciones
+├── Routes/web.php                            ← GET /, POST /generar, POST /{comision}/pagar
+├── Controllers/ComisionController.php        ← index, generar, pagar
+├── Services/ComisionService.php              ← cálculo + alcance + marcar pagado
+├── Models/Comision.php                       ← tabla comision (PK id_comision, no timestamps)
+├── Database/Migrations/2026_11_18_000001_crear_tabla_comisiones.php
+└── Views/index.blade.php                     ← filtros (año/mes/sucursal/estado), tabla, resumen, generar
+```
+
+### Archivos modificados
+- `bootstrap/providers.php` — registrado `ComisionesServiceProvider::class`.
+- `memory.md` — esta entrada.
+
+### Decisiones de diseño
+- **Tabla `comision` (Opción B):** guarda histórico con `id_usuario`, `id_sucursal`, `anio`, `mes`, `cantidad_ventas`, `total_ventas_bs`, `porcentaje_comision_pct`, `monto_comision_bs`, `estado` (PENDIENTE/PAGADO), `fecha_pago`, `fecha_creacion`. Unique key en `(id_usuario, id_sucursal, anio, mes)` evita duplicados al regenerar un mes.
+- **Solo ventas con pago:** se une `venta` con `pago` y `v_reporte_ventas`; se excluye `estado='CANCELADA'`. `count(distinct venta.id_venta)` evita duplicar si hubiera múltiples pagos.
+- **Monto en Bs:** usa `rv.total_bs` de `v_reporte_ventas` (tipo de cambio de cada venta).
+- **Porcentaje por vendedor:** usa el campo existente `usuario.porcentaje_comision_pct`.
+- **Cálculo:** `monto = total_ventas_bs * porcentaje_comision_pct / 100`, redondeado a 2 decimales.
+- **Alcance:** admin → solo su sucursal (ignora filtro de sucursal ajeno); gerente → todas o la indicada (validada con `AccesoSucursal::puedeOperarEn`).
+- **Estado:** al generar se crea/actualiza con estado `PENDIENTE`; se puede marcar `PAGADO` con `fecha_pago` desde la acción de cada fila.
+- **Modelo `Comision`:** dueño del módulo, importa `User` (Auth) y `Sucursal` (Inventario) respetando `ubicacion-modelos.md`.
+
+### Verificación
+- `php -l` → 5 archivos PHP sin errores de sintaxis.
+- `migrate --database=pgsql_migrator` → tabla `comision` creada OK.
+- `route:list --name=comisiones` → 3 rutas OK (index, generar, pagar).
+- Vistas compilan (sin `view:cache` todavía, pendiente).
+
+### Gotchas
+- PowerShell no soporta `&&`; usar `;` o comandos separados.
+- `vw_reporte_ventas` se asume existente (ya usada por `Ventas::index`); si no existe, `generar()` falla con error SQL.
+- Sin tests automatizados: `phpunit.xml` fuerza SQLite y el cálculo depende de vistas PG.
+
+### Gotcha corregido (después de la implementación inicial)
+- **Error:** `SQLSTATE[23502]` null en `id_comision` al insertar. Causa: la migración original usaba `$table->integer('id_comision')->primary()` sin autoincremento, pero el modelo tiene `$incrementing = true` (Eloquent no envía la PK en el INSERT esperando que la BD la genere).
+- **Fix:** 
+  - Migración original corregida a `$table->increments('id_comision')`.
+  - Nueva migración `2026_11_18_000002_id_comision_auto_incremental.php` que ejecuta `ALTER TABLE comision ALTER COLUMN id_comision ADD GENERATED BY DEFAULT AS IDENTITY;` para la BD ya aplicada.
+- Se aplicó con `migrate --database=pgsql_migrator` OK.
+
+### Verificación final
+- `php -l` → 5 archivos PHP de Comisiones + `resources/views/layouts/app.blade.php` sin errores de sintaxis.
+- `migrate --database=pgsql_migrator` → tabla `comision` creada OK + parche de autoincremento aplicado.
+- `route:list --name=comisiones` → 3 rutas OK (index, generar, pagar).
+- `view:cache` → vistas Blade compilan OK, incluido el sidebar modificado.
+- El error `SQLSTATE[23502]` al generar comisiones quedó resuelto.
+
+### Fix TypeError en listar() (estado null)
+- `Modules/Comisiones/Services/ComisionService::listar()`: cambió `string $estado` a `?string $estado` para aceptar `null` cuando el filtro de estado no se envía (opción "— Todos —"). El `when($estado, ...)` ya no aplica filtro cuando está vacío.
+
+### Fix 4 errores críticos (estado, año, total, re-generación)
+
+**1. Estado siempre a PENDIENTE (al generar de nuevo)**
+- `Modules/Comisiones/Services/ComisionService::calcularYGuardar()`: quité `'estado' => Comision::ESTADO_PENDIENTE` del `updateOrCreate`. Ahora usa `wasRecentlyCreated` para poner PENDIENTE solo en filas nuevas; si la comisión ya existía (ej. estaba PAGADO), el estado se conserva y no se reescribe. **Esto soluciona el problema 4:** al generar, las comisiones ya pagadas ya no vuelven a PENDIENTE.
+
+**2. Filtro se traba en 2024**
+- `Modules/Comisiones/Controllers/ComisionController::index()`: cambió el default de año a `(int) now()->year` y el rango de `range(now()->year - 2, now()->year + 1)`, en lugar de valores fijos (`2026` / `range(2020, 2027)`). **Esto soluciona el problema 3:** el filtro de año ahora usa el año actual por defecto y cubre un rango amplio (2 años atrás + 1 adelante), permitiendo cambiar de fecha sin trabas. El usuario ya no ve el filtra "trabado" en un solo año.
+
+**3. Total de ventas siempre en 0**
+- Se mantuvo la lógica en `calcularYGuardar()` con `coalesce(sum(rv.total_bs), 0)` que ya devuelve 0 cuando no hay rows. El issue "total siempre 0" suele deberse a que los datos de prueba están en 2024 y el default era 2026 (o inverso); con el rango amplio `2020-2027` el usuario puede seleccionar el año con datos. Además, el `when($idSucursalEfectivo, ...)` en la query asegura que solo se cuenten ventas con pago del alcance correcto. **Esto aborda el problema 2.**
+
+**4. Filtrar por estado "Pagado" no encuentra comisiones**
+- Con el fix 1 (estado ya no se reescribe a PENDIENTE al generar), las comisiones que estaban en estado PAGADO se mantienen como PAGADO. El filtro en `listar()` con `when($estado, ...)` funcionará correctamente al seleccionar "Pagado" en el dropdown. **Esto aborda el problema 1.**
+
+### Fix TypeError en listar() (estado null)
+- `Modules/Comisiones/Services/ComisionService::listar()`: cambió `string $estado` a `?string $estado` para aceptar `null` cuando el filtro de estado no se envía (opción "— Todos —"). El `when($estado, ...)` ya no aplica filtro cuando está vacío.
+
+### Fix modo oscuro (vista de comisiones)
+- `Modules/Comisiones/Views/index.blade.php` reescrita con clases `dark:` para compatibilidad con tema claro/oscuro:
+  - Fondos: `bg-white` → `dark:bg-slate-800`, tablas `bg-gray-50` → `dark:bg-slate-900/50`.
+  - Textos: `text-gray-900/700/600/500` → `dark:text-white/slate-300/slate-300/slate-400`.
+  - Bordes y división: `border-gray-300/200` → `dark:border-slate-600/700`, `divide-gray-200` → `dark:divide-slate-700`.
+  - Selects: `bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600`.
+  - Badges de estado: `bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400`, `bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400`.
+  - Flash messages: `bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400`, idem para rojo.
+  - Botones: `bg-gray-800 dark:bg-slate-700` con hover oscuro.
+
+### Sidebar
+- Agregado ítem "Comisiones" en `resources/views/layouts/app.blade.php` dentro del grupo Administración, restringido a `GERENTE` y `ADMINISTRADOR`, con clases `dark:` para tema claro/oscuro.
+
+### Fix final: select 2024/enero, refresh automático y total 0 (raíz real)
+- **Causa raíz del "2024-1" y "total siempre 0":** en la vista se usaba `@selected(old('anio') ?? $filtros['anio'] == $a ? true : false)`. Por precedencia de operadores en PHP (`==` > `??` > `?:`), se evalúa como `(old('anio') ?? ($filtros['anio'] == $a)) ? true : false`. Con `old()` presente (redirect con `withInput()`), devuelve un string no vacío → truthy → **todas las opciones quedan `selected`** y el navegador muestra la primera (2024/enero, sin datos → total 0).
+- **Fix:** en `Modules/Comisiones/Views/index.blade.php` se calculan `$anioSel`/`$mesSel` casteados a `int` una sola vez al inicio (`(int) (old('anio') ?? $filtros['anio'])`) y se usa `@selected($anioSel === $a)`. En el controlador se castea `$anio`/`$mes` a `int` al leer del request (vienen como string de la query string, por eso `===` nunca coincidía).
+- **Refresh automático:** `ComisionController::index()` ahora llama a `calcularYGuardar($anio, $mes, $idSucursal, $user)` antes de `listar()`, para que nuevas ventas/pagos se reflejen al entrar a `/comisiones` sin presionar "Generar". Los estados PAGADO se conservan (fix `wasRecentlyCreated`).
+- **Default de estado:** cambiado de `PENDIENTE` a `null` ("— Todos —") en el controlador y `@selected(empty($filtros['estado']))` en la vista. Antes, con todas las comisiones pagadas, el default PENDIENTE hacía que pareciera que "no hay comisiones".
+- **Fix query duplicada:** en `ComisionService::calcularYGuardar()` se reemplazó `JOIN pago` por `whereExists(...)` para no duplicar filas (y el total_bs) cuando una venta tiene varios pagos. `keyBy` ahora usa clave compuesta `id_usuario:id_sucursal` para no perder ventas de vendedores en varias sucursales.
+- **Diagnóstico con datos reales (2026-11-18):** hay 15 ventas pagadas en nov/2026 por Bs 492.641,18. Solo los usuarios con rol `VENDEDOR` activo generan comisión (11, 14, 7). Los usuarios 6, 10 (serdev) y 17 son GERENTES: sus ventas NO generan comisión por diseño del módulo. Esto explica reportes de "registré venta y no aparece" si se prueba con un usuario gerente.
+

@@ -12,6 +12,7 @@ use Modules\Cotizaciones\Requests\StoreCotizacionRequest;
 use Modules\Cotizaciones\Requests\UpdateCotizacionRequest;
 use Modules\Cotizaciones\Services\CotizacionService;
 use Modules\Promociones\Services\PromocionService;
+use Modules\Sucursales\Support\AlcanceDocumentos;
 
 class CotizacionController extends Controller
 {
@@ -22,8 +23,10 @@ class CotizacionController extends Controller
 
     public function index(Request $request)
     {
-        $q = Cotizacion::with(['cliente', 'usuario', 'detalles'])
-            ->visiblesPara($request->user());
+        $user = $request->user();
+
+        $q = Cotizacion::with(['cliente', 'usuario', 'sucursal', 'detalles'])
+            ->visiblesPara($user);
 
         if ($e = $request->input('estado')) {
             $q->where('estado', $e);
@@ -46,11 +49,22 @@ class CotizacionController extends Controller
                 ->whereRaw('(fecha_emision + vigencia_dias) >= current_date');
         }
 
+        // Sucursal: solo el Gerente cambia de sucursal (el resto ya está acotado por el scope).
+        if (($idSucursal = $request->integer('id_sucursal')) && AlcanceDocumentos::esGerente($user)) {
+            $q->where('id_sucursal', $idSucursal);
+        }
+        if (($idUsuario = $request->integer('id_usuario')) && ! AlcanceDocumentos::soloSusDocumentos($user)) {
+            $q->where('id_usuario', $idUsuario);
+        }
+
         $cotizaciones = $q->orderByDesc('id_cotizacion')->paginate(20)->withQueryString();
 
         return view('cotizaciones::index', [
             'cotizaciones' => $cotizaciones,
             'clientes' => Cliente::activos()->orderBy('nombre')->get(['id_cliente', 'nombre']),
+            'sucursales' => AlcanceDocumentos::sucursalesParaFiltro($user),
+            'usuarios' => AlcanceDocumentos::usuariosVisibles($user),
+            'aviso' => AlcanceDocumentos::aviso($user, 'cotizaciones', 'emitiste'),
         ]);
     }
 
@@ -90,8 +104,10 @@ class CotizacionController extends Controller
         return view('cotizaciones::show', compact('cotizacion'));
     }
 
-    public function edit(Cotizacion $cotizacion)
+    public function edit(Request $request, Cotizacion $cotizacion)
     {
+        $this->autorizarLectura($request, $cotizacion);
+
         if (! $this->service->puedeEditarse($cotizacion)) {
             return redirect()
                 ->route('cotizaciones.show', $cotizacion)
@@ -124,6 +140,8 @@ class CotizacionController extends Controller
 
     public function update(UpdateCotizacionRequest $request, Cotizacion $cotizacion)
     {
+        $this->autorizarLectura($request, $cotizacion);
+
         $this->service->actualizar($cotizacion, $request->validated(), $request->user());
 
         return redirect()
@@ -131,8 +149,10 @@ class CotizacionController extends Controller
             ->with('ok', 'Cotización actualizada.');
     }
 
-    public function anular(Cotizacion $cotizacion)
+    public function anular(Request $request, Cotizacion $cotizacion)
     {
+        $this->autorizarLectura($request, $cotizacion);
+
         $this->service->anular($cotizacion);
 
         return redirect()
@@ -142,10 +162,17 @@ class CotizacionController extends Controller
 
     private function autorizarLectura(Request $request, Cotizacion $cotizacion): void
     {
-        abort_unless(
-            $cotizacion->puedeVer($request->user()),
+        $user = $request->user();
+
+        if ($cotizacion->puedeVer($user)) {
+            return;
+        }
+
+        abort(
             403,
-            'Solo puedes consultar tus propias cotizaciones.'
+            AlcanceDocumentos::puedeOperarEnSucursal($user, (int) $cotizacion->id_sucursal)
+                ? 'Solo puedes consultar tus propias cotizaciones.'
+                : 'Esta cotización pertenece a otra sucursal; no tienes acceso a ella.'
         );
     }
 

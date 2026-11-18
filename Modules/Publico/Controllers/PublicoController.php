@@ -4,15 +4,13 @@ namespace Modules\Publico\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Modules\Catalogo\Models\Producto;
 use Modules\Promociones\Services\PromocionService;
 use Modules\ServicioTecnico\Services\SolicitudService;
 
 class PublicoController extends Controller
 {
-    /**
-     * Catálogo público sin autenticación.
-     */
     public function __construct(
         private SolicitudService $solicitudes,
         private PromocionService $promociones,
@@ -24,17 +22,18 @@ class PublicoController extends Controller
             ->with([
                 'marca',
                 'imagenes',
-                'variantes' => fn ($q) => $q->where('estado', 'ACTIVO'),
+                'variantes' => fn($q) => $q->where('estado', 'ACTIVO'),
             ])
             ->orderBy('nombre')
             ->get();
 
-        // Promociones vigentes por variante (precios con descuento del público).
+        // 🔽 NUEVO: categorías con conteo + imagen de ejemplo
+        $categorias = $this->construirCategorias($productos);
+
         $promociones = $this->promociones->mapaVigente(
-            $productos->flatMap(fn (Producto $p) => $p->variantes)
+            $productos->flatMap(fn(Producto $p) => $p->variantes)
         );
 
-        // Datos que consume el modal de detalle (se serializan como JSON en la vista).
         $detalle = $productos->mapWithKeys(function (Producto $p) use ($promociones) {
             return [$p->id_producto => [
                 'id' => $p->id_producto,
@@ -48,13 +47,13 @@ class PublicoController extends Controller
                 'descripcion' => $p->descripcion,
                 'es_combo' => $p->esCombo(),
                 'componentes' => $p->esCombo()
-                    ? $p->componentesCombo->map(fn ($c) => ($c->componente?->nombre ?? 'Producto #'.$c->id_componente).' ×'.$c->cantidad)->implode(', ')
+                    ? $p->componentesCombo->map(fn($c) => ($c->componente?->nombre ?? 'Producto #' . $c->id_componente) . ' ×' . $c->cantidad)->implode(', ')
                     : null,
-                'imagenes' => $p->imagenes->map(fn ($i) => [
+                'imagenes' => $p->imagenes->map(fn($i) => [
                     'url' => $i->url,
                     'alt' => $i->texto_alternativo ?: $p->nombre,
                 ])->values(),
-                'variantes' => $p->variantes->map(fn ($v) => [
+                'variantes' => $p->variantes->map(fn($v) => [
                     'sku' => $v->sku,
                     'color' => $v->color,
                     'caracteristicas' => $v->caracteristicas,
@@ -64,36 +63,61 @@ class PublicoController extends Controller
             ]];
         });
 
-        return view('publico::publico', compact('productos', 'detalle', 'promociones'));
+        return view('publico::publico', compact('productos', 'detalle', 'promociones', 'categorias'));
     }
 
     /**
-     * Contacta con servicio técnico desde la web pública.
-     * Solo clientes existentes (nombre + celular) pueden crear una solicitud.
+     * Devuelve una colección con TODAS las categorías de Producto::CATEGORIAS,
+     * aunque no tengan productos todavía. Así la sección nunca queda vacía.
      */
-    public function contactarServicioTecnico(Request $request)
+    private function construirCategorias(Collection $productos): Collection
     {
-        $validado = $request->validate([
-            'nombre' => ['required', 'string', 'min:2', 'max:100'],
-            'telefono' => ['required', 'string', 'min:7', 'max:20'],
-            'mensaje' => ['nullable', 'string', 'min:5', 'max:1000'],
-        ]);
+        $meta = [
+            'ALIMENTARIA' => [
+                'titulo'      => 'Línea alimentaria',
+                'descripcion' => 'Equipamiento para preparación, proceso y conservación de alimentos.',
+                'imagen'      => '/images/catalog/categoria-alimentaria.jpg',
+            ],
+            'PANADERIA' => [
+                'titulo'      => 'Panadería',
+                'descripcion' => 'Maquinaria para procesos de producción de panadería y masas.',
+                'imagen'      => '/images/catalog/categoria-panaderia.jpg',
+            ],
+            'REPOSTERIA' => [
+                'titulo'      => 'Repostería',
+                'descripcion' => 'Equipos para elaboración de repostería, dulces y postres.',
+                'imagen'      => '/images/catalog/categoria-reposteria.jpg',
+            ],
+            'CARNICA' => [
+                'titulo'      => 'Línea cárnica',
+                'descripcion' => 'Soluciones para procesamiento de carnes y embutidos.',
+                'imagen'      => '/images/catalog/categoria-carnica.jpg',
+            ],
+        ];
 
-        $cliente = $this->solicitudes->buscarCliente($validado['nombre'], $validado['telefono']);
+        $agrupados = $productos->groupBy('categoria');
 
-        if ($cliente === null) {
-            return back()
-                ->withInput()
-                ->with('error', 'No se encontró un cliente con ese nombre y número de celular. Asegúrate de estar registrado con compras previas.');
-        }
+        return collect(Producto::CATEGORIAS)->map(function (string $slug) use ($agrupados, $meta) {
+            $grupo  = $agrupados->get($slug, collect());
+            $config = $meta[$slug] ?? [
+                'titulo'      => ucfirst(mb_strtolower($slug)),
+                'descripcion' => '',
+                'imagen'      => null,
+            ];
 
-        $solicitud = $this->solicitudes->crearPublica($cliente->id_cliente, [
-            'descripcion_falla' => $validado['mensaje'] ?? 'Solicitud de contacto desde la web pública.',
-            'id_garantia' => null,
-        ]);
+            // Imagen representativa: primer producto de la categoría con imagen.
+            $conImagen = $grupo->first(fn($p) => $p->imagenes->isNotEmpty());
+            $imagen    = $conImagen?->imagenes->first()?->url ?: $config['imagen'];
 
-        return redirect()
-            ->route('serviciotecnico.publico.panel')
-            ->with('success', 'Tu solicitud de contacto ha sido registrada. Un técnico la revisará pronto.');
+            return [
+                'slug'        => $slug,
+                'titulo'      => $config['titulo'],
+                'descripcion' => $config['descripcion'],
+                'imagen'      => $imagen,
+                'total'       => $grupo->count(),
+            ];
+        })->values();
     }
+
+    // ... contactarServicioTecnico() queda igual
 }

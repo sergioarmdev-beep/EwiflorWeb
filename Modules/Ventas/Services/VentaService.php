@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
 use Modules\Catalogo\Models\VarianteProducto;
 use Modules\Cotizaciones\Models\Cotizacion;
+use Modules\Inventario\Models\Almacen;
 use Modules\Precios\Services\TipoCambioService;
 use Modules\Promociones\Services\PromocionService;
+use Modules\Sucursales\Support\AlcanceDocumentos;
 use Modules\Ventas\Models\Comprobante;
 use Modules\Ventas\Models\Pago;
 use Modules\Ventas\Models\Venta;
@@ -28,7 +30,7 @@ class VentaService
      */
     public function convertirCotizacion(int $idCotizacion, int $idAlmacen, User $actor): Venta
     {
-        if (! $actor->id_sucursal) {
+        if (! AlcanceDocumentos::esGerente($actor) && ! $actor->id_sucursal) {
             throw new BusinessRuleException('Tu usuario no tiene sucursal asignada.');
         }
 
@@ -37,13 +39,28 @@ class VentaService
             throw new BusinessRuleException("La cotización #{$idCotizacion} no existe.");
         }
         if (! $cot->puedeVer($actor)) {
-            throw new BusinessRuleException('Solo puedes convertir tus propias cotizaciones.');
+            throw new BusinessRuleException(
+                AlcanceDocumentos::puedeOperarEnSucursal($actor, (int) $cot->id_sucursal)
+                    ? 'Solo puedes convertir tus propias cotizaciones.'
+                    : 'Esta cotización pertenece a otra sucursal; no puedes convertirla.'
+            );
         }
         if ($cot->estado !== 'EMITIDA') {
             throw new BusinessRuleException("La cotización #{$idCotizacion} no está EMITIDA (estado: {$cot->estado}).");
         }
         if (now()->startOfDay()->gt($cot->fecha_emision->copy()->addDays($cot->vigencia_dias))) {
             throw new BusinessRuleException("La cotización #{$idCotizacion} está vencida.");
+        }
+
+        // La venta nace en la sucursal de la cotización: el almacén debe ser de esa misma sucursal.
+        $almacen = Almacen::find($idAlmacen);
+        if (! $almacen) {
+            throw new BusinessRuleException('El almacén indicado no existe.');
+        }
+        if ((int) $almacen->id_sucursal !== (int) $cot->id_sucursal) {
+            throw new BusinessRuleException(
+                'El almacén de salida debe pertenecer a la sucursal de la cotización.'
+            );
         }
 
         return DB::transaction(function () use ($idCotizacion, $idAlmacen, $actor) {
@@ -61,9 +78,20 @@ class VentaService
 
     public function crearDirecta(array $data, User $actor): Venta
     {
-        if (! $actor->id_sucursal) {
+        if (! AlcanceDocumentos::esGerente($actor) && ! $actor->id_sucursal) {
             throw new BusinessRuleException('Tu usuario no tiene sucursal asignada.');
         }
+
+        // La venta se registra en la sucursal del almacén de salida: es la que
+        // realmente despacha el stock. Un no-Gerente solo puede usar la suya.
+        $almacen = Almacen::find((int) $data['id_almacen']);
+        if (! $almacen) {
+            throw new BusinessRuleException('El almacén indicado no existe.');
+        }
+        if (! AlcanceDocumentos::puedeOperarEnSucursal($actor, (int) $almacen->id_sucursal)) {
+            throw new BusinessRuleException('Solo puedes vender desde almacenes de tu sucursal asignada.');
+        }
+        $idSucursal = (int) $almacen->id_sucursal;
 
         $tc = $this->tipoCambio->actuales()['paralelo'];
         if (! $tc) {
@@ -77,13 +105,13 @@ class VentaService
 
         $payload = $this->construirLineasJson($data['lineas'], (int) $data['id_almacen'], $actor);
 
-        return DB::transaction(function () use ($data, $actor, $tc, $payload) {
+        return DB::transaction(function () use ($data, $actor, $tc, $payload, $idSucursal) {
             $rows = DbFunction::query(
                 'select registrar_venta(?, ?, ?, ?, ?::jsonb, null) as id',
                 [
                     (int) $data['id_cliente'],
                     $actor->id_usuario,
-                    $actor->id_sucursal,
+                    $idSucursal,
                     $tc->id_tipo_cambio,
                     json_encode($payload),
                 ]
