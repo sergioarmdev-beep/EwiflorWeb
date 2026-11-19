@@ -206,12 +206,12 @@
         }
 
         .brand-icon {
-            width: 38px;
-            height: 38px;
+            width: 44px;
+            height: 44px;
             display: grid;
             place-items: center;
             border-radius: 13px;
-            background: var(--green);
+            background: none;
             color: #fff;
             font-size: 1.05rem;
             font-weight: 800;
@@ -1574,12 +1574,12 @@
 
 <body>
     @php
-        $esInicio   = request()->routeIs('catalogo.publico');
-        $enCatalogo = request()->routeIs('publico.catalogo');
-        $enServicio = request()->routeIs('publico.servicio.tecnico');
-        $enNosotros = request()->routeIs('publico.nosotros');
-        // En el inicio los anclajes son locales (#seccion); en otras páginas vuelven al inicio.
-        $base = $esInicio ? '' : route('catalogo.publico');
+    $esInicio = request()->routeIs('catalogo.publico');
+    $enCatalogo = request()->routeIs('publico.catalogo');
+    $enServicio = request()->routeIs('publico.servicio.tecnico');
+    $enNosotros = request()->routeIs('publico.nosotros');
+    // En el inicio los anclajes son locales (#seccion); en otras páginas vuelven al inicio.
+    $base = $esInicio ? '' : route('catalogo.publico');
     @endphp
     @include('publico::partials.navbar')
 
@@ -1591,7 +1591,11 @@
     @include('publico::partials.product-modal')
 
     {{-- Datos del modal como JSON válido. Antes: `{ !!json_encode(...) !! }` → texto literal roto. --}}
-    <script id="product-data" type="application/json">{!! json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script id="product-data" type="application/json">
+        {
+            !!json_encode($detalle ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!
+        }
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {

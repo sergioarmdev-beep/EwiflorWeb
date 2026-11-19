@@ -214,11 +214,12 @@
             {{-- Marca --}}
             <div class="flex h-16 shrink-0 items-center justify-between border-b border-line px-5">
                 <a href="{{ route('dashboard') }}" class="brand-link group flex min-w-0 items-center gap-3">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-green text-white shadow-soft transition-transform duration-300 group-hover:scale-105">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 7.8 7.5 4.4 7.5-4.4M12 12.2V21" />
-                        </svg>
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-soft transition-transform duration-300 group-hover:scale-105">
+
+                        <img
+                            src="{{ asset('images/ewiflor-logo.webp') }}"
+                            alt="Logo EWIFLOR">
+
                     </span>
                     <span class="brand-text min-w-0">
                         <span class="block truncate text-base font-bold tracking-tight text-ink">EwiflorWeb</span>

@@ -95,3 +95,14 @@
     0%   { opacity: 0; transform: translateY(8px); }
     100% { opacity: 1; transform: translateY(0); }
 }
+
+
+/* Estado cerrado del menú móvil */
+#mobile-menu[hidden] {
+    display: none !important;
+}
+
+/* Estado visible */
+#mobile-menu:not([hidden]) {
+    display: flex;
+}
