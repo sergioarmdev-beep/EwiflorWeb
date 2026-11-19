@@ -7,119 +7,123 @@ $cond = $cotizacion->condicionTemporal();
 $rol = auth()->user()->nombre_rol;
 @endphp
 
-<div class="p-6 max-w-5xl space-y-4">
+<div class="p-6 max-w-5xl space-y-6">
     <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold">
+        <h1 class="text-2xl font-bold text-ink">
             Cotización #{{ $cotizacion->id_cotizacion }}
             <span class="ml-2 text-xs px-2 py-1 rounded
-                {{ $cotizacion->estado === 'EMITIDA' ? 'bg-blue-100 text-blue-800' : '' }}
-                {{ $cotizacion->estado === 'CONVERTIDA' ? 'bg-green-100 text-green-800' : '' }}
-                {{ $cotizacion->estado === 'ANULADA' ? 'bg-red-100 text-red-800' : '' }}">
+                {{ $cotizacion->estado === 'EMITIDA' ? 'border border-brand-blue/20 bg-brand-blue/10 text-brand-blue' : '' }}
+                {{ $cotizacion->estado === 'CONVERTIDA' ? 'border border-brand-green/20 bg-brand-green/10 text-brand-green' : '' }}
+                {{ $cotizacion->estado === 'ANULADA' ? 'border border-red-500/30 bg-red-500/10 text-red-500' : '' }}">
                 {{ $cotizacion->estado }}
             </span>
             @if ($cond === 'VENCIDA')
-            <span class="ml-1 text-xs px-2 py-1 rounded bg-red-100 text-red-800">VENCIDA</span>
+            <span class="ml-1 text-xs px-2 py-1 rounded border border-red-500/30 bg-red-500/10 text-red-500">VENCIDA</span>
             @endif
         </h1>
         <div class="flex gap-2">
             @if (in_array($rol, ['GERENTE','ADMINISTRADOR']) && $cotizacion->estado === 'EMITIDA')
             <a href="{{ route('cotizaciones.edit', $cotizacion) }}"
-                class="border px-4 py-2 rounded">Editar</a>
+                class="border border-line rounded-xl px-4 py-2 text-ink hover:bg-surface-2 transition">Editar</a>
             <form method="POST" action="{{ route('cotizaciones.anular', $cotizacion) }}"
                 onsubmit="return confirm('¿Anular esta cotización?')">
                 @csrf
-                <button class="border border-red-500 text-red-600 px-4 py-2 rounded">Anular</button>
+                <button class="border border-red-500/30 bg-red-500/10 text-red-500 rounded-xl px-4 py-2 hover:bg-red-500/20 transition">Anular</button>
             </form>
             @endif
-            <a href="{{ route('cotizaciones.index') }}" class="border px-4 py-2 rounded">Volver</a>
+            <a href="{{ route('cotizaciones.index') }}" class="border border-line rounded-xl px-4 py-2 text-ink hover:bg-surface-2 transition">Volver</a>
         </div>
     </div>
 
     @if (session('ok'))
-    <div class="bg-green-100 text-green-800 px-4 py-2 rounded">{{ session('ok') }}</div>
+    <div class="mb-3 flex items-start gap-3 rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-2 text-sm text-brand-green">
+        {{ session('ok') }}
+    </div>
     @endif
     @if (session('error'))
-    <div class="bg-red-100 text-red-800 px-4 py-2 rounded">{{ session('error') }}</div>
+    <div class="mb-3 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-500">
+        {{ session('error') }}
+    </div>
     @endif
 
-    <div class="bg-white p-6 rounded shadow grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-        <div><span class="text-gray-500">Cliente:</span> {{ $cotizacion->cliente?->nombre ?? '—' }}</div>
-        <div><span class="text-gray-500">Teléfono:</span> {{ $cotizacion->cliente?->telefono ?? '—' }}</div>
-        <div><span class="text-gray-500">Sucursal:</span> {{ $cotizacion->sucursal?->nombre ?? '—' }}</div>
-        <div><span class="text-gray-500">Vendedor:</span> {{ $cotizacion->usuario?->nombre_completo ?? '—' }}</div>
-        <div><span class="text-gray-500">Fecha emisión:</span> {{ $cotizacion->fecha_emision->format('d/m/Y') }}</div>
-        <div><span class="text-gray-500">Vence:</span>
+    <div class="bg-surface p-6 rounded-2xl border border-line shadow-soft grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div><span class="text-muted">Cliente:</span> {{ $cotizacion->cliente?->nombre ?? '—' }}</div>
+        <div><span class="text-muted">Teléfono:</span> {{ $cotizacion->cliente?->telefono ?? '—' }}</div>
+        <div><span class="text-muted">Sucursal:</span> {{ $cotizacion->sucursal?->nombre ?? '—' }}</div>
+        <div><span class="text-muted">Vendedor:</span> {{ $cotizacion->usuario?->nombre_completo ?? '—' }}</div>
+        <div><span class="text-muted">Fecha emisión:</span> {{ $cotizacion->fecha_emision->format('d/m/Y') }}</div>
+        <div><span class="text-muted">Vence:</span>
             {{ $cotizacion->fecha_emision->copy()->addDays($cotizacion->vigencia_dias)->format('d/m/Y') }}
             ({{ $cotizacion->vigencia_dias }} días)
         </div>
-        <div><span class="text-gray-500">T/C aplicado:</span>
+        <div><span class="text-muted">T/C aplicado:</span>
             {{ $cotizacion->tipoCambio?->tipo }} — {{ number_format((float) $cotizacion->tipoCambio?->valor, 4) }} Bs/USD
         </div>
         @if ($cotizacion->observacion)
-        <div class="md:col-span-3"><span class="text-gray-500">Observación:</span> {{ $cotizacion->observacion }}</div>
+        <div class="md:col-span-3"><span class="text-muted">Observación:</span> {{ $cotizacion->observacion }}</div>
         @endif
     </div>
 
-    <div class="bg-white rounded shadow overflow-x-auto">
+    <div class="bg-surface rounded-2xl border border-line shadow-soft overflow-hidden overflow-x-auto">
         <table class="min-w-full text-sm">
-            <thead class="bg-gray-50">
+            <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-4 py-2 text-left">SKU</th>
-                    <th class="px-4 py-2 text-left">Producto</th>
-                    <th class="px-4 py-2 text-right">Cant.</th>
-                    <th class="px-4 py-2 text-right">P. Unit. USD</th>
-                    <th class="px-4 py-2 text-right">Desc. %</th>
-                    <th class="px-4 py-2 text-right">Garantía (meses)</th>
-                    <th class="px-4 py-2 text-right">Subtotal USD</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">SKU</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Producto</th>
+                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Cant.</th>
+                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">P. Unit. USD</th>
+                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Desc. %</th>
+                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Garantía (meses)</th>
+                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Subtotal USD</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-line">
                 @foreach ($cotizacion->detalles as $d)
                 @php
                 $sub = $d->cantidad * (float) $d->precio_unitario_usd * (1 - (float) $d->descuento_pct / 100);
                 @endphp
-                <tr class="border-t">
-                    <td class="px-4 py-2">{{ $d->variante?->sku ?? '—' }}</td>
-                    <td class="px-4 py-2">
+                <tr class="hover:bg-surface-2 transition-colors">
+                    <td class="px-4 py-2 text-ink">{{ $d->variante?->sku ?? '—' }}</td>
+                    <td class="px-4 py-2 text-ink">
                         {{ $d->variante?->producto?->nombre ?? '—' }}
                         @if ($d->variante?->color) ({{ $d->variante->color }}) @endif
                     </td>
-                    <td class="px-4 py-2 text-right">{{ $d->cantidad }}</td>
-                    <td class="px-4 py-2 text-right">{{ number_format((float) $d->precio_unitario_usd, 2) }}</td>
-                    <td class="px-4 py-2 text-right">{{ number_format((float) $d->descuento_pct, 2) }}</td>
-                    <td class="px-4 py-2 text-right">{{ $d->garantia_meses ?? ($d->variante?->producto?->garantia_meses ?? '—') }}</td>
-                    <td class="px-4 py-2 text-right">{{ number_format($sub, 2) }}</td>
+                    <td class="px-4 py-2 text-right text-ink">{{ $d->cantidad }}</td>
+                    <td class="px-4 py-2 text-right text-ink">{{ number_format((float) $d->precio_unitario_usd, 2) }}</td>
+                    <td class="px-4 py-2 text-right text-ink">{{ number_format((float) $d->descuento_pct, 2) }}</td>
+                    <td class="px-4 py-2 text-right text-ink">{{ $d->garantia_meses ?? ($d->variante?->producto?->garantia_meses ?? '—') }}</td>
+                    <td class="px-4 py-2 text-right text-ink">{{ number_format($sub, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
-            <tfoot class="bg-gray-50 border-t font-semibold">
+            <tfoot class="bg-surface-2 border-t border-line font-semibold">
                 <tr>
-                    <td colspan="6" class="px-4 py-2 text-right">Total USD</td>
-                    <td class="px-4 py-2 text-right">$ {{ number_format($cotizacion->totalUsd(), 2) }}</td>
+                    <td colspan="6" class="px-4 py-2 text-right text-ink">Total USD</td>
+                    <td class="px-4 py-2 text-right text-ink">$ {{ number_format($cotizacion->totalUsd(), 2) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="6" class="px-4 py-2 text-right">Total Bs (al T/C congelado)</td>
-                    <td class="px-4 py-2 text-right">Bs {{ number_format($cotizacion->totalBs(), 2) }}</td>
+                    <td colspan="6" class="px-4 py-2 text-right text-ink">Total Bs (al T/C congelado)</td>
+                    <td class="px-4 py-2 text-right text-ink">Bs {{ number_format($cotizacion->totalBs(), 2) }}</td>
                 </tr>
             </tfoot>
         </table>
     </div>
 
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="font-semibold mb-2">Siguiente paso</h2>
+    <div class="bg-surface p-6 rounded-2xl border border-line shadow-soft">
+        <h2 class="font-bold text-ink mb-2">Siguiente paso</h2>
         @if ($cotizacion->estado === 'CONVERTIDA')
-        <p class="text-sm text-gray-600">Esta cotización ya fue convertida en venta.</p>
+        <p class="text-sm text-muted">Esta cotización ya fue convertida en venta.</p>
         @elseif ($cotizacion->estado === 'ANULADA')
-        <p class="text-sm text-gray-600">Cotización anulada. No puede convertirse.</p>
+        <p class="text-sm text-muted">Cotización anulada. No puede convertirse.</p>
         @elseif ($cond === 'VENCIDA')
-        <p class="text-sm text-red-700">Cotización vencida. Extiende la vigencia editándola o emite una nueva.</p>
+        <p class="text-sm text-amber-500">Cotización vencida. Extiende la vigencia editándola o emite una nueva.</p>
         @elseif (Route::has('ventas.create'))
         <a href="{{ route('ventas.create', ['desde_cotizacion' => 1, 'cotizacion' => $cotizacion->id_cotizacion]) }}"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded inline-block">
+            class="bg-brand-green text-white px-4 py-2 rounded-xl font-semibold hover:bg-brand-green-dark transition-colors inline-block">
             Convertir a venta
         </a>
         @else
-        <p class="text-sm text-gray-500">
+        <p class="text-sm text-muted">
             Módulo de Ventas pendiente. Cuando esté listo, aparecerá aquí el botón <em>Convertir a venta</em>
             (usa la función PostgreSQL <code>convertir_cotizacion_a_venta</code>).
         </p>

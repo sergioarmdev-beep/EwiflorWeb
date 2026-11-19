@@ -152,7 +152,8 @@ class DashboardController extends Controller
                 return response()->json(['error' => true, 'message' => 'Tu usuario de administrador no tiene una sucursal asignada.'], 422);
             }
         } elseif ($rol === 'GERENTE') {
-            $idSucursal = $request->integer('id_sucursal'); // null = todas las sucursales
+            $idSucursalRaw = $request->input('id_sucursal');
+            $idSucursal = ($idSucursalRaw === null || $idSucursalRaw === '') ? null : (int) $idSucursalRaw; // null = todas las sucursales
         }
 
         try {

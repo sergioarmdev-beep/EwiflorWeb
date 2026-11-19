@@ -18,8 +18,7 @@ true
         <div>
             <a href="{{ route('clientes.index') }}"
                 class="inline-flex items-center gap-2 text-sm font-medium
-                       text-slate-500 hover:text-sky-700
-                       dark:text-slate-400 dark:hover:text-sky-400 transition mb-3">
+                       text-muted hover:text-brand-blue transition mb-3">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -30,8 +29,7 @@ true
 
             <div class="flex items-center gap-3">
                 <span class="w-10 h-10 flex items-center justify-center rounded-xl
-                             bg-sky-100 text-sky-700
-                             dark:bg-sky-500/10 dark:text-sky-400">
+                             border border-brand-blue/20 bg-brand-blue/10 text-brand-blue">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -41,10 +39,10 @@ true
                 </span>
 
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    <h1 class="text-2xl font-bold text-ink">
                         {{ $cliente->nombre }}
                     </h1>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                    <p class="text-sm text-muted">
                         Detalle e historial comercial del cliente
                     </p>
                 </div>
@@ -54,9 +52,7 @@ true
         @if ($puedeGestionarClientes)
         <a href="{{ route('clientes.edit', $cliente) }}"
             class="inline-flex items-center justify-center gap-2 px-4 py-2.5
-                       rounded-lg bg-sky-600 hover:bg-sky-700
-                       dark:bg-sky-600 dark:hover:bg-sky-500
-                       text-white text-sm font-semibold shadow-sm transition">
+                       rounded-lg bg-brand-green text-white text-sm font-semibold shadow-sm hover:bg-brand-green-dark transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor"
                 viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -69,28 +65,26 @@ true
     </div>
 
     {{-- Información general --}}
-    <section class="bg-white dark:bg-slate-900
-                    border border-slate-200 dark:border-slate-800
-                    rounded-xl shadow-sm overflow-hidden">
+    <section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
                     gap-3 px-5 py-4
-                    border-b border-slate-200 dark:border-slate-800">
+                    border-b border-line">
 
             <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                <svg class="w-5 h-5 text-muted"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         stroke-width="1.8"
                         d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m16-10a4 4 0 0 0 0-8m4 18v-2a4 4 0 0 0-3-3.87M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
                 </svg>
 
-                <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                <h2 class="font-semibold text-ink">
                     Información del cliente
                 </h2>
             </div>
 
-            <span class="text-xs text-slate-500 dark:text-slate-400">
+            <span class="text-xs text-muted">
                 Código: #{{ $cliente->id_cliente }}
             </span>
         </div>
@@ -101,20 +95,14 @@ true
                 @if ($cliente->estado === 'ACTIVO')
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1
                                  rounded-full text-xs font-semibold
-                                 bg-emerald-100 text-emerald-800
-                                 border border-emerald-200
-                                 dark:bg-emerald-500/10 dark:text-emerald-400
-                                 dark:border-emerald-500/20">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                 border border-brand-green/20 bg-brand-green/10 text-brand-green">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
                     Activo
                 </span>
                 @else
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1
                                  rounded-full text-xs font-semibold
-                                 bg-red-100 text-red-800
-                                 border border-red-200
-                                 dark:bg-red-500/10 dark:text-red-400
-                                 dark:border-red-500/20">
+                                 border border-red-500/30 bg-red-500/10 text-red-500">
                     <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                     Inactivo
                 </span>
@@ -123,19 +111,13 @@ true
                 @if ($cliente->es_mayorista)
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full
                                  text-xs font-semibold
-                                 bg-violet-100 text-violet-800
-                                 border border-violet-200
-                                 dark:bg-violet-500/10 dark:text-violet-400
-                                 dark:border-violet-500/20">
+                                 border border-brand-blue/20 bg-brand-blue/10 text-brand-blue">
                     Mayorista
                 </span>
                 @else
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full
                                  text-xs font-semibold
-                                 bg-slate-100 text-slate-700
-                                 border border-slate-200
-                                 dark:bg-slate-700/50 dark:text-slate-300
-                                 dark:border-slate-600">
+                                 border border-line bg-surface-2 text-muted">
                     Minorista
                 </span>
                 @endif
@@ -145,50 +127,50 @@ true
 
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider
-                              text-slate-500 dark:text-slate-400 mb-1.5">
+                              text-muted mb-1.5">
                         Nombre completo
                     </p>
-                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    <p class="text-sm font-semibold text-ink">
                         {{ $cliente->nombre }}
                     </p>
                 </div>
 
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider
-                              text-slate-500 dark:text-slate-400 mb-1.5">
+                              text-muted mb-1.5">
                         Teléfono
                     </p>
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <p class="text-sm font-medium text-muted">
                         {{ $cliente->telefono ?: 'No registrado' }}
                     </p>
                 </div>
 
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider
-                              text-slate-500 dark:text-slate-400 mb-1.5">
+                              text-muted mb-1.5">
                         Correo electrónico
                     </p>
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300 break-all">
+                    <p class="text-sm font-medium text-muted break-all">
                         {{ $cliente->correo ?: 'No registrado' }}
                     </p>
                 </div>
 
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider
-                              text-slate-500 dark:text-slate-400 mb-1.5">
+                              text-muted mb-1.5">
                         Tipo de cliente
                     </p>
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <p class="text-sm font-medium text-muted">
                         {{ str_replace('_', ' ', $cliente->tipo_cliente) }}
                     </p>
                 </div>
 
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider
-                              text-slate-500 dark:text-slate-400 mb-1.5">
+                              text-muted mb-1.5">
                         Fecha de registro
                     </p>
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <p class="text-sm font-medium text-muted">
                         {{ $cliente->fecha_registro?->format('d/m/Y') ?? 'No disponible' }}
                     </p>
                 </div>
@@ -199,8 +181,7 @@ true
     {{-- Aviso de alcance: el vendedor solo ve sus propias operaciones --}}
     @if ($soloDocumentosPropios ?? false)
     <div class="flex items-start gap-3 p-4 rounded-xl
-                border border-sky-200 bg-sky-50 text-sky-900
-                dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300">
+                border border-brand-blue/30 bg-brand-blue/10 text-brand-blue">
         <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor"
             viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -219,7 +200,7 @@ true
     <section class="space-y-4">
 
         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+            <svg class="w-5 h-5 text-muted"
                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     stroke-width="1.8"
@@ -227,10 +208,10 @@ true
             </svg>
 
             <div>
-                <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                <h2 class="font-semibold text-ink">
                     Resumen comercial
                 </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
+                <p class="text-xs text-muted">
                     Indicadores acumulados de la actividad del cliente
                 </p>
             </div>
@@ -239,18 +220,15 @@ true
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
             {{-- Cotizaciones emitidas --}}
-            <div class="bg-white dark:bg-slate-900
-                        border border-slate-200 dark:border-slate-800
-                        rounded-xl p-5 shadow-sm">
+            <div class="bg-surface border border-line rounded-xl p-5 shadow-soft">
 
                 <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <p class="text-sm font-medium text-muted">
                         Cotizaciones emitidas
                     </p>
 
                     <span class="w-9 h-9 flex items-center justify-center rounded-lg
-                                 bg-sky-100 text-sky-700
-                                 dark:bg-sky-500/10 dark:text-sky-400">
+                                 border border-brand-blue/20 bg-brand-blue/10 text-brand-blue">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -260,28 +238,25 @@ true
                     </span>
                 </div>
 
-                <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-3 tabular-nums">
+                <p class="text-3xl font-bold text-ink mt-3 tabular-nums">
                     {{ $resumenCotizaciones->emitidas ?? 0 }}
                 </p>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <p class="text-xs text-muted mt-2">
                     Total: {{ $resumenCotizaciones->total ?? 0 }}
                 </p>
             </div>
 
             {{-- Cotizaciones convertidas --}}
-            <div class="bg-white dark:bg-slate-900
-                        border border-slate-200 dark:border-slate-800
-                        rounded-xl p-5 shadow-sm">
+            <div class="bg-surface border border-line rounded-xl p-5 shadow-soft">
 
                 <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <p class="text-sm font-medium text-muted">
                         Cotizaciones convertidas
                     </p>
 
                     <span class="w-9 h-9 flex items-center justify-center rounded-lg
-                                 bg-emerald-100 text-emerald-700
-                                 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                 border border-brand-green/20 bg-brand-green/10 text-brand-green">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -291,28 +266,25 @@ true
                     </span>
                 </div>
 
-                <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-3 tabular-nums">
+                <p class="text-3xl font-bold text-ink mt-3 tabular-nums">
                     {{ $resumenCotizaciones->convertidas ?? 0 }}
                 </p>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <p class="text-xs text-muted mt-2">
                     Anuladas: {{ $resumenCotizaciones->anuladas ?? 0 }}
                 </p>
             </div>
 
             {{-- Ventas registradas --}}
-            <div class="bg-white dark:bg-slate-900
-                        border border-slate-200 dark:border-slate-800
-                        rounded-xl p-5 shadow-sm">
+            <div class="bg-surface border border-line rounded-xl p-5 shadow-soft">
 
                 <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <p class="text-sm font-medium text-muted">
                         Ventas registradas
                     </p>
 
                     <span class="w-9 h-9 flex items-center justify-center rounded-lg
-                                 bg-violet-100 text-violet-700
-                                 dark:bg-violet-500/10 dark:text-violet-400">
+                                 border border-brand-blue/20 bg-brand-blue/10 text-brand-blue">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -322,28 +294,25 @@ true
                     </span>
                 </div>
 
-                <p class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-3 tabular-nums">
+                <p class="text-3xl font-bold text-ink mt-3 tabular-nums">
                     {{ $resumenVentas->total ?? 0 }}
                 </p>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <p class="text-xs text-muted mt-2">
                     Operaciones efectivas
                 </p>
             </div>
 
             {{-- Saldo pendiente --}}
-            <div class="bg-white dark:bg-slate-900
-                        border border-slate-200 dark:border-slate-800
-                        rounded-xl p-5 shadow-sm">
+            <div class="bg-surface border border-line rounded-xl p-5 shadow-soft">
 
                 <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <p class="text-sm font-medium text-muted">
                         Saldo pendiente
                     </p>
 
                     <span class="w-9 h-9 flex items-center justify-center rounded-lg
-                                 bg-amber-100 text-amber-700
-                                 dark:bg-amber-500/10 dark:text-amber-400">
+                                 border border-amber-500/30 bg-amber-500/10 text-amber-500">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -353,28 +322,25 @@ true
                     </span>
                 </div>
 
-                <p class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-3 tabular-nums">
+                <p class="text-2xl font-bold text-amber-500 mt-3 tabular-nums">
                     Bs {{ number_format((float) ($resumenVentas->saldo_bs ?? 0), 2, ',', '.') }}
                 </p>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <p class="text-xs text-muted mt-2">
                     Por cobrar
                 </p>
             </div>
 
             {{-- Garantías por vencer --}}
-            <div class="bg-white dark:bg-slate-900
-                        border border-slate-200 dark:border-slate-800
-                        rounded-xl p-5 shadow-sm">
+            <div class="bg-surface border border-line rounded-xl p-5 shadow-soft">
 
                 <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <p class="text-sm font-medium text-muted">
                         Garantías por vencer
                     </p>
 
                     <span class="w-9 h-9 flex items-center justify-center rounded-lg
-                                 bg-amber-100 text-amber-700
-                                 dark:bg-amber-500/10 dark:text-amber-400">
+                                 border border-amber-500/30 bg-amber-500/10 text-amber-500">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -384,11 +350,11 @@ true
                     </span>
                 </div>
 
-                <p class="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-3 tabular-nums">
+                <p class="text-3xl font-bold text-amber-500 mt-3 tabular-nums">
                     {{ $garantiasPorVencer ?? 0 }}
                 </p>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <p class="text-xs text-muted mt-2">
                     Próximos 30 días
                 </p>
             </div>
@@ -397,30 +363,26 @@ true
         {{-- Resumen financiero --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            <div class="bg-white dark:bg-slate-900
-                        border border-slate-200 dark:border-slate-800
-                        rounded-xl p-5 shadow-sm">
+            <div class="bg-surface border border-line rounded-xl p-5 shadow-soft">
 
                 <p class="text-xs font-semibold uppercase tracking-wider
-                          text-slate-500 dark:text-slate-400">
+                          text-muted">
                     Importe total vendido
                 </p>
 
-                <p class="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2 tabular-nums">
+                <p class="text-xl font-bold text-ink mt-2 tabular-nums">
                     Bs {{ number_format((float) ($resumenVentas->total_bs ?? 0), 2, ',', '.') }}
                 </p>
             </div>
 
-            <div class="bg-white dark:bg-slate-900
-                        border border-slate-200 dark:border-slate-800
-                        rounded-xl p-5 shadow-sm">
+            <div class="bg-surface border border-line rounded-xl p-5 shadow-soft">
 
                 <p class="text-xs font-semibold uppercase tracking-wider
-                          text-slate-500 dark:text-slate-400">
+                          text-muted">
                     Importe pagado
                 </p>
 
-                <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-2 tabular-nums">
+                <p class="text-xl font-bold text-brand-green mt-2 tabular-nums">
                     Bs {{ number_format((float) ($resumenVentas->pagado_bs ?? 0), 2, ',', '.') }}
                 </p>
             </div>
@@ -428,36 +390,33 @@ true
     </section>
 
     {{-- Historial de cotizaciones --}}
-    <section class="bg-white dark:bg-slate-900
-                    border border-slate-200 dark:border-slate-800
-                    rounded-xl shadow-sm overflow-hidden">
+    <section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
                     gap-3 px-5 py-4
-                    border-b border-slate-200 dark:border-slate-800">
+                    border-b border-line">
 
             <div>
                 <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                    <svg class="w-5 h-5 text-muted"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             stroke-width="1.8"
                             d="M8 7h8m-8 4h8m-8 4h5M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
                     </svg>
 
-                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 class="font-semibold text-ink">
                         Historial de cotizaciones
                     </h2>
                 </div>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p class="text-xs text-muted mt-1">
                     Últimas 10 cotizaciones del cliente
                 </p>
             </div>
 
             <a href="{{ route('cotizaciones.index', ['id_cliente' => $cliente->id_cliente]) }}"
-                class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
                 Ver todas las cotizaciones →
             </a>
         </div>
@@ -465,9 +424,8 @@ true
         @if ($cotizaciones->isEmpty())
         <div class="px-6 py-14 text-center">
             <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
-                            bg-slate-100 dark:bg-slate-800
-                            text-slate-500 dark:text-slate-400
-                            flex items-center justify-center">
+                        bg-surface-2 text-muted
+                        flex items-center justify-center">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -476,20 +434,18 @@ true
                 </svg>
             </div>
 
-            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+            <h3 class="font-semibold text-ink">
                 No hay cotizaciones registradas
             </h3>
 
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p class="text-sm text-muted mt-1">
                 Las cotizaciones de este cliente aparecerán aquí.
             </p>
         </div>
         @else
         <div class="overflow-x-auto">
             <table class="min-w-[900px] w-full text-sm text-left">
-                <thead class="bg-slate-100 dark:bg-slate-800/80
-                                  text-xs uppercase tracking-wider
-                                  text-slate-600 dark:text-slate-400">
+                <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
                         <th class="px-4 py-4 font-semibold">N.º</th>
                         <th class="px-4 py-4 font-semibold">Fecha</th>
@@ -501,60 +457,59 @@ true
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody class="divide-y divide-line">
                     @foreach ($cotizaciones as $cotizacion)
                     @php
                     $condicion = $cotizacion->condicionTemporal();
 
                     $condicionClases = match ($condicion) {
-                    'VIGENTE' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-                    'VENCIDA' => 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
-                    default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                    'VIGENTE' => 'border border-brand-green/20 bg-brand-green/10 text-brand-green',
+                    'VENCIDA' => 'border border-amber-500/30 bg-amber-500/10 text-amber-500',
+                    default => 'border border-line bg-surface-2 text-muted',
                     };
 
                     $estadoClases = match ($cotizacion->estado) {
-                    'EMITIDA' => 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
-                    'CONVERTIDA' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-                    'ANULADA' => 'bg-red-100 text-red-800 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20',
-                    default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                    'EMITIDA' => 'border border-brand-blue/20 bg-brand-blue/10 text-brand-blue',
+                    'CONVERTIDA' => 'border border-brand-green/20 bg-brand-green/10 text-brand-green',
+                    'ANULADA' => 'border border-red-500/30 bg-red-500/10 text-red-500',
+                    default => 'border border-line bg-surface-2 text-muted',
                     };
                     @endphp
 
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                    <tr class="hover:bg-surface-2 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-ink">
                             #{{ $cotizacion->id_cotizacion }}
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        <td class="px-4 py-3 text-muted whitespace-nowrap">
                             {{ $cotizacion->fecha_emision?->format('d/m/Y') ?? '—' }}
                         </td>
 
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full
-                                                 text-xs font-semibold border {{ $estadoClases }}">
+                                                     text-xs font-semibold border {{ $estadoClases }}">
                                 {{ $cotizacion->estado }}
                             </span>
                         </td>
 
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full
-                                                 text-xs font-semibold border {{ $condicionClases }}">
+                                                     text-xs font-semibold border {{ $condicionClases }}">
                                 {{ $condicion }}
                             </span>
                         </td>
 
-                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap">
+                        <td class="px-4 py-3 text-right text-muted tabular-nums whitespace-nowrap">
                             $ {{ number_format($cotizacion->totalUsd(), 2, ',', '.') }}
                         </td>
 
-                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap">
+                        <td class="px-4 py-3 text-right text-muted tabular-nums whitespace-nowrap">
                             Bs {{ number_format($cotizacion->totalBs(), 2, ',', '.') }}
                         </td>
 
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('cotizaciones.show', $cotizacion) }}"
-                                class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                                               dark:text-sky-400 dark:hover:text-sky-300 transition">
+                                class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
                                 Ver
                             </a>
                         </td>
@@ -567,36 +522,33 @@ true
     </section>
 
     {{-- Historial de ventas --}}
-    <section class="bg-white dark:bg-slate-900
-                    border border-slate-200 dark:border-slate-800
-                    rounded-xl shadow-sm overflow-hidden">
+    <section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
                     gap-3 px-5 py-4
-                    border-b border-slate-200 dark:border-slate-800">
+                    border-b border-line">
 
             <div>
                 <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                    <svg class="w-5 h-5 text-muted"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             stroke-width="1.8"
                             d="M3 3h2l2.4 12.5a2 2 0 0 0 2 1.5h8.8a2 2 0 0 0 2-1.6L22 8H6m4 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm8 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
                     </svg>
 
-                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 class="font-semibold text-ink">
                         Historial de ventas
                     </h2>
                 </div>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p class="text-xs text-muted mt-1">
                     Últimas 10 operaciones comerciales
                 </p>
             </div>
 
             <a href="{{ route('ventas.index', ['buscar' => $cliente->nombre]) }}"
-                class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
                 Ver todas las ventas →
             </a>
         </div>
@@ -604,9 +556,8 @@ true
         @if ($ventas->isEmpty())
         <div class="px-6 py-14 text-center">
             <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
-                            bg-slate-100 dark:bg-slate-800
-                            text-slate-500 dark:text-slate-400
-                            flex items-center justify-center">
+                        bg-surface-2 text-muted
+                        flex items-center justify-center">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -615,20 +566,18 @@ true
                 </svg>
             </div>
 
-            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+            <h3 class="font-semibold text-ink">
                 No hay ventas registradas
             </h3>
 
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p class="text-sm text-muted mt-1">
                 Las operaciones comerciales de este cliente aparecerán aquí.
             </p>
         </div>
         @else
         <div class="overflow-x-auto">
             <table class="min-w-[950px] w-full text-sm text-left">
-                <thead class="bg-slate-100 dark:bg-slate-800/80
-                                  text-xs uppercase tracking-wider
-                                  text-slate-600 dark:text-slate-400">
+                <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
                         <th class="px-4 py-4 font-semibold">N.º</th>
                         <th class="px-4 py-4 font-semibold">Fecha</th>
@@ -640,14 +589,14 @@ true
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody class="divide-y divide-line">
                     @foreach ($ventas as $venta)
                     @php
                     $estadoVentaClases = match ($venta->estado) {
-                    'REGISTRADA' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-                    'EN_PROCESO' => 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
-                    'CANCELADA' => 'bg-red-100 text-red-800 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20',
-                    default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                    'REGISTRADA' => 'border border-brand-green/20 bg-brand-green/10 text-brand-green',
+                    'EN_PROCESO' => 'border border-brand-blue/20 bg-brand-blue/10 text-brand-blue',
+                    'CANCELADA' => 'border border-red-500/30 bg-red-500/10 text-red-500',
+                    default => 'border border-line bg-surface-2 text-muted',
                     };
 
                     $totalVenta = (float) ($venta->total_bs ?? 0);
@@ -655,39 +604,38 @@ true
                     $saldoVenta = $totalVenta - $pagadoVenta;
                     @endphp
 
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                    <tr class="hover:bg-surface-2 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-ink">
                             #{{ $venta->id_venta }}
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        <td class="px-4 py-3 text-muted whitespace-nowrap">
                             {{ $venta->fecha_hora?->format('d/m/Y H:i') ?? '—' }}
                         </td>
 
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full
-                                                 text-xs font-semibold border {{ $estadoVentaClases }}">
+                                                     text-xs font-semibold border {{ $estadoVentaClases }}">
                                 {{ $venta->estado }}
                             </span>
                         </td>
 
-                        <td class="px-4 py-3 text-right text-slate-700 dark:text-slate-300 tabular-nums whitespace-nowrap">
+                        <td class="px-4 py-3 text-right text-muted tabular-nums whitespace-nowrap">
                             Bs {{ number_format($totalVenta, 2, ',', '.') }}
                         </td>
 
-                        <td class="px-4 py-3 text-right text-emerald-700 dark:text-emerald-400 tabular-nums whitespace-nowrap">
+                        <td class="px-4 py-3 text-right text-brand-green tabular-nums whitespace-nowrap">
                             Bs {{ number_format($pagadoVenta, 2, ',', '.') }}
                         </td>
 
                         <td class="px-4 py-3 text-right font-semibold tabular-nums whitespace-nowrap
-                                    {{ $saldoVenta > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300' }}">
+                                    {{ $saldoVenta > 0 ? 'text-amber-500' : 'text-muted' }}">
                             Bs {{ number_format($saldoVenta, 2, ',', '.') }}
                         </td>
 
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('ventas.show', $venta) }}"
-                                class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                                               dark:text-sky-400 dark:hover:text-sky-300 transition">
+                                class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
                                 Ver
                             </a>
                         </td>
@@ -700,37 +648,34 @@ true
     </section>
 
     {{-- Garantías activas --}}
-    <section class="bg-white dark:bg-slate-900
-                border border-slate-200 dark:border-slate-800
-                rounded-xl shadow-sm overflow-hidden">
+    <section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
                     gap-3 px-5 py-4
-                    border-b border-slate-200 dark:border-slate-800">
+                    border-b border-line">
 
             <div>
                 <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                    <svg class="w-5 h-5 text-muted"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             stroke-width="1.8"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
 
-                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 class="font-semibold text-ink">
                         Garantías activas
                     </h2>
                 </div>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p class="text-xs text-muted mt-1">
                     Garantías vigentes y por vencer en los próximos 30 días
                 </p>
             </div>
 
             @if ($garantiasActivas->count() > 0)
             <a href="{{ route('ventas.index', ['buscar' => $cliente->nombre]) }}"
-                class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
                 Ver todas las ventas →
             </a>
             @endif
@@ -739,8 +684,7 @@ true
         @if ($garantiasActivas->isEmpty())
         <div class="px-6 py-14 text-center">
             <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
-                        bg-slate-100 dark:bg-slate-800
-                        text-slate-500 dark:text-slate-400
+                        bg-surface-2 text-muted
                         flex items-center justify-center">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
@@ -750,20 +694,18 @@ true
                 </svg>
             </div>
 
-            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+            <h3 class="font-semibold text-ink">
                 Sin garantías activas
             </h3>
 
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p class="text-sm text-muted mt-1">
                 Este cliente no tiene garantías vigentes ni por vencer.
             </p>
         </div>
         @else
         <div class="overflow-x-auto">
             <table class="min-w-[950px] w-full text-sm text-left">
-                <thead class="bg-slate-100 dark:bg-slate-800/80
-                                  text-xs uppercase tracking-wider
-                                  text-slate-600 dark:text-slate-400">
+                <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
                         <th class="px-4 py-4 font-semibold">Garantía</th>
                         <th class="px-4 py-4 font-semibold">Producto / SKU</th>
@@ -774,41 +716,41 @@ true
                         <th class="px-4 py-4 font-semibold">Estado</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody class="divide-y divide-line">
                     @foreach ($garantiasActivas as $g)
                     @php
                     $diasRestantes = \Carbon\Carbon::parse($g->fecha_vencimiento)->diffInDays(now());
                     $estadoClase = $diasRestantes <= 7
-                        ? 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20'
-                        : 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
+                        ? 'border border-amber-500/30 bg-amber-500/10 text-amber-500'
+                        : 'border border-brand-green/20 bg-brand-green/10 text-brand-green';
                     $estadoTexto = $diasRestantes <= 7 ? 'Por vencer' : 'Vigente';
                     @endphp
 
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                    <tr class="hover:bg-surface-2 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-ink">
                             #{{ $g->id_garantia }}
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <td class="px-4 py-3 text-muted">
                             {{ $g->producto }}
-                            <span class="text-xs text-slate-500 block">({{ $g->sku }})</span>
+                            <span class="text-xs text-muted block">({{ $g->sku }})</span>
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        <td class="px-4 py-3 text-muted whitespace-nowrap">
                             {{ \Carbon\Carbon::parse($g->fecha_inicio)->format('d/m/Y') }}
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap
-                                {{ $diasRestantes <= 7 ? 'font-bold text-amber-600 dark:text-amber-400' : '' }}">
+                        <td class="px-4 py-3 text-muted whitespace-nowrap
+                                {{ $diasRestantes <= 7 ? 'font-bold text-amber-500' : '' }}">
                             {{ \Carbon\Carbon::parse($g->fecha_vencimiento)->format('d/m/Y') }}
                         </td>
 
                         <td class="px-4 py-3 text-center text-sm font-mono
-                                {{ $diasRestantes <= 7 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-600 dark:text-slate-400' }}">
+                                {{ $diasRestantes <= 7 ? 'text-amber-500 font-bold' : 'text-muted' }}">
                             {{ $diasRestantes }} días
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-mono">
+                        <td class="px-4 py-3 text-muted font-mono">
                             #{{ $g->id_venta }}
                         </td>
 
@@ -827,36 +769,33 @@ true
     </section>
 
     {{-- Solicitudes de servicio técnico --}}
-    <section class="bg-white dark:bg-slate-900
-                border border-slate-200 dark:border-slate-800
-                rounded-xl shadow-sm overflow-hidden">
+    <section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between
                     gap-3 px-5 py-4
-                    border-b border-slate-200 dark:border-slate-800">
+                    border-b border-line">
 
             <div>
                 <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-slate-500 dark:text-slate-400"
+                    <svg class="w-5 h-5 text-muted"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             stroke-width="1.8"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
 
-                    <h2 class="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 class="font-semibold text-ink">
                         Solicitudes de servicio técnico
                     </h2>
                 </div>
 
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p class="text-xs text-muted mt-1">
                     Historial de solicitudes de servicio asociadas a este cliente
                 </p>
             </div>
 
             <a href="{{ route('serviciotecnico.publico.panel') }}"
-                class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                       dark:text-sky-400 dark:hover:text-sky-300 transition">
+                class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
                 Gestión de servicio →
             </a>
         </div>
@@ -864,8 +803,7 @@ true
         @if ($solicitudesServicio->isEmpty())
         <div class="px-6 py-14 text-center">
             <div class="w-14 h-14 mx-auto mb-4 rounded-2xl
-                        bg-slate-100 dark:bg-slate-800
-                        text-slate-500 dark:text-slate-400
+                        bg-surface-2 text-muted
                         flex items-center justify-center">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
@@ -875,20 +813,18 @@ true
                 </svg>
             </div>
 
-            <h3 class="font-semibold text-slate-800 dark:text-slate-200">
+            <h3 class="font-semibold text-ink">
                 Sin solicitudes de servicio
             </h3>
 
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p class="text-sm text-muted mt-1">
                 Este cliente no tiene solicitudes de servicio técnico registradas.
             </p>
         </div>
         @else
         <div class="overflow-x-auto">
             <table class="min-w-[950px] w-full text-sm text-left">
-                <thead class="bg-slate-100 dark:bg-slate-800/80
-                                  text-xs uppercase tracking-wider
-                                  text-slate-600 dark:text-slate-400">
+                <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
                         <th class="px-4 py-4 font-semibold">Solicitud</th>
                         <th class="px-4 py-4 font-semibold">Fecha</th>
@@ -899,31 +835,31 @@ true
                         <th class="px-4 py-4 font-semibold text-right">Acción</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody class="divide-y divide-line">
                     @foreach ($solicitudesServicio as $s)
                     @php
                     $estadoClase = match ($s->estado) {
-                        'PENDIENTE' => 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
-                        'PROGRAMADA' => 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
-                        'CERRADA' => 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-                        'CANCELADA' => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
-                        default => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600',
+                        'PENDIENTE' => 'border border-amber-500/30 bg-amber-500/10 text-amber-500',
+                        'PROGRAMADA' => 'border border-brand-blue/20 bg-brand-blue/10 text-brand-blue',
+                        'CERRADA' => 'border border-brand-green/20 bg-brand-green/10 text-brand-green',
+                        'CANCELADA' => 'border border-line bg-surface-2 text-muted',
+                        default => 'border border-line bg-surface-2 text-muted',
                     };
                     $resultadoTexto = $s->resultado
                         ? \Str::ucfirst(\Str::replace('_', ' ', $s->resultado))
                         : '—';
                     @endphp
 
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200 font-mono">
+                    <tr class="hover:bg-surface-2 transition-colors">
+                        <td class="px-4 py-3 font-semibold text-ink font-mono">
                             #{{ $s->id_solicitud }}
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap font-mono">
+                        <td class="px-4 py-3 text-muted whitespace-nowrap font-mono">
                             {{ \Carbon\Carbon::parse($s->fecha_solicitud)->format('d/m/Y H:i') }}
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <td class="px-4 py-3 text-muted">
                             {{ \Illuminate\Support\Str::limit($s->descripcion_falla, 60) }}
                         </td>
 
@@ -934,18 +870,17 @@ true
                             </span>
                         </td>
 
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <td class="px-4 py-3 text-muted">
                             {{ data_get($s, 'tecnico.nombre_completo', 'Sin asignar') }}
                         </td>
 
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-400 text-sm">
+                        <td class="px-4 py-3 text-muted text-sm">
                             {{ $resultadoTexto }}
                         </td>
 
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('serviciotecnico.show', $s->id_solicitud) }}"
-                                class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                                               dark:text-sky-400 dark:hover:text-sky-300 transition">
+                                class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
                                 Ver detalle
                             </a>
                         </td>

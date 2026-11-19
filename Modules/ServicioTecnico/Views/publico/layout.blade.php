@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full dark" id="html-root">
+<html lang="es" class="h-full" id="html-root">
 
 <head>
     <meta charset="UTF-8">
@@ -8,14 +8,23 @@
     <title>@yield('title', 'Servicio Técnico') | EwiflorWeb</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    {{-- Aplica el tema antes de pintar para evitar flash --}}
+    <script>
+        (() => {
+            const saved = localStorage.getItem('theme');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = saved || (systemDark ? 'dark' : 'light');
+        })();
+    </script>
+
     <style>
         html, body {
-            background: #020617;
-            color: #f1f5f9;
+            background: var(--bg);
+            color: var(--text);
         }
         .st-panel {
-            background: #0f172a;
-            border: 1px solid #1e293b;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 0.75rem;
             padding: 1.5rem;
         }
@@ -27,29 +36,27 @@
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
+            border: 1px solid transparent;
         }
-        .st-badge-pending { background: #fef3c7; color: #92400e; }
-        .st-badge-programada { background: #dbeafe; color: #1e40af; }
-        .st-badge-cerrada { background: #d1fae5; color: #065f46; }
     </style>
 </head>
 
-<body class="h-full overflow-hidden bg-slate-950 text-slate-100 antialiased">
+<body class="h-full overflow-hidden bg-canvas text-ink antialiased">
     <div class="min-h-screen flex flex-col">
-        <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-6 py-4 flex items-center justify-between">
+        <header class="border-b border-line bg-nav-bg/90 backdrop-blur px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="h-8 w-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold">
+                <div class="h-8 w-8 rounded-lg bg-brand-blue flex items-center justify-center text-white font-bold">
                     ST
                 </div>
                 <div>
-                    <span class="block text-xs font-semibold text-sky-300 uppercase tracking-wider">EwiflorWeb</span>
-                    <span class="block text-sm font-semibold text-white">Servicio Técnico — Cliente</span>
+                    <span class="block text-xs font-semibold text-brand-blue uppercase tracking-wider">EwiflorWeb</span>
+                    <span class="block text-sm font-semibold text-ink">Servicio Técnico — Cliente</span>
                 </div>
             </div>
             <div class="flex items-center gap-3">
                 <form action="{{ route('serviciotecnico.publico.salir') }}" method="POST">
                     @csrf
-                    <button type="submit" class="text-xs text-slate-400 hover:text-white transition">
+                    <button type="submit" class="text-xs text-muted hover:text-ink transition">
                         Cerrar sesión
                     </button>
                 </form>
@@ -58,13 +65,13 @@
 
         <main class="flex-1 px-6 py-8 max-w-5xl mx-auto">
             @if (session('success'))
-                <div class="mb-4 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/10 px-4 py-3 text-sm text-emerald-300 dark:border-emerald-500/30 dark:text-emerald-200" role="status">
+                <div class="mb-4 flex items-start gap-3 rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-3 text-sm text-brand-green" role="status">
                     <span>{{ session('success') }}</span>
                 </div>
             @endif
 
             @if (session('error'))
-                <div class="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50/10 px-4 py-3 text-sm text-red-300 dark:border-red-500/30 dark:text-red-200" role="alert">
+                <div class="mb-4 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500" role="alert">
                     <span>{{ session('error') }}</span>
                 </div>
             @endif
@@ -72,7 +79,7 @@
             @yield('content')
         </main>
 
-        <footer class="border-t border-slate-800 bg-slate-950 px-6 py-4 text-center text-[10px] text-slate-500">
+        <footer class="border-t border-line bg-surface px-6 py-4 text-center text-[10px] text-muted">
             EwiflorWeb · Servicio Técnico — Panel público de cliente
         </footer>
     </div>

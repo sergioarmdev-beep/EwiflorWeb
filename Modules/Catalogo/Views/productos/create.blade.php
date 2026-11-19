@@ -4,42 +4,42 @@
 
 @section('content')
 
-<div class="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen py-10 px-4 sm:px-6 lg:px-8">
 
     <div class="max-w-5xl mx-auto">
 
         {{-- ENCABEZADO --}}
         <div class="mb-8">
-            <div class="flex items-center gap-2 text-sm text-slate-500 mb-3">
+            <div class="flex items-center gap-2 text-sm text-muted mb-3">
                 <span>Catálogo</span>
                 <span>/</span>
-                <span class="text-sky-400">Nuevo producto</span>
+                <span class="text-brand-blue">Nuevo producto</span>
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
                 <div>
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="w-11 h-11 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                        <div class="w-11 h-11 rounded-xl border border-brand-blue/20 bg-brand-blue/10 flex items-center justify-center text-brand-blue">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                                     d="M12 4v16m8-8H4" />
                             </svg>
                         </div>
 
-                        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
                             Registrar producto
                         </h2>
                     </div>
 
-                    <p class="text-sm text-slate-400 max-w-xl">
+                    <p class="text-sm text-muted max-w-xl">
                         Complete la información general, clasificación y características
                         del nuevo producto para incorporarlo al catálogo.
                     </p>
                 </div>
 
                 <a href="{{ route('catalogo.productos.index') }}"
-                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:border-sky-500/50 transition duration-200 text-sm font-semibold">
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-line bg-surface text-ink hover:text-brand-green hover:border-brand-green/50 transition duration-200 text-sm font-semibold">
 
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -54,13 +54,13 @@
 
 
         {{-- FORMULARIO --}}
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-black/20 overflow-hidden">
+        <div class="bg-surface border border-line rounded-2xl shadow-soft overflow-hidden">
 
             {{-- CABECERA DEL FORMULARIO --}}
-            <div class="px-6 sm:px-8 py-5 border-b border-slate-800 bg-slate-900/80">
+            <div class="px-6 sm:px-8 py-5 border-b border-line bg-surface-2/60">
                 <div class="flex items-center gap-3">
 
-                    <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                    <div class="w-9 h-9 rounded-lg bg-brand-blue/10 flex items-center justify-center text-brand-blue">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                                 d="M4 6h16M4 12h16M4 18h16" />
@@ -68,10 +68,10 @@
                     </div>
 
                     <div>
-                        <h3 class="text-base font-bold text-white">
+                        <h3 class="text-base font-bold text-ink">
                             Información del producto
                         </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">
+                        <p class="text-xs text-muted mt-0.5">
                             Los campos marcados con * son obligatorios.
                         </p>
                     </div>
@@ -90,15 +90,15 @@
                     <section>
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 01
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Identificación
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     Datos principales para reconocer el producto.
                                 </p>
                             </div>
@@ -108,8 +108,8 @@
 
                             {{-- Código --}}
                             <div>
-                                <label for="codigo" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Código <span class="text-rose-400">*</span>
+                                <label for="codigo" class="block text-sm font-medium text-muted mb-2">
+                                    Código <span class="text-red-500">*</span>
                                 </label>
 
                                 <input type="text" name="codigo" id="codigo"
@@ -125,8 +125,8 @@
 
                             {{-- Nombre --}}
                             <div>
-                                <label for="nombre" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Nombre del producto <span class="text-rose-400">*</span>
+                                <label for="nombre" class="block text-sm font-medium text-muted mb-2">
+                                    Nombre del producto <span class="text-red-500">*</span>
                                 </label>
 
                                 <input type="text" name="nombre" id="nombre"
@@ -142,8 +142,8 @@
 
                             {{-- Marca --}}
                             <div>
-                                <label for="id_marca" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Marca <span class="text-rose-400">*</span>
+                                <label for="id_marca" class="block text-sm font-medium text-muted mb-2">
+                                    Marca <span class="text-red-500">*</span>
                                 </label>
 
                                 <select name="id_marca" id="id_marca" required class="form-select">
@@ -165,7 +165,7 @@
 
                             {{-- Modelo --}}
                             <div>
-                                <label for="modelo" class="block text-sm font-medium text-slate-300 mb-2">
+                                <label for="modelo" class="block text-sm font-medium text-muted mb-2">
                                     Modelo
                                 </label>
 
@@ -180,18 +180,18 @@
 
 
                     {{-- SECCIÓN 2: CLASIFICACIÓN --}}
-                    <section class="pt-8 border-t border-slate-800">
+                    <section class="pt-8 border-t border-line">
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 02
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Clasificación del producto
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     Defina cómo se organiza y comercializa el producto.
                                 </p>
                             </div>
@@ -201,8 +201,8 @@
 
                             {{-- Categoría --}}
                             <div>
-                                <label for="categoria" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Categoría <span class="text-rose-400">*</span>
+                                <label for="categoria" class="block text-sm font-medium text-muted mb-2">
+                                    Categoría <span class="text-red-500">*</span>
                                 </label>
 
                                 <select name="categoria" id="categoria" required class="form-select">
@@ -224,8 +224,8 @@
 
                             {{-- Tipo de producto --}}
                             <div>
-                                <label for="tipo_producto" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Tipo de producto <span class="text-rose-400">*</span>
+                                <label for="tipo_producto" class="block text-sm font-medium text-muted mb-2">
+                                    Tipo de producto <span class="text-red-500">*</span>
                                 </label>
 
                                 <select name="tipo_producto" id="tipo_producto" required class="form-select">
@@ -248,8 +248,8 @@
                             {{-- Modalidad --}}
                             <div class="md:col-span-2">
 
-                                <label for="modalidad" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Modalidad <span class="text-rose-400">*</span>
+                                <label for="modalidad" class="block text-sm font-medium text-muted mb-2">
+                                    Modalidad <span class="text-red-500">*</span>
                                 </label>
 
                                 <select name="modalidad" id="modalidad" required class="form-select">
@@ -268,7 +268,7 @@
                                 <span class="form-error">{{ $message }}</span>
                                 @enderror
 
-                                <p class="text-xs text-slate-500 mt-2">
+                                <p class="text-xs text-muted mt-2">
                                     Seleccione si el producto se gestiona mediante inventario
                                     o se comercializa bajo pedido.
                                 </p>
@@ -279,18 +279,18 @@
 
 
                     {{-- SECCIÓN 3: CONTROL Y GARANTÍA --}}
-                    <section class="pt-8 border-t border-slate-800">
+                    <section class="pt-8 border-t border-line">
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 03
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Control y garantía
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     Parámetros iniciales para la gestión del producto.
                                 </p>
                             </div>
@@ -300,8 +300,8 @@
 
                             {{-- Stock mínimo --}}
                             <div>
-                                <label for="stock_minimo" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Stock mínimo <span class="text-rose-400">*</span>
+                                <label for="stock_minimo" class="block text-sm font-medium text-muted mb-2">
+                                    Stock mínimo <span class="text-red-500">*</span>
                                 </label>
 
                                 <div class="relative">
@@ -309,7 +309,7 @@
                                         value="{{ old('stock_minimo', 0) }}" min="0" required
                                         class="form-input pr-20">
 
-                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-500 pointer-events-none">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted pointer-events-none">
                                         Unidades
                                     </span>
                                 </div>
@@ -318,7 +318,7 @@
                                 <span class="form-error">{{ $message }}</span>
                                 @enderror
 
-                                <p class="text-xs text-slate-500 mt-2">
+                                <p class="text-xs text-muted mt-2">
                                     Cantidad mínima de referencia para el control de existencias.
                                 </p>
                             </div>
@@ -326,8 +326,8 @@
 
                             {{-- Garantía --}}
                             <div>
-                                <label for="garantia_meses" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Garantía <span class="text-rose-400">*</span>
+                                <label for="garantia_meses" class="block text-sm font-medium text-muted mb-2">
+                                    Garantía <span class="text-red-500">*</span>
                                 </label>
 
                                 <div class="relative">
@@ -335,7 +335,7 @@
                                         value="{{ old('garantia_meses', 0) }}" min="0" required
                                         class="form-input pr-20">
 
-                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-500 pointer-events-none">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted pointer-events-none">
                                         Meses
                                     </span>
                                 </div>
@@ -350,18 +350,18 @@
 
 
                     {{-- SECCIÓN 4: IMÁGENES --}}
-                    <section class="pt-8 border-t border-slate-800">
+                    <section class="pt-8 border-t border-line">
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 04
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Imágenes del producto
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     La primera imagen será la principal; podrá cambiarla luego al editar.
                                 </p>
                             </div>
@@ -377,18 +377,18 @@
 
 
                     {{-- SECCIÓN 6: DOCUMENTACIÓN --}}
-                    <section class="pt-8 border-t border-slate-800">
+                    <section class="pt-8 border-t border-line">
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 06
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Documentación del producto
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     Suba manuales, fichas técnicas o documentos en formato TXT o Word.
                                 </p>
                             </div>
@@ -398,18 +398,18 @@
 
                             {{-- Documentos --}}
                             <div class="md:col-span-2">
-                                <label for="documentos" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Documentos adjuntos <span class="text-slate-500">(opcional)</span>
+                                <label for="documentos" class="block text-sm font-medium text-muted mb-2">
+                                    Documentos adjuntos <span class="text-muted">(opcional)</span>
                                 </label>
 
                                 <input type="file" name="documentos[]" id="documentos" multiple
                                     accept=".txt,.doc,.docx"
-                                    class="block w-full text-sm text-slate-400
+                                    class="block w-full text-sm text-muted
                                         file:mr-4 file:py-2 file:rounded-full file:border-0
-                                        file:text-sm file:font-semibold file:bg-sky-600 file:text-white
-                                        hover:file:bg-sky-500 cursor-pointer">
+                                        file:text-sm file:font-semibold file:bg-brand-blue file:text-white
+                                        hover:file:bg-brand-blue-dark cursor-pointer">
 
-                                <p class="text-xs text-slate-500 mt-2">
+                                <p class="text-xs text-muted mt-2">
                                     Formatos permitidos: .txt, .doc, .docx. Máximo 5 archivos, 5 MB cada uno.
                                 </p>
 
@@ -423,21 +423,21 @@
 
 
                     {{-- SECCIÓN 7: REPUESTOS (solo maquinaria) --}}
-                    <section class="pt-8 border-t border-slate-800 repuestos-section"
+                    <section class="pt-8 border-t border-line repuestos-section"
                         id="repuestos-section"
                         data-tipo-producto="{{ old('tipo_producto') }}">
                         {{-- Se muestra solo si el tipo es MAQUINARIA --}}
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 07
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Repuestos asociados
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     Seleccione los repuestos compatibles con esta maquinaria.
                                 </p>
                             </div>
@@ -447,8 +447,8 @@
 
                             {{-- Selector de repuestos --}}
                             <div class="md:col-span-2">
-                                <label for="repuestos" class="block text-sm font-medium text-slate-300 mb-2">
-                                    Repuestos compatibles <span class="text-slate-500">(opcional)</span>
+                                <label for="repuestos" class="block text-sm font-medium text-muted mb-2">
+                                    Repuestos compatibles <span class="text-muted">(opcional)</span>
                                 </label>
 
                                 <select name="repuestos[]" id="repuestos" multiple
@@ -466,7 +466,7 @@
                                     @endforeach
                                 </select>
 
-                                <p class="text-xs text-slate-500 mt-2">
+                                <p class="text-xs text-muted mt-2">
                                     Solo aplica a productos de tipo <strong>MAQUINARIA</strong>.
                                     Los repuestos disponibles son aquellos marcados como tipo REPUESTO.
                                 </p>
@@ -480,25 +480,25 @@
                     </section>
 
                     {{-- SECCIÓN 8: DESCRIPCIÓN --}}
-                    <section class="pt-8 border-t border-slate-800">
+                    <section class="pt-8 border-t border-line">
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 08
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Descripción
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     Información adicional sobre el producto.
                                 </p>
                             </div>
                         </div>
 
                         <div>
-                            <label for="descripcion" class="block text-sm font-medium text-slate-300 mb-2">
+                            <label for="descripcion" class="block text-sm font-medium text-muted mb-2">
                                 Descripción del producto
                             </label>
 
@@ -511,36 +511,36 @@
 
 
                     {{-- SECCIÓN 9: VISIBILIDAD --}}
-                    <section class="pt-8 border-t border-slate-800">
+                    <section class="pt-8 border-t border-line">
 
                         <div class="flex items-center gap-3 mb-6">
-                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                                 09
                             </span>
 
                             <div>
-                                <h4 class="text-sm font-bold text-white">
+                                <h4 class="text-sm font-bold text-ink">
                                     Visibilidad del producto
                                 </h4>
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-muted">
                                     Configure la publicación en el catálogo público.
                                 </p>
                             </div>
                         </div>
 
                         <label for="es_publico"
-                            class="flex items-start gap-4 p-4 rounded-xl border border-slate-700 bg-slate-950/50 cursor-pointer hover:border-sky-500/40 transition duration-200">
+                            class="flex items-start gap-4 p-4 rounded-xl border border-line bg-surface-2/60 cursor-pointer hover:border-brand-blue/50 transition duration-200">
 
                             <input type="checkbox" name="es_publico" id="es_publico" value="1"
                                 {{ old('es_publico', true) ? 'checked' : '' }}
-                                class="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-800 text-sky-500 focus:ring-sky-500 focus:ring-offset-slate-900">
+                                class="mt-1 w-4 h-4 rounded border border-line bg-surface-2 text-brand-blue focus:ring-brand-blue/50 focus:ring-offset-surface">
 
                             <div>
-                                <span class="block text-sm font-semibold text-slate-200">
+                                <span class="block text-sm font-semibold text-ink">
                                     Mostrar en el catálogo público
                                 </span>
 
-                                <span class="block text-xs text-slate-500 mt-1 leading-relaxed">
+                                <span class="block text-xs text-muted mt-1 leading-relaxed">
                                     Al activar esta opción, el producto podrá mostrarse
                                     en el catálogo web público.
                                 </span>
@@ -554,23 +554,23 @@
 
 
                 {{-- ACCIONES --}}
-                <div class="px-6 sm:px-8 py-5 border-t border-slate-800 bg-slate-950/50">
+                <div class="px-6 sm:px-8 py-5 border-t border-line bg-surface-2/60">
 
                     <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
 
-                        <p class="text-xs text-slate-500">
+                        <p class="text-xs text-muted">
                             Verifique la información antes de guardar.
                         </p>
 
                         <div class="flex flex-col sm:flex-row gap-3">
 
                             <a href="{{ route('catalogo.productos.index') }}"
-                                class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white transition duration-200 text-sm font-semibold">
+                                class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-line bg-surface text-ink hover:bg-surface-2 hover:text-brand-green transition duration-200 text-sm font-semibold">
                                 Cancelar
                             </a>
 
                             <button type="submit"
-                                class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-950/30 transition duration-200">
+                                class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-brand-green text-white font-bold text-sm shadow-sm hover:bg-brand-green-dark transition duration-200">
 
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -590,7 +590,7 @@
 
         </div>
 
-        <p class="text-center text-xs text-slate-600 mt-6">
+        <p class="text-center text-xs text-muted mt-6">
             Ewiflor Importaciones · Administración de catálogo
         </p>
 
@@ -607,23 +607,23 @@
         width: 100%;
         min-height: 44px;
         padding: 10px 13px;
-        border: 1px solid #334155;
+        border: 1px solid var(--border);
         border-radius: 10px;
         outline: none;
-        background-color: #020617;
-        color: #e2e8f0;
+        background-color: var(--surface-2);
+        color: var(--text);
         font-size: .875rem;
         transition: border-color .2s ease, box-shadow .2s ease;
     }
 
     .form-input::placeholder {
-        color: #64748b;
+        color: var(--muted);
     }
 
     .form-input:focus,
     .form-select:focus {
-        border-color: #0ea5e9;
-        box-shadow: 0 0 0 3px rgba(14, 165, 233, .12);
+        border-color: var(--color-brand-green);
+        box-shadow: 0 0 0 3px rgba(42, 152, 50, .12);
     }
 
     .form-select {
@@ -631,14 +631,14 @@
     }
 
     .form-select option {
-        background: #0f172a;
-        color: #e2e8f0;
+        background: var(--surface);
+        color: var(--text);
     }
 
     .form-error {
         display: block;
         margin-top: 7px;
-        color: #fb7185;
+        color: var(--color-red-500, #ef4444);
         font-size: .75rem;
     }
 

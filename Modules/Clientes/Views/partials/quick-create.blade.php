@@ -1,101 +1,102 @@
-{{-- Alta rápida de cliente.
-     Permite registrar un cliente sin salir del formulario (cotización o venta
-     directa) y lo deja seleccionado en el <select id="id_cliente"> de la página.
-     Si el teléfono ya existe, ofrece reutilizar ese cliente.
+{{--
+    Alta rápida de cliente.
+    Permite registrar un cliente sin salir del formulario (cotización o venta
+    directa) y lo deja seleccionado en el <select id="id_cliente"> de la página.
+    Si el teléfono ya existe, ofrece reutilizar ese cliente.
 
-     OJO: este partial se incluye DENTRO del formulario de la cotización o de la
-     venta, así que NO define un formulario propio ni atributos name: los
-     formularios anidados son inválidos en HTML y el navegador descarta el
-     interno. Los datos se recolectan con data-campo para no enviarse junto con
-     el documento padre. --}}
+    OJO: este partial se incluye DENTRO del formulario de la cotización o de la
+    venta, así que NO define un formulario propio ni atributos name: los
+    formularios anidados son inválidos en HTML y el navegador descarta el
+    interno. Los datos se recolectan con data-campo para no enviarse junto con
+    el documento padre. --}}
 <div class="mt-1 flex flex-wrap items-center gap-2">
     <button type="button" data-cliente-rapido-open
-        class="text-sm text-blue-600 hover:underline">
+        class="text-sm text-brand-blue hover:underline">
         + Registrar cliente nuevo
     </button>
 
     <noscript>
-        <a href="{{ route('clientes.create') }}" class="text-sm text-blue-600 hover:underline">
+        <a href="{{ route('clientes.create') }}" class="text-sm text-brand-blue hover:underline">
             (abrir el formulario de clientes)
         </a>
     </noscript>
 </div>
 
-<dialog id="dlg-cliente-rapido" class="rounded-lg shadow-xl p-6 w-full max-w-lg">
+<dialog id="dlg-cliente-rapido" class="rounded-2xl shadow-modal p-6 w-full max-w-lg">
     <div id="qc-campos">
-        <h2 class="text-lg font-semibold mb-1">Registrar cliente</h2>
-        <p class="text-sm text-gray-600 mb-4">
+        <h2 class="text-lg font-bold text-ink mb-1">Registrar cliente</h2>
+        <p class="text-sm text-muted mb-4">
             Se guarda en el panel de clientes y queda seleccionado en este formulario.
         </p>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="sm:col-span-2">
-                <label class="block text-sm font-medium" for="qc-nombre">Nombre *</label>
+                <label class="block text-sm font-medium text-muted" for="qc-nombre">Nombre *</label>
                 <input type="text" id="qc-nombre" data-campo="nombre" maxlength="120"
                     placeholder="Nombre completo o razón social"
-                    class="w-full border rounded px-3 py-2">
-                <p class="text-red-600 text-xs mt-1 hidden" data-error="nombre"></p>
+                    class="w-full rounded-xl border border-line bg-surface-2 text-ink px-3 py-2 focus:border-brand-green/50 focus:ring-brand-green/20">
+                <p class="text-red-500 text-xs mt-1 hidden" data-error="nombre"></p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium" for="qc-telefono">Teléfono *</label>
+                <label class="block text-sm font-medium text-muted" for="qc-telefono">Teléfono *</label>
                 <input type="text" id="qc-telefono" data-campo="telefono" maxlength="20"
                     placeholder="Número de teléfono"
-                    class="w-full border rounded px-3 py-2">
-                <p class="text-red-600 text-xs mt-1 hidden" data-error="telefono"></p>
+                    class="w-full rounded-xl border border-line bg-surface-2 text-ink px-3 py-2 focus:border-brand-green/50 focus:ring-brand-green/20">
+                <p class="text-red-500 text-xs mt-1 hidden" data-error="telefono"></p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium" for="qc-correo">Correo</label>
+                <label class="block text-sm font-medium text-muted" for="qc-correo">Correo</label>
                 <input type="email" id="qc-correo" data-campo="correo" maxlength="100"
                     placeholder="ejemplo@correo.com"
-                    class="w-full border rounded px-3 py-2">
-                <p class="text-red-600 text-xs mt-1 hidden" data-error="correo"></p>
+                    class="w-full rounded-xl border border-line bg-surface-2 text-ink px-3 py-2 focus:border-brand-green/50 focus:ring-brand-green/20">
+                <p class="text-red-500 text-xs mt-1 hidden" data-error="correo"></p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium" for="qc-tipo">Tipo de cliente</label>
-                <select id="qc-tipo" data-campo="tipo_cliente" class="w-full border rounded px-3 py-2">
+                <label class="block text-sm font-medium text-muted" for="qc-tipo">Tipo de cliente</label>
+                <select id="qc-tipo" data-campo="tipo_cliente" class="w-full rounded-xl border border-line bg-surface-2 text-ink px-3 py-2 focus:border-brand-green/50 focus:ring-brand-green/20">
                     <option value="">Seleccionar tipo</option>
                     @foreach (\Modules\Clientes\Models\Cliente::TIPOS as $tipo)
                     <option value="{{ $tipo }}">{{ $tipo }}</option>
                     @endforeach
                 </select>
-                <p class="text-red-600 text-xs mt-1 hidden" data-error="tipo_cliente"></p>
+                <p class="text-red-500 text-xs mt-1 hidden" data-error="tipo_cliente"></p>
             </div>
 
             <div class="flex items-end">
-                <label class="inline-flex items-center gap-2 text-sm" for="qc-mayorista">
+                <label class="inline-flex items-center gap-2 text-sm text-muted" for="qc-mayorista">
                     <input type="checkbox" id="qc-mayorista" data-campo="es_mayorista"
-                        class="w-4 h-4 rounded border-gray-300">
+                        class="w-4 h-4 rounded border border-line bg-surface-2 text-brand-green focus:ring-brand-green/50 focus:ring-offset-surface">
                     Cliente mayorista
                 </label>
-                <p class="text-red-600 text-xs mt-1 hidden" data-error="es_mayorista"></p>
+                <p class="text-red-500 text-xs mt-1 hidden" data-error="es_mayorista"></p>
             </div>
         </div>
 
-        <div id="qc-existente" class="hidden mt-4 p-3 rounded border border-amber-300 bg-amber-50 text-sm">
+        <div id="qc-existente" class="hidden mt-4 p-3 rounded-xl border border-amber-500/30 bg-amber-500/20 text-sm text-amber-500">
             <p>
                 Ya existe un cliente con ese teléfono:
-                <span class="font-semibold" data-existente-nombre></span>
+                <span class="font-semibold text-ink" data-existente-nombre></span>
             </p>
             <div class="flex flex-wrap gap-2 mt-3">
                 <button type="button" data-usar-existente
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    class="bg-brand-green text-white px-4 py-2 rounded-xl font-semibold hover:bg-brand-green-dark transition-colors">
                     Usar este cliente
                 </button>
-                <button type="button" data-crear-igual class="border px-4 py-2 rounded">
+                <button type="button" data-crear-igual class="border border-line rounded-xl px-4 py-2 text-ink hover:bg-surface-2 transition-colors">
                     Registrar de todas formas
                 </button>
             </div>
         </div>
 
-        <p class="text-red-600 text-sm mt-3 hidden" data-error-general></p>
+        <p class="text-red-500 text-sm mt-3 hidden" data-error-general></p>
 
         <div class="flex justify-end gap-2 mt-5">
-            <button type="button" data-cerrar class="border px-4 py-2 rounded">Cancelar</button>
+            <button type="button" data-cerrar class="border border-line rounded-xl px-4 py-2 text-ink hover:bg-surface-2 transition-colors">Cancelar</button>
             <button type="button" data-submit
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                class="bg-brand-green text-white px-4 py-2 rounded-xl font-semibold hover:bg-brand-green-dark transition-colors">
                 Guardar cliente
             </button>
         </div>

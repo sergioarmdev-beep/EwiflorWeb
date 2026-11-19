@@ -13,10 +13,8 @@ $lngJson = $lngInicial !== null ? (float) $lngInicial : null;
 <div class="space-y-4">
 
     <div>
-        <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Ubicación geográfica
-        </h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        <h3 class="text-sm font-semibold text-ink">Ubicación geográfica</h3>
+        <p class="text-xs text-muted mt-1">
             Haz clic en el mapa para colocar el marcador, o usa tu ubicación actual.
             Coordenadas opcionales: sirven para mostrar la sucursal en el mapa general.
         </p>
@@ -24,7 +22,7 @@ $lngJson = $lngInicial !== null ? (float) $lngInicial : null;
 
     {{-- Coordenadas visibles --}}
     <div class="flex items-center justify-between gap-3 flex-wrap">
-        <span id="coordenadas-lectura" class="text-xs font-mono text-slate-600 dark:text-slate-300">
+        <span id="coordenadas-lectura" class="text-xs font-mono text-muted">
             {{ $tieneUbicacion
                 ? 'Lat: '.number_format($latJson, 6).' · Lng: '.number_format($lngJson, 6)
                 : 'Sin ubicación asignada' }}
@@ -33,9 +31,7 @@ $lngJson = $lngInicial !== null ? (float) $lngInicial : null;
         <div class="flex items-center gap-2">
             <button type="button" id="btn-mi-ubicacion"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                          border border-slate-300 dark:border-slate-700
-                          text-slate-700 dark:text-slate-300
-                          hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                          border border-line bg-surface-2 text-ink hover:bg-surface-2 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -45,9 +41,7 @@ $lngJson = $lngInicial !== null ? (float) $lngInicial : null;
 
             <button type="button" id="btn-quitar-ubicacion"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                          border border-slate-300 dark:border-slate-700
-                          text-red-700 dark:text-red-400
-                          hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                          border border-line bg-surface-2 text-red-500 hover:bg-red-500/10 transition-colors">
                 Quitar ubicación
             </button>
         </div>
@@ -59,14 +53,13 @@ $lngJson = $lngInicial !== null ? (float) $lngInicial : null;
 
     {{-- Mapa --}}
     <div id="mapa-picker"
-        class="w-full h-80 rounded-lg overflow-hidden
-               border border-slate-300 dark:border-slate-700 z-0"></div>
+        class="w-full h-80 rounded-lg overflow-hidden border border-line z-0"></div>
 
     @error('latitud')
-    <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+    <p class="text-xs text-red-500">{{ $message }}</p>
     @enderror
     @error('longitud')
-    <p class="text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+    <p class="text-xs text-red-500">{{ $message }}</p>
     @enderror
 </div>
 

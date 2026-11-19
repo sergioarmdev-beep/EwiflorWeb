@@ -17,27 +17,20 @@ $altura = $altura ?? 'h-96';
 
 @include('sucursales::partials.leaflet-assets')
 
-<section class="bg-white dark:bg-slate-900
-                border border-slate-200 dark:border-slate-800
-                rounded-xl shadow-sm overflow-hidden">
+<section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
 
-    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800
-                flex items-center justify-between gap-3">
+    <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
         <div>
-            <h2 class="font-semibold text-slate-900 dark:text-slate-100">
-                Mapa de sucursales
-            </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <h2 class="font-semibold text-ink">Mapa de sucursales</h2>
+            <p class="text-xs text-muted mt-1">
                 {{ $puntos->count() }} sucursal(es) con ubicación registrada.
             </p>
         </div>
-        <span class="text-xs text-slate-400">
-            OpenStreetMap
-        </span>
+        <span class="text-xs text-muted">OpenStreetMap</span>
     </div>
 
     @if ($puntos->isEmpty())
-    <div class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+    <div class="px-6 py-10 text-center text-sm text-muted">
         Ninguna sucursal tiene coordenadas todavía. Asigna una ubicación
         desde el formulario de edición de cada sucursal.
     </div>
@@ -67,7 +60,7 @@ $altura = $altura ?? 'h-96';
     var bounds = [];
 
     puntos.forEach(function (p) {
-        var color = p.estado === 'ACTIVO' ? '#059669' : '#dc2626';
+        var color = p.estado === 'ACTIVO' ? 'var(--color-brand-green)' : 'var(--color-red-500, #ef4444)';
         var icon = L.divIcon({
             className: '',
             html: '<span style="display:inline-block;width:14px;height:14px;border-radius:9999px;' +

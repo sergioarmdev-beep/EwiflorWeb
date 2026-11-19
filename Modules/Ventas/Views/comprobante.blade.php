@@ -1,24 +1,38 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full" data-theme="light">
 
 <head>
     <meta charset="utf-8">
     <title>Comprobante {{ $venta->numero_factura }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Aplica el tema antes de pintar para evitar flash --}}
+    <script>
+        (() => {
+            const saved = localStorage.getItem('theme');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = saved || (systemDark ? 'dark' : 'light');
+        })();
+    </script>
+
     <style>
         body {
-            font-family: system-ui, sans-serif;
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
             max-width: 720px;
             margin: 30px auto;
-            color: #111;
+            color: var(--text);
+            background: var(--bg);
         }
 
         h1 {
             font-size: 22px;
             margin: 0 0 4px;
+            color: var(--text);
         }
 
         .muted {
-            color: #666;
+            color: var(--muted);
             font-size: 12px;
         }
 
@@ -31,13 +45,14 @@
 
         th,
         td {
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border);
             padding: 6px 8px;
             text-align: left;
+            color: var(--text);
         }
 
         th {
-            background: #f5f5f5;
+            background: var(--surface-2);
         }
 
         .right {
@@ -46,21 +61,25 @@
 
         .total td {
             font-weight: 600;
-            border-top: 2px solid #333;
+            border-top: 2px solid var(--text);
         }
 
         @media print {
             .no-print {
                 display: none;
             }
+            body {
+                background: var(--bg);
+                color: var(--text);
+            }
         }
     </style>
 </head>
 
-<body>
+<body class="antialiased">
     <div class="no-print" style="margin-bottom:12px">
-        <button onclick="window.print()">Imprimir</button>
-        <a href="{{ route('ventas.show', $venta) }}">← Volver a la venta</a>
+        <button onclick="window.print()" class="bg-brand-green text-white px-4 py-2 rounded-xl font-semibold hover:bg-brand-green-dark transition-colors">Imprimir</button>
+        <a href="{{ route('ventas.show', $venta) }}" class="text-brand-blue hover:underline ml-2">← Volver a la venta</a>
     </div>
 
     <h1>Ewiflor Importaciones</h1>

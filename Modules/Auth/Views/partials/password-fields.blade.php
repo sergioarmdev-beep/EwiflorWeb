@@ -1,13 +1,13 @@
 {{--
     Campos «Nueva contraseña» + «Confirmar» con medidor de fortaleza y generador.
-    Theme-aware: soporta claro (bg-white) y oscuro (bg-slate-800).
+    Usa las variables de tema de resources/css/app.css (data-theme), sin clases dark:.
 --}}
 @php
 $requerido = $requerido ?? true;
 $etiqueta = $etiqueta ?? 'Contraseña';
 
-$campo = 'mt-1 w-full px-3.5 py-2.5 pr-12 bg-white dark:bg-slate-800 border border-slate-300 dark:border-sky-500/40 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#0B6E45] dark:focus:border-sky-400 focus:ring-2 focus:ring-[#0B6E45]/30 dark:focus:ring-sky-500/30 transition-all';
-$ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition-colors cursor-pointer';
+$campo = 'mt-1 w-full px-3.5 py-2.5 pr-12 rounded-xl bg-surface-2 border border-line text-ink placeholder:text-muted text-sm focus:border-brand-green/50 focus:ring-brand-green/20';
+$ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted hover:text-ink focus:outline-none transition-colors cursor-pointer';
 @endphp
 
 <div class="md:col-span-2 space-y-4" data-pw-root>
@@ -15,7 +15,7 @@ $ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 ho
 
         {{-- Nueva contraseña --}}
         <div>
-            <label for="pw-new" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+            <label for="pw-new" class="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
                 {{ $etiqueta }} {{ $requerido ? '*' : '(dejar vacío para no cambiar)' }}
             </label>
             <div class="relative">
@@ -33,12 +33,12 @@ $ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 ho
                     </svg>
                 </button>
             </div>
-            @error('password') <p class="text-xs text-red-500 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+            @error('password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
         </div>
 
         {{-- Confirmar contraseña --}}
         <div>
-            <label for="pw-confirm" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">Confirmar contraseña</label>
+            <label for="pw-confirm" class="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">Confirmar contraseña</label>
             <div class="relative">
                 <input type="password" name="password_confirmation" id="pw-confirm" autocomplete="new-password"
                     placeholder="••••••••" minlength="8" maxlength="72" {{ $requerido ? 'required' : '' }}
@@ -59,42 +59,42 @@ $ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 ho
     </div>
 
     {{-- Medidor de fortaleza + requisitos --}}
-    <div class="p-3.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
+    <div class="p-3.5 rounded-xl border border-line bg-surface-2/60 space-y-3">
         <div class="flex items-center gap-3">
             <div class="flex-1 grid grid-cols-4 gap-1.5" role="progressbar" aria-label="Fortaleza de la contraseña"
                 aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" id="pw-meter">
-                <span class="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 transition-colors duration-200" data-bar></span>
-                <span class="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 transition-colors duration-200" data-bar></span>
-                <span class="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 transition-colors duration-200" data-bar></span>
-                <span class="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 transition-colors duration-200" data-bar></span>
+                <span class="h-1.5 rounded-full border border-line bg-surface transition-colors duration-200" data-bar></span>
+                <span class="h-1.5 rounded-full border border-line bg-surface transition-colors duration-200" data-bar></span>
+                <span class="h-1.5 rounded-full border border-line bg-surface transition-colors duration-200" data-bar></span>
+                <span class="h-1.5 rounded-full border border-line bg-surface transition-colors duration-200" data-bar></span>
             </div>
-            <span id="pw-label" class="w-20 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-500" aria-live="polite">—</span>
+            <span id="pw-label" class="w-20 text-right text-[11px] font-semibold uppercase tracking-wider text-muted" aria-live="polite">—</span>
         </div>
 
-        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
-            <li data-req="len" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Mínimo 8 caracteres</li>
-            <li data-req="letra" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Al menos una letra</li>
-            <li data-req="num" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Al menos un número</li>
-            <li data-req="extra" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Recomendado: mayúsculas, minúsculas y símbolos</li>
+        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted">
+            <li data-req="len" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full border border-line bg-surface"></span>Mínimo 8 caracteres</li>
+            <li data-req="letra" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full border border-line bg-surface"></span>Al menos una letra</li>
+            <li data-req="num" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full border border-line bg-surface"></span>Al menos un número</li>
+            <li data-req="extra" class="flex items-center gap-1.5"><span data-dot class="w-1.5 h-1.5 rounded-full border border-line bg-surface"></span>Recomendado: mayúsculas, minúsculas y símbolos</li>
         </ul>
 
         {{-- Generador --}}
-        <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-line">
             <button type="button" id="pw-generate"
-                class="inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer">
-                <svg class="w-3.5 h-3.5 text-[#0B6E45] dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-line bg-surface text-ink text-xs font-semibold hover:bg-surface-2 transition-colors cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Generar contraseña segura
             </button>
             <button type="button" id="pw-copy"
-                class="inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-                <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-line bg-surface text-ink text-xs font-semibold hover:bg-surface-2 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                <svg class="w-3.5 h-3.5 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 <span id="pw-copy-text">Copiar</span>
             </button>
-            <span class="text-[11px] text-slate-500 dark:text-slate-500">Se rellenan ambos campos. Cópiala antes de guardar.</span>
+            <span class="text-[11px] text-muted">Se rellenan ambos campos. Cópiala antes de guardar.</span>
         </div>
     </div>
 </div>
@@ -146,20 +146,20 @@ $ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 ho
             };
         }
 
-        // ── Paleta theme-aware (funciona en claro y oscuro) ────
+        // ── Paleta theme-aware (clases estáticas que respetan CSS vars) ────
         const BAR_ESTADOS = [
-            ['bg-slate-200', 'dark:bg-slate-800'], // 0 vacío
+            [], // 0 vacío (sin color de fondo, solo borde)
             ['bg-red-500'], // 1 débil
             ['bg-amber-500'], // 2 aceptable
-            ['bg-sky-500'], // 3 buena
-            ['bg-emerald-500'], // 4 fuerte
+            ['bg-brand-blue'], // 3 buena
+            ['bg-brand-green'], // 4 fuerte
         ];
         const TEXT_ESTADOS = [
-            'text-slate-500 dark:text-slate-500', // 0
-            'text-red-500 dark:text-red-400', // 1
-            'text-amber-600 dark:text-amber-300', // 2
-            'text-sky-600 dark:text-sky-300', // 3
-            'text-emerald-600 dark:text-emerald-300', // 4
+            'text-muted', // 0
+            'text-red-500', // 1
+            'text-amber-500', // 2
+            'text-brand-blue', // 3
+            'text-brand-green', // 4
         ];
         const TXT_LABEL = ['—', 'Débil', 'Aceptable', 'Buena', 'Fuerte'];
 
@@ -205,14 +205,11 @@ $ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 ho
             function pintarRequisito(clave, ok) {
                 const li = document.querySelector('[data-req="' + clave + '"]');
                 if (!li) return;
-                li.classList.toggle('text-emerald-600', ok);
-                li.classList.toggle('dark:text-emerald-300', ok);
-                li.classList.toggle('text-slate-600', !ok);
-                li.classList.toggle('dark:text-slate-400', !ok);
+                li.classList.toggle('text-brand-green', ok);
+                li.classList.toggle('text-muted', !ok);
                 const dot = li.querySelector('[data-dot]');
-                dot.classList.toggle('bg-emerald-500', ok);
-                dot.classList.toggle('bg-slate-300', !ok);
-                dot.classList.toggle('dark:bg-slate-600', !ok);
+                dot.classList.toggle('bg-brand-green', ok);
+                dot.classList.toggle('bg-surface', !ok);
             }
 
             function actualizar() {
@@ -220,14 +217,14 @@ $ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 ho
 
                 // Barras
                 barras.forEach(function(b, i) {
-                    BAR_ESTADOS.flat().forEach(c => b.classList.remove(c));
-                    const estado = (i < r.nivel) ? BAR_ESTADOS[r.nivel] : BAR_ESTADOS[0];
-                    estado.forEach(c => b.classList.add(c));
+                    b.className = 'h-1.5 rounded-full border border-line bg-surface transition-colors duration-200';
+                    if (i < r.nivel) {
+                        b.classList.add(BAR_ESTADOS[r.nivel][0]);
+                    }
                 });
 
                 // Etiqueta
-                TEXT_ESTADOS.forEach(c => c.split(' ').forEach(cls => etiqueta.classList.remove(cls)));
-                TEXT_ESTADOS[r.nivel].split(' ').forEach(cls => etiqueta.classList.add(cls));
+                etiqueta.className = 'w-20 text-right text-[11px] font-semibold uppercase tracking-wider transition-colors ' + TEXT_ESTADOS[r.nivel];
                 etiqueta.textContent = TXT_LABEL[r.nivel];
                 meter.setAttribute('aria-valuenow', r.nivel);
 
@@ -239,13 +236,13 @@ $ojoBtn = 'absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 ho
                 // Coincidencia
                 if (conf.value.length === 0) {
                     match.textContent = '';
-                    match.className = 'text-xs mt-1 min-h-[1rem]';
+                    match.className = 'text-xs mt-1 min-h-[1rem] text-muted';
                 } else if (conf.value === nuevo.value) {
                     match.textContent = 'Las contraseñas coinciden';
-                    match.className = 'text-xs mt-1 min-h-[1rem] text-emerald-600 dark:text-emerald-400';
+                    match.className = 'text-xs mt-1 min-h-[1rem] text-brand-green';
                 } else {
                     match.textContent = 'Las contraseñas no coinciden';
-                    match.className = 'text-xs mt-1 min-h-[1rem] text-red-500 dark:text-red-400';
+                    match.className = 'text-xs mt-1 min-h-[1rem] text-red-500';
                 }
             }
 

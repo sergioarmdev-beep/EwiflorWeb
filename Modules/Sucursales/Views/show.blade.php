@@ -15,36 +15,33 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
         <div>
             <div class="flex items-center gap-3 mb-1 flex-wrap">
                 <span class="w-10 h-10 flex items-center justify-center rounded-xl
-                             bg-sky-100 text-sky-700
-                             dark:bg-sky-500/10 dark:text-sky-400">
+                             border border-brand-blue/20 bg-brand-blue/10 text-brand-blue">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                             d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" />
                     </svg>
                 </span>
 
-                <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <h1 class="text-2xl font-bold text-ink">
                     {{ $sucursal->nombre }}
                 </h1>
 
                 @if ($sucursal->estado === 'ACTIVO')
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                                     bg-emerald-100 text-emerald-800 border border-emerald-200
-                                     dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                     border border-brand-green/20 bg-brand-green/10 text-brand-green">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
                     Activa
                 </span>
                 @else
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                                     bg-red-100 text-red-800 border border-red-200
-                                     dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20">
+                                     border border-red-500/30 bg-red-500/10 text-red-500">
                     <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                     Inactiva
                 </span>
                 @endif
             </div>
 
-            <p class="text-sm text-slate-600 dark:text-slate-400">
+            <p class="text-sm text-muted">
                 {{ \Illuminate\Support\Str::of($sucursal->departamento)->replace('_', ' ')->title() }}
                 @if ($sucursal->direccion)
                     · {{ $sucursal->direccion }}
@@ -58,8 +55,7 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
         @if ($puedeGestionar)
         <a href="{{ route('sucursales.edit', $sucursal) }}"
             class="inline-flex items-center justify-center gap-2 px-4 py-2.5
-                      rounded-lg bg-amber-600 hover:bg-amber-700
-                      text-white text-sm font-semibold shadow-sm transition">
+                      rounded-lg bg-brand-blue text-white text-sm font-semibold shadow-sm hover:bg-brand-blue-dark transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="m16.9 3.1 4 4L8 20l-5 1 1-5L16.9 3.1Z" />
@@ -73,22 +69,20 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
     @include('sucursales::partials.mapa-sucursales', ['sucursales' => collect([$sucursal]), 'altura' => 'h-72'])
 
     {{-- Almacenes --}}
-    <section class="bg-white dark:bg-slate-900
-                    border border-slate-200 dark:border-slate-800
-                    rounded-xl shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800
+    <section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
+        <div class="px-5 py-4 border-b border-line
                     flex items-center justify-between gap-3">
             <div>
-                <h2 class="font-semibold text-slate-900 dark:text-slate-100">Almacenes</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <h2 class="font-semibold text-ink">Almacenes</h2>
+                <p class="text-xs text-muted mt-1">
                     {{ $sucursal->almacenes->count() }} almacén(es) en esta sucursal.
                 </p>
             </div>
 
             @if ($puedeGestionar && $sucursal->estado === 'ACTIVO')
             <a href="{{ route('sucursales.almacenes.create', $sucursal) }}"
-                class="inline-flex items-center gap-2 px-3 py-2 rounded-lg
-                          bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold transition">
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl
+                          bg-brand-blue text-white text-xs font-semibold transition">
                 + Agregar almacén
             </a>
             @endif
@@ -96,9 +90,7 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
 
         <div class="overflow-x-auto">
             <table class="min-w-[640px] w-full text-sm text-left">
-                <thead class="bg-slate-100 dark:bg-slate-800/80
-                              text-xs uppercase tracking-wider
-                              text-slate-600 dark:text-slate-400">
+                <thead class="bg-surface-2 text-xs uppercase tracking-wider text-muted">
                     <tr>
                         <th class="px-4 py-3 font-semibold">Almacén</th>
                         <th class="px-4 py-3 font-semibold">Tamaño</th>
@@ -109,27 +101,25 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody class="divide-y divide-line">
                     @forelse ($sucursal->almacenes as $a)
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
+                    <tr class="hover:bg-surface-2 transition-colors">
+                        <td class="px-4 py-3 font-medium text-ink">
                             {{ $a->nombre }}
                         </td>
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <td class="px-4 py-3 text-muted">
                             {{ $a->tamano === 'GRANDE' ? 'Grande' : 'Pequeño' }}
                         </td>
                         <td class="px-4 py-3">
                             @if ($a->estado === 'ACTIVO')
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                                                 bg-emerald-100 text-emerald-800 border border-emerald-200
-                                                 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                     border border-brand-green/20 bg-brand-green/10 text-brand-green">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
                                 Activo
                             </span>
                             @else
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                                                 bg-red-100 text-red-800 border border-red-200
-                                                 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20">
+                                                     border border-red-500/30 bg-red-500/10 text-red-500">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                                 Inactivo
                             </span>
@@ -140,8 +130,7 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
                         <td class="px-4 py-3">
                             <div class="flex items-center justify-end gap-3">
                                 <a href="{{ route('sucursales.almacenes.edit', $a) }}"
-                                    class="text-sm font-semibold text-amber-700 hover:text-amber-900
-                                              dark:text-amber-400 dark:hover:text-amber-300 transition">
+                                    class="text-sm font-semibold text-amber-600 hover:text-amber-500 dark:text-amber-400 transition">
                                     Editar
                                 </a>
 
@@ -151,8 +140,8 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
                                     <button type="submit"
                                         class="text-sm font-semibold
                                                {{ $a->estado === 'ACTIVO'
-                                                  ? 'text-red-700 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300'
-                                                  : 'text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300' }}">
+                                                  ? 'text-red-500 hover:text-red-400'
+                                                  : 'text-brand-green hover:text-brand-green-dark' }}">
                                         {{ $a->estado === 'ACTIVO' ? 'Desactivar' : 'Reactivar' }}
                                     </button>
                                 </form>
@@ -162,7 +151,7 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ $puedeGestionar ? 4 : 3 }}" class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                        <td colspan="{{ $puedeGestionar ? 4 : 3 }}" class="px-6 py-10 text-center text-sm text-muted">
                             Sin almacenes registrados en esta sucursal.
                         </td>
                     </tr>
@@ -173,12 +162,10 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
     </section>
 
     {{-- Usuarios asignados --}}
-    <section class="bg-white dark:bg-slate-900
-                    border border-slate-200 dark:border-slate-800
-                    rounded-xl shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800">
-            <h2 class="font-semibold text-slate-900 dark:text-slate-100">Personal asignado</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+    <section class="bg-surface border border-line rounded-xl shadow-soft overflow-hidden">
+        <div class="px-5 py-4 border-b border-line">
+            <h2 class="font-semibold text-ink">Personal asignado</h2>
+            <p class="text-xs text-muted mt-1">
                 {{ $usuariosActivos->count() }} usuario(s) activo(s) de {{ $usuarios->count() }} asignado(s).
                 La asignación se gestiona desde la sección Usuarios.
             </p>
@@ -186,9 +173,7 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
 
         <div class="overflow-x-auto">
             <table class="min-w-[560px] w-full text-sm text-left">
-                <thead class="bg-slate-100 dark:bg-slate-800/80
-                              text-xs uppercase tracking-wider
-                              text-slate-600 dark:text-slate-400">
+                <thead class="bg-surface-2 text-xs uppercase tracking-wider text-muted">
                     <tr>
                         <th class="px-4 py-3 font-semibold">Usuario</th>
                         <th class="px-4 py-3 font-semibold">Usuario de acceso</th>
@@ -197,30 +182,28 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody class="divide-y divide-line">
                     @forelse ($usuarios as $u)
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
+                    <tr class="hover:bg-surface-2 transition-colors">
+                        <td class="px-4 py-3 font-medium text-ink">
                             {{ $u->nombre_completo }}
                         </td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        <td class="px-4 py-3 text-muted">
                             {{ $u->nombre_usuario }}
                         </td>
-                        <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <td class="px-4 py-3 text-muted">
                             {{ $u->nombre_rol }}
                         </td>
                         <td class="px-4 py-3">
                             @if ($u->estado === 'ACTIVO')
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                                                 bg-emerald-100 text-emerald-800 border border-emerald-200
-                                                 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                     border border-brand-green/20 bg-brand-green/10 text-brand-green">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand-green"></span>
                                 Activo
                             </span>
                             @else
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                                                 bg-red-100 text-red-800 border border-red-200
-                                                 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20">
+                                                     border border-red-500/30 bg-red-500/10 text-red-500">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                                 Inactivo
                             </span>
@@ -229,7 +212,7 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                        <td colspan="4" class="px-6 py-10 text-center text-sm text-muted">
                             Ningún usuario está asignado a esta sucursal.
                         </td>
                     </tr>
@@ -241,8 +224,7 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
 
     <div>
         <a href="{{ route('sucursales.index') }}"
-            class="text-sm font-semibold text-sky-700 hover:text-sky-900
-                      dark:text-sky-400 dark:hover:text-sky-300 transition">
+            class="text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition">
             ← Volver a sucursales
         </a>
     </div>

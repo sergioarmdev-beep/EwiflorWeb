@@ -20,24 +20,24 @@
     $filas = array_values($filas);
 @endphp
 
-<section class="pt-8 border-t border-slate-800" id="variantes-section">
+<section class="pt-8 border-t border-line" id="variantes-section">
 
     <div class="flex items-center justify-between gap-3 mb-6">
         <div class="flex items-center gap-3">
-            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">
+            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-brand-blue/10 text-brand-blue text-xs font-bold">
                 {{ $numero }}
             </span>
 
             <div>
-                <h4 class="text-sm font-bold text-white">Variantes</h4>
-                <p class="text-xs text-slate-500">
+                <h4 class="text-sm font-bold text-ink">Variantes</h4>
+                <p class="text-xs text-muted">
                     Colores o presentaciones con su propio SKU. Es opcional.
                 </p>
             </div>
         </div>
 
         <button type="button" id="variante-add"
-            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 text-xs font-semibold transition duration-200 cursor-pointer">
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-brand-blue/40 bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20 text-xs font-semibold transition duration-200 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -56,7 +56,7 @@
     </div>
 
     <div id="variantes-vacio"
-        class="{{ count($filas) ? 'hidden' : '' }} rounded-xl border border-dashed border-slate-700 bg-slate-950/50 px-6 py-8 text-center text-xs text-slate-500">
+        class="{{ count($filas) ? 'hidden' : '' }} rounded-xl border border-dashed border-line bg-surface-2/60 px-6 py-8 text-center text-xs text-muted">
         Este producto no tiene variantes. Use «Agregar variante» si se ofrece en varios colores o presentaciones.
     </div>
 

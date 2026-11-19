@@ -532,7 +532,7 @@ trait DashboardStatsTrait
                 ->get();
         };
 
-        $builder = function (string $mes) use ($rango, $consulta): array {
+        $builder = function (string $mes) use ($rango, $consulta, $etiqueta): array {
             [$inicio, $fin] = $rango($mes);
             $diasEnMes = (int) Carbon::parse($mes . '-01')->daysInMonth;
             $filas = $consulta($inicio, $fin);

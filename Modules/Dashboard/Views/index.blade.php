@@ -156,6 +156,12 @@ $island = 'rounded-xl border border-line bg-surface-2/50';
                             this.ready[name] = true;
                         });
                     }
+
+                    this.$nextTick(() => {
+                        const map = { comercial: 'chartVentasMensuales', financiero: 'chartTipoCambio', comparativo: 'chartVentasLineas' };
+                        const id = map[name];
+                        if (id && window.refreshDashboardChart) window.refreshDashboardChart(id);
+                    });
                 }
             }"
             x-init="$nextTick(() => ready.resumen = true)"
@@ -273,7 +279,13 @@ $island = 'rounded-xl border border-line bg-surface-2/50';
             'stats' => $stats,
             'esGerencia' => $esGerencia,
             'esVendedor' => $esVendedor,
-            'esTecnico' => $esTecnico
+            'esTecnico' => $esTecnico,
+            'meses' => $meses ?? collect(),
+            'mes1' => $mes1 ?? null,
+            'mes2' => $mes2 ?? null,
+            'sucursales' => $sucursales ?? collect(),
+            'idSucursalSeleccionada' => $idSucursalSeleccionada ?? null,
+            'rol' => $rol,
             ])
         </div>
 
@@ -300,4 +312,256 @@ $island = 'rounded-xl border border-line bg-surface-2/50';
 
 </div>
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function() {
+        'use strict';
+
+        if (typeof Chart === 'undefined') return;
+
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const activeCharts = new Map();
+
+        function chartTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            return {
+                grid: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.07)',
+                tick: isDark ? '#94a3b8' : '#64748b',
+                primary: '#0B6E45',
+                primaryFill: isDark ? 'rgba(11,110,69,0.22)' : 'rgba(11,110,69,0.14)',
+                secondary: '#a78bfa',
+                secondaryFill: isDark ? 'rgba(167,139,250,0.15)' : 'rgba(167,139,250,0.10)',
+                tooltipBg: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                tooltipText: isDark ? '#f1f5f9' : '#0f172a',
+                tooltipBorder: isDark ? 'rgba(148,163,184,0.25)' : 'rgba(148,163,184,0.35)',
+            };
+        }
+
+        const formatBs = v => 'Bs ' + v.toLocaleString('es-BO', { minimumFractionDigits: 2 });
+
+        const initializers = {
+            chartVentasMensuales(canvas) {
+                const t = chartTheme();
+                const data = @json((isset($stats['ventas']) ? ($stats['ventas']['ventas_por_mes'] ?? []) : []));
+                const labels = data.map(d => d.mes);
+                const values = data.map(d => parseFloat(d.total));
+
+                return new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Ventas (Bs)',
+                            data: values,
+                            backgroundColor: t.primaryFill,
+                            borderColor: t.primary,
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: prefersReducedMotion ? false : { duration: 800, easing: 'easeOutQuart' },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: t.tooltipBg,
+                                titleColor: t.tooltipText,
+                                bodyColor: t.tooltipText,
+                                borderColor: t.tooltipBorder,
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: ctx => formatBs(ctx.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: t.grid },
+                                ticks: { color: t.tick, font: { size: 11 }, callback: formatBs }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: t.tick, font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            },
+
+            chartVentasLineas(canvas) {
+                const t = chartTheme();
+                const url = canvas.dataset.url;
+                let chart = null;
+
+                const $errorEl = () => document.getElementById('errorVentasLineas');
+
+                const render = (datos) => {
+                    const $error = $errorEl();
+                    if ($error) {
+                        $error.style.display = (datos && datos.error) ? 'block' : 'none';
+                    }
+                    if (!datos || datos.error || !datos.mes1 || !datos.mes2) {
+                        if (chart) {
+                            try { chart.destroy(); } catch (e) {}
+                            activeCharts.delete(canvas.id);
+                            chart = null;
+                        }
+                        return;
+                    }
+                    const labels = datos.mes1.dias.map(d => 'Día ' + d.dia);
+                    const serie1 = datos.mes1.dias.map(d => parseFloat(d.total) || 0);
+                    const serie2 = datos.mes2.dias.map(d => parseFloat(d.total) || 0);
+                    const data = {
+                        labels,
+                        datasets: [{
+                            label: datos.mes1.etiqueta,
+                            data: serie1,
+                            borderColor: t.primary,
+                            backgroundColor: t.primaryFill,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: false,
+                            tension: 0.4
+                        }, {
+                            label: datos.mes2.etiqueta,
+                            data: serie2,
+                            borderColor: t.secondary,
+                            backgroundColor: t.secondaryFill,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: false,
+                            tension: 0.4
+                        }]
+                    };
+                    const opciones = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: prefersReducedMotion ? false : { duration: 600, easing: 'easeOutQuart' },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: t.tick, font: { size: 11 } } },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: t.tooltipBg,
+                                titleColor: t.tooltipText,
+                                bodyColor: t.tooltipText,
+                                borderColor: t.tooltipBorder,
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: ctx => ctx.dataset.label + ': ' + formatBs(ctx.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: t.grid }, ticks: { color: t.tick, font: { size: 11 }, callback: formatBs } },
+                            x: { grid: { display: false }, ticks: { color: t.tick, font: { size: 11 } } }
+                        }
+                    };
+                    if (chart) {
+                        chart.data = data;
+                        chart.options = opciones;
+                        chart.update();
+                    } else {
+                        chart = new Chart(canvas, { type: 'line', data, options: opciones });
+                        activeCharts.set(canvas.id, chart);
+                    }
+                };
+
+                const fetchDatos = () => {
+                    const m1 = document.getElementById('mes1')?.value;
+                    const m2 = document.getElementById('mes2')?.value;
+                    const idS = document.getElementById('id_sucursal')?.value || null;
+                    if (!m1 || !m2) return;
+                    fetch(url + '?' + new URLSearchParams({ mes1: m1, mes2: m2, id_sucursal: idS ?? '' }))
+                        .then(r => r.json())
+                        .then(datos => {
+                            console.log('[dashboard.ventas-lineas] respuesta:', datos);
+                            render(datos);
+                        })
+                        .catch(err => { console.error('[dashboard.ventas-lineas] error de red:', err); });
+                };
+
+                // Cargar datos iniciales vía AJAX
+                fetchDatos();
+
+                document.getElementById('mes1')?.addEventListener('change', fetchDatos);
+                document.getElementById('mes2')?.addEventListener('change', fetchDatos);
+                document.getElementById('id_sucursal')?.addEventListener('change', fetchDatos);
+
+                return chart;
+            }
+        };
+
+        function initChart(id) {
+            const el = document.getElementById(id);
+            if (!el || !initializers[id]) return;
+            if (activeCharts.has(id)) {
+                try { activeCharts.get(id).destroy(); } catch (e) {}
+                activeCharts.delete(id);
+            }
+            try {
+                const chart = initializers[id](el);
+                if (chart) activeCharts.set(id, chart);
+            } catch (e) {
+                console.warn('Chart init failed', id, e);
+            }
+            const skeleton = el.parentElement?.querySelector('[data-chart-skeleton]');
+            if (skeleton) skeleton.style.display = 'none';
+        }
+
+        window.refreshDashboardChart = function(id) {
+            if (initializers[id]) {
+                if (activeCharts.has(id)) {
+                    try { activeCharts.get(id).destroy(); } catch (e) {}
+                    activeCharts.delete(id);
+                }
+                initChart(id);
+            }
+        };
+
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const id = entry.target.id;
+                if (!activeCharts.has(id)) initChart(id);
+                io.unobserve(entry.target);
+            });
+        }, { threshold: 0.15, rootMargin: '120px 0px' });
+
+        function ready(fn) {
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+            else fn();
+        }
+
+        ready(() => {
+            Object.keys(initializers).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) io.observe(el);
+            });
+        });
+
+        new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                if (m.attributeName === 'class') {
+                    const ids = Array.from(activeCharts.keys());
+                    if (ids.length === 0) return;
+                    requestAnimationFrame(() => ids.forEach(initChart));
+                    return;
+                }
+            }
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    })();
+</script>
+@endpush
+
 @endsection

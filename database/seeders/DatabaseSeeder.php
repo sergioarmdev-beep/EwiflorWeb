@@ -9,8 +9,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            SucursalSeeder::class,   // primero: crea sucursales
-            AdminUserSeeder::class,  // después: admin necesita sucursal
+            EwiflorDemoSeeder::class, // sucursales, usuarios, catálogo, tipo de cambio, existencia, clientes, ventas y movimientos
         ]);
     }
 }
