@@ -1,11 +1,11 @@
 @php
-    $ventas = $stats['ventas'] ?? [];
-    $tc = $stats['tipo_cambio'] ?? [];
-    $tcParalelo = $tc['paralelo'] ?? null;
-    $tcOficial = $tc['oficial'] ?? null;
-    $panel = 'bg-slate-900 border border-slate-700/80 rounded-2xl shadow-xl shadow-black/10';
-    $muted = 'text-slate-400';
-    $label = 'text-[11px] font-semibold uppercase tracking-wider text-slate-400';
+$ventas = $stats['ventas'] ?? [];
+$tc = $stats['tipo_cambio'] ?? [];
+$tcParalelo = $tc['paralelo'] ?? null;
+$tcOficial = $tc['oficial'] ?? null;
+$panel = 'bg-slate-900 border border-slate-700/80 rounded-2xl shadow-xl shadow-black/10';
+$muted = 'text-slate-400';
+$label = 'text-[11px] font-semibold uppercase tracking-wider text-slate-400';
 @endphp
 
 <!-- Indicadores generales (Administración) -->
@@ -67,16 +67,16 @@
         <div>
             <p class="{{ $label }}">Tipo de cambio {{ $nombre }}</p>
             @if ($tcItem)
-                <p class="mt-2 text-2xl font-bold font-mono text-white">Bs {{ number_format((float) $tcItem->valor, 2, ',', '.') }} <span class="text-sm font-normal text-slate-400">/ USD</span></p>
-                <p class="mt-1 text-xs {{ $muted }}">Vigente desde {{ $tcItem->fecha?->format('d/m/Y') ?? '—' }}</p>
+            <p class="mt-2 text-2xl font-bold font-mono text-white">Bs {{ number_format((float) $tcItem->valor, 2, ',', '.') }} <span class="text-sm font-normal text-slate-400">/ USD</span></p>
+            <p class="mt-1 text-xs {{ $muted }}">Vigente desde {{ $tcItem->fecha?->format('d/m/Y') ?? '—' }}</p>
             @else
-                <p class="mt-2 text-sm text-slate-400">Sin registro disponible</p>
+            <p class="mt-2 text-sm text-slate-400">Sin registro disponible</p>
             @endif
         </div>
         @if ($tcItem)
-            <span class="rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider {{ $tcItem->origen === 'API' ? 'border-sky-500/30 bg-sky-500/10 text-sky-300' : 'border-violet-500/30 bg-violet-500/10 text-violet-300' }}">{{ $tcItem->origen }}</span>
+        <span class="rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider {{ $tcItem->origen === 'API' ? 'border-sky-500/30 bg-sky-500/10 text-sky-300' : 'border-violet-500/30 bg-violet-500/10 text-violet-300' }}">{{ $tcItem->origen }}</span>
         @else
-            <span class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-semibold text-slate-400">SIN DATOS</span>
+        <span class="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-semibold text-slate-400">SIN DATOS</span>
         @endif
     </article>
     @endforeach
