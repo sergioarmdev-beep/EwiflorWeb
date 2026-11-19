@@ -4,6 +4,7 @@ namespace Modules\Dashboard\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 trait DashboardStatsTrait
 {
@@ -485,5 +486,79 @@ trait DashboardStatsTrait
                 'u.nombre_completo as tecnico',
             ])
             ->toArray();
+    }
+
+    /**
+     * Ventas diarias de dos meses para gráfico de líneas comparativo.
+     *
+     * @param  string  $mes1  Formato YYYY-MM
+     * @param  string  $mes2  Formato YYYY-MM
+     * @param  int|null  $idSucursal  null = sin filtro (sumatoria de todas)
+     * @return array ['error'=>false, 'mes1'=>[...], 'mes2'=>[...]]
+     */
+    protected function calcularVentasLineasComparativo(string $mes1, string $mes2, ?int $idSucursal = null): array
+    {
+        $rango = function (string $mes): array {
+            $inicio = Carbon::parse($mes . '-01')->startOfMonth();
+            $fin = Carbon::parse($mes . '-01')->endOfMonth();
+
+            return [$inicio, $fin];
+        };
+
+        $etiqueta = function (string $mes): string {
+            $m = Carbon::parse($mes . '-01');
+            $nombres = [
+                1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+                5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+                9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+            ];
+
+            return $nombres[(int) $m->month] . ' ' . $m->year;
+        };
+
+        $consulta = function (Carbon $inicio, Carbon $fin) use ($idSucursal) {
+            $q = DB::table('v_reporte_ventas as rv')
+                ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
+                ->where('rv.estado', 'REGISTRADA')
+                ->whereBetween('v.fecha_hora', [$inicio, $fin]);
+
+            if ($idSucursal !== null) {
+                $q->where('v.id_sucursal', $idSucursal);
+            }
+
+            return $q->selectRaw("EXTRACT(DAY FROM v.fecha_hora) AS dia, SUM(rv.total_bs) AS total")
+                ->groupBy('dia')
+                ->orderBy('dia')
+                ->get();
+        };
+
+        $builder = function (string $mes) use ($rango, $consulta): array {
+            [$inicio, $fin] = $rango($mes);
+            $diasEnMes = (int) Carbon::parse($mes . '-01')->daysInMonth;
+            $filas = $consulta($inicio, $fin);
+
+            $porDia = [];
+            foreach ($filas as $f) {
+                $porDia[(int) $f->dia] = (float) $f->total;
+            }
+
+            $dias = [];
+            for ($d = 1; $d <= $diasEnMes; $d++) {
+                $dias[] = ['dia' => $d, 'total' => $porDia[$d] ?? 0.0];
+            }
+
+            return [
+                'etiqueta' => $etiqueta($mes),
+                'valor' => $mes,
+                'dias' => $dias,
+                'total' => array_sum(array_column($dias, 'total')),
+            ];
+        };
+
+        return [
+            'error' => false,
+            'mes1' => $builder($mes1),
+            'mes2' => $builder($mes2),
+        ];
     }
 }

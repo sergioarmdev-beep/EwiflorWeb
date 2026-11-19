@@ -54,4 +54,10 @@ class AdministradorDashboardService
 
         return $data;
     }
+
+    /** Comparativa de ventas diarias entre dos meses (gráfico de líneas). */
+    public function ventasLineasComparativo(string $mes1, string $mes2, ?int $idSucursal = null): array
+    {
+        return $this->calcularVentasLineasComparativo($mes1, $mes2, $idSucursal);
+    }
 }

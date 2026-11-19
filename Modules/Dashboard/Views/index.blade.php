@@ -74,7 +74,7 @@
         {{-- Barra de pestañas --}}
         <div x-data="{ tab: 'resumen' }" class="flex flex-col gap-1">
             <nav class="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800 -mb-px" aria-label="Secciones del panel">
-@foreach (['resumen' => '01. Resumen Ejecutivo', 'alertas' => '02. Centro de Alertas', 'comercial' => '03. Inteligencia Comercial', 'inventario' => '04. Inteligencia de Inventario', 'financiero' => '05. Resumen Financiero', 'acciones' => '06. Acciones Rápidas', 'actividad' => '07. Actividad Empresarial', 'operativo' => '08. Seguimiento Operativo'] as $clave => $etiqueta)
+@foreach (['resumen' => '01. Resumen Ejecutivo', 'alertas' => '02. Centro de Alertas', 'comercial' => '03. Inteligencia Comercial', 'inventario' => '04. Inteligencia de Inventario', 'financiero' => '05. Resumen Financiero', 'acciones' => '06. Acciones Rápidas', 'actividad' => '07. Actividad Empresarial', 'comparativo' => '09. Comparativa de Ventas', 'operativo' => '08. Seguimiento Operativo'] as $clave => $etiqueta)
     @php $mostrar = in_array($clave, $tabsPermitidas); @endphp
     @if($mostrar)
     <button x-on:click="tab = '{{ $clave }}'"
@@ -95,6 +95,7 @@
                 'financiero' => 'dashboard::partials.resumen-financiero',
                 'acciones' => 'dashboard::partials.acciones-rapidas',
                 'actividad' => 'dashboard::partials.actividad-empresarial',
+                'comparativo' => 'dashboard::partials.ventas-lineas',
                 'operativo' => 'dashboard::partials.seguimiento-operativo',
             ]; @endphp
             @foreach ($tabsPermitidas as $tp)
@@ -272,9 +273,109 @@
                     }
                 });
             }
-        };
+        },
 
-        function initChart(id) {
+        chartVentasLineas(canvas) {
+            const t = chartTheme();
+            const url = canvas.dataset.url;
+            const inicial = @json($stats['ventas_lineas'] ?? []);
+            const $error = document.getElementById('errorVentasLineas');
+            let chart = null;
+
+            const render = (datos) => {
+                if ($error) {
+                    $error.style.display = (datos && datos.error) ? 'block' : 'none';
+                }
+                if (!datos || datos.error || !datos.mes1 || !datos.mes2) {
+                    if (chart) {
+                        try { chart.destroy(); } catch (e) {}
+                        activeCharts.delete(canvas.id);
+                        chart = null;
+                    }
+                    return;
+                }
+                const labels = datos.mes1.dias.map(d => 'Día ' + d.dia);
+                const serie1 = datos.mes1.dias.map(d => parseFloat(d.total) || 0);
+                const serie2 = datos.mes2.dias.map(d => parseFloat(d.total) || 0);
+                const data = {
+                    labels,
+                    datasets: [{
+                        label: datos.mes1.etiqueta,
+                        data: serie1,
+                        borderColor: t.primary,
+                        backgroundColor: t.primaryFill,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: false,
+                        tension: 0.4
+                    }, {
+                        label: datos.mes2.etiqueta,
+                        data: serie2,
+                        borderColor: t.secondary,
+                        backgroundColor: t.secondaryFill,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                };
+                const opciones = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: prefersReducedMotion ? false : { duration: 600, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: t.tick, font: { size: 11 } } },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: t.tooltipBg,
+                            titleColor: t.tooltipText,
+                            bodyColor: t.tooltipText,
+                            borderColor: t.tooltipBorder,
+                            borderWidth: 1,
+                            callbacks: {
+                                label: ctx => ctx.dataset.label + ': ' + formatBs(ctx.parsed.y)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: t.grid }, ticks: { color: t.tick, font: { size: 11 }, callback: formatBs } },
+                        x: { grid: { display: false }, ticks: { color: t.tick, font: { size: 11 } } }
+                    }
+                };
+                if (chart) {
+                    chart.data = data;
+                    chart.options = opciones;
+                    chart.update();
+                } else {
+                    chart = new Chart(canvas, { type: 'line', data, options: opciones });
+                    activeCharts.set(canvas.id, chart);
+                }
+            };
+
+            render(inicial);
+
+            const onChange = () => {
+                const mes1 = document.getElementById('mes1')?.value;
+                const mes2 = document.getElementById('mes2')?.value;
+                const idSucursal = document.getElementById('id_sucursal')?.value || null;
+                if (!mes1 || !mes2) return;
+                fetch(url + '?' + new URLSearchParams({ mes1, mes2, id_sucursal: idSucursal ?? '' }))
+                    .then(r => r.json())
+                    .then(datos => render(datos))
+                    .catch(() => { if ($error) $error.style.display = 'block'; });
+            };
+            document.getElementById('mes1')?.addEventListener('change', onChange);
+            document.getElementById('mes2')?.addEventListener('change', onChange);
+            document.getElementById('id_sucursal')?.addEventListener('change', onChange);
+
+            return chart;
+        }
+    };
+
+    function initChart(id) {
             const el = document.getElementById(id);
             if (!el || !initializers[id]) return;
             if (activeCharts.has(id)) {
