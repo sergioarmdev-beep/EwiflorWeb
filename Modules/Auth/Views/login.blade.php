@@ -143,10 +143,10 @@
         <form method="POST" action="{{ route('login') }}" class="space-y-5">
             @csrf
 
-            {{-- Campo Usuario --}}
+            {{-- Campo Usuario o correo --}}
             <div>
-                <label for="nombre_usuario" class="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
-                    Usuario
+                <label for="identificador" class="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
+                    Usuario o correo
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
@@ -154,8 +154,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                     </div>
-                    <input id="nombre_usuario" type="text" name="nombre_usuario" value="{{ old('nombre_usuario') }}" required autofocus
-                        placeholder="Nombre de usuario"
+                    <input id="identificador" type="text" name="identificador" value="{{ old('identificador') }}" required autofocus
+                        placeholder="Nombre de usuario o correo"
+                        autocomplete="username"
                         class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-line text-ink placeholder:text-muted text-sm opacity-90 focus:opacity-100 focus:outline-none focus:border-brand-green/50 focus:ring-brand-green/20 transition-all duration-200">
                 </div>
             </div>
@@ -192,6 +193,34 @@
                     </button>
                 </div>
             </div>
+
+            {{-- Recuperación de contraseña --}}
+            <div class="text-center -mt-2">
+                <a href="{{ route('password.olvide') }}"
+                    class="text-xs font-medium text-muted hover:text-brand-green transition-colors duration-150">
+                    ¿Olvidaste tu contraseña?
+                </a>
+            </div>
+
+            {{-- Separador: O continúa con --}}
+            <div class="relative text-center mb-6">
+                <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted px-2">
+                    <span class="relative z-10 bg-surface px-1">O continúa con</span>
+                </div>
+                <div class="absolute top-0 left-0 right-0 h-0.5 border-line -mt-1.5 pointer-events-none"></div>
+            </div>
+
+            {{-- Botón Google OAuth --}}
+            <a href="{{ route('login.google') }}"
+                class="w-full py-3 px-4 mt-2 bg-surface-2 text-ink font-semibold text-sm rounded-xl border border-line shadow-sm flex items-center justify-center gap-2 transition-all duration-150 hover:bg-brand-green/50 hover:border-brand-green/30 focus:outline-none focus:ring-2 focus:ring-brand-green/40 active:scale-[0.99] dark:hover:bg-brand-green/20">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path d="M5.84 14.09c-.22-.61-.35-1.28-.35-2.09 0-.81.13-1.48.35-2.09H2.18v2.77h3.66zm0-5.63c0-.81.13-1.48.35-2.09H2.18v2.77h3.66c-.22.61-.35 1.28-.35 2.09z"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.61l3.57 2.77c.87-2.6 3.3-4.53 6.25-4.53z"/>
+                </svg>
+                <span>Continuar con Google</span>
+            </a>
 
             {{-- Botón de Envío --}}
             <button type="submit"

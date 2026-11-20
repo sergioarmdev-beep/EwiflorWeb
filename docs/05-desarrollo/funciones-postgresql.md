@@ -44,6 +44,8 @@ parche `A-01`. Firma exacta según el script:
 | `registrar_reserva`               | `(VARCHAR, INTEGER, INTEGER, INTEGER, INTEGER, NUMERIC, INTEGER, NUMERIC, VARCHAR, INTEGER, INTEGER)` | `INTEGER` (id_reserva)                         |
 | `cancelar_venta`                  | `(INTEGER, INTEGER, VARCHAR)`                                                                         | `VOID`                                         |
 | `fn_autenticar_usuario`           | `(VARCHAR, TEXT)`                                                                                     | `TABLE(id_usuario, nombre_rol, exito, motivo)` |
+| `fn_registrar_intento_acceso`     | `(INTEGER, VARCHAR, VARCHAR, BOOLEAN)`                                                                | `TABLE(intentos, bloqueado_hasta TIMESTAMPTZ, bloqueo_nuevo BOOLEAN)` |
+| `fn_desbloquear_usuario`          | `(INTEGER)`                                                                                           | `VOID`                                         |
 
 > `fn_autenticar_usuario` **no se usa desde Laravel**. La autenticación la
 > hace `Auth::attempt()` con bcrypt nativo (ADR-001). La función existe en la
@@ -64,6 +66,22 @@ parche `A-01`. Firma exacta según el script:
   de `ENTRADA` y no permite reactivar.
 - `convertir_cotizacion_a_venta`: helper que arma las líneas desde
   `detalle_cotizacion` y llama a `registrar_venta`.
+
+### 2.2 Funciones del módulo Auth (recuperación de contraseña y bloqueo)
+
+Agregadas por la migración del módulo
+`Modules/Auth/Database/Migrations/2026_11_20_000001_recuperacion_contrasena_y_bloqueo.php`.
+
+- `fn_registrar_intento_acceso(p_id_usuario, p_identificador, p_ip, p_exitoso)`:
+  - Inserta un intento en `intento_acceso`.
+  - Si el acceso es exitoso: limpia `bloqueado_hasta` y borra fallos recientes de la ventana; retorna `intentos=0`, `bloqueado_hasta=NULL`, `bloqueo_nuevo=FALSE`.
+  - Si falla: cuenta fallos en ventana de 10 min; si son >= 3 y la cuenta no está ya bloqueada, establece `bloqueado_hasta = now() + INTERVAL '10 minutes'` y retorna `bloqueo_nuevo=TRUE` (para notificar una sola vez por episodio de bloqueo).
+  - Usa `SELECT ... FOR UPDATE` sobre `usuario` para ser segura bajo concurrencia.
+  - Las marcas de tiempo usan `now()` de PostgreSQL (zona horaria de la sesión, no de PHP).
+
+- `fn_desbloquear_usuario(p_id_usuario)`:
+  - Limpia `bloqueado_hasta = NULL` y borra fallos recientes de la ventana.
+  - Usado por el desbloqueo manual desde `UserController@desbloquear` y por `RestablecerContrasenaService::generarTemporal`.
 
 ---
 

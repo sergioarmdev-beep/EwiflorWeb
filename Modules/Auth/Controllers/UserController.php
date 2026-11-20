@@ -6,20 +6,29 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Modules\Auth\Models\Notificacion;
 use Modules\Auth\Models\SolicitudCuenta;
+use Modules\Auth\Models\SolicitudRestablecimiento;
 use Modules\Auth\Models\User;
 use Modules\Auth\Requests\StoreUserRequest;
 use Modules\Auth\Requests\UpdateUserRequest;
-use Modules\Auth\Support\GeneradorContrasena;
+use Modules\Auth\Services\IntentoAccesoService;
+use Modules\Auth\Services\RestablecerContrasenaService;
 use Modules\Inventario\Models\Sucursal;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private RestablecerContrasenaService $restablecer,
+        private IntentoAccesoService $intentos,
+    ) {}
+
     /** Columnas por las que se puede ordenar el listado (lista blanca). */
     private const ORDENABLES = [
         'nombre_completo',
         'nombre_usuario',
         'correo',
+        'celular',
         'nombre_rol',
         'sucursal',
         'porcentaje_comision_pct',
@@ -34,7 +43,8 @@ class UserController extends Controller
             $query->where(function ($q) use ($buscar) {
                 $q->where('nombre_completo', 'ILIKE', "%{$buscar}%")
                     ->orWhere('nombre_usuario', 'ILIKE', "%{$buscar}%")
-                    ->orWhere('correo', 'ILIKE', "%{$buscar}%");
+                    ->orWhere('correo', 'ILIKE', "%{$buscar}%")
+                    ->orWhere('celular', 'ILIKE', "%{$buscar}%");
             });
         }
 
@@ -48,6 +58,19 @@ class UserController extends Controller
 
         if ($idSucursal = $request->input('id_sucursal')) {
             $query->where('id_sucursal', $idSucursal);
+        }
+
+        if ($request->boolean('bloqueados')) {
+            // now() de la BD: evita el desfase entre la zona horaria de PHP y la sesión PG.
+            $query->whereRaw('bloqueado_hasta > now()');
+        }
+
+        // Cuentas que no podrían usar «Olvidé mi contraseña» (falta correo o celular).
+        if ($request->boolean('sin_recuperacion')) {
+            $query->where(function ($q) {
+                $q->whereNull('correo')->orWhere('correo', '')
+                    ->orWhereNull('celular')->orWhere('celular', '');
+            });
         }
 
         // Orden por columna (clic en el encabezado de la tabla)
@@ -77,7 +100,7 @@ class UserController extends Controller
             'sucursales' => $this->sucursalesActivas(),
             'orden' => $orden,
             'dir' => $dir,
-            'resumen' => $this->resumen(),
+            'resumen' => $this->resumen($request->user()),
         ]);
     }
 
@@ -96,6 +119,9 @@ class UserController extends Controller
             if ($solicitud) {
                 $usuario->nombre_completo = $solicitud->nombre_completo;
                 $usuario->correo = $solicitud->correo;
+                // El celular de la solicitud es el que luego servirá para
+                // «Olvidé mi contraseña».
+                $usuario->celular = $solicitud->celular;
             }
         }
 
@@ -189,6 +215,7 @@ class UserController extends Controller
     /**
      * Genera una contraseña temporal, la guarda hasheada y obliga al usuario a cambiarla
      * en su próximo ingreso. La clave en claro se muestra UNA sola vez (flash de sesión).
+     * También limpia cualquier bloqueo y cierra sus solicitudes de restablecimiento.
      */
     public function resetPassword(Request $request, User $usuario)
     {
@@ -198,12 +225,7 @@ class UserController extends Controller
             return back()->with('error', 'Para cambiar tu propia contraseña usa «Mi perfil».');
         }
 
-        $temporal = GeneradorContrasena::generar(10, false);
-
-        $usuario->forceFill([
-            'contrasena_hash' => Hash::make($temporal),
-            'debe_cambiar_contrasena' => true,
-        ])->save();
+        $temporal = $this->restablecer->generarTemporal($usuario, $request->user());
 
         return redirect()
             ->route('usuarios.index', $request->only(['buscar', 'rol', 'estado', 'id_sucursal', 'orden', 'dir', 'page']))
@@ -212,6 +234,35 @@ class UserController extends Controller
                 'nombre_usuario' => $usuario->nombre_usuario,
                 'password' => $temporal,
             ]);
+    }
+
+    /**
+     * Quita un bloqueo temporal por intentos fallidos antes de tiempo
+     * (el bloqueo solo se levanta solo a los 10 min; esto es a petición).
+     */
+    public function desbloquear(Request $request, User $usuario)
+    {
+        $this->autorizarGestionDe($usuario);
+
+        if ($usuario->id_usuario === $request->user()->id_usuario) {
+            return back()->with('error', 'No puedes desbloquear tu propia cuenta desde aquí.');
+        }
+
+        if (! $usuario->estaBloqueado()) {
+            return back()->with('error', 'Esa cuenta no está bloqueada.');
+        }
+
+        $this->intentos->desbloquear($usuario);
+
+        // El aviso de ese bloqueo ya cumplió su función.
+        Notificacion::query()
+            ->where('id_usuario', $request->user()->id_usuario)
+            ->where('id_usuario_origen', $usuario->id_usuario)
+            ->where('tipo', Notificacion::TIPO_BLOQUEO_CUENTA)
+            ->where('leida', false)
+            ->update(['leida' => true, 'fecha_lectura' => DB::raw('now()')]);
+
+        return back()->with('success', "Cuenta {$usuario->nombre_completo} desbloqueada.");
     }
 
     /**
@@ -245,20 +296,27 @@ class UserController extends Controller
     }
 
     /** Totales para las tarjetas de resumen (sobre todos los usuarios, sin filtros). */
-    private function resumen(): array
+    private function resumen(User $actor): array
     {
         $tot = User::query()
             ->selectRaw("COUNT(*) AS total,
                 SUM(CASE WHEN estado = 'ACTIVO' THEN 1 ELSE 0 END) AS activos,
-                SUM(CASE WHEN estado = 'INACTIVO' THEN 1 ELSE 0 END) AS inactivos")
+                SUM(CASE WHEN estado = 'INACTIVO' THEN 1 ELSE 0 END) AS inactivos,
+                SUM(CASE WHEN bloqueado_hasta > now() THEN 1 ELSE 0 END) AS bloqueados")
             ->first();
 
         return [
             'total' => (int) ($tot->total ?? 0),
             'activos' => (int) ($tot->activos ?? 0),
             'inactivos' => (int) ($tot->inactivos ?? 0),
+            'bloqueados' => (int) ($tot->bloqueados ?? 0),
             'por_rol' => User::query()->selectRaw('nombre_rol, COUNT(*) AS c')->groupBy('nombre_rol')->pluck('c', 'nombre_rol')->all(),
             'solicitudes' => SolicitudCuenta::where('estado', SolicitudCuenta::PENDIENTE)->count(),
+            // «Olvidé su contraseña» pendientes que este actor puede atender.
+            'solicitudes_contrasena' => SolicitudRestablecimiento::query()
+                ->visiblesPara($actor)
+                ->where('estado', SolicitudRestablecimiento::PENDIENTE)
+                ->count(),
         ];
     }
 

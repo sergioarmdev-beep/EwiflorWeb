@@ -337,6 +337,14 @@
                     </a>
                     @endif
 
+                    {{-- Notificaciones del centro de avisos --}}
+                    <a href="{{ route('notificaciones.index') }}" title="Notificaciones" class="nav-item group mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors {{ request()->routeIs('notificaciones.*') ? 'bg-brand-green/15 text-brand-green ring-1 ring-inset ring-brand-green/25' : 'text-muted hover:bg-surface-2 hover:text-ink' }}">
+                        <svg class="h-5 w-5 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.897 14.823c.182-.332.29-.734.29-1.174 0-1.11-.89-2.004-2-2.22-.384-.074-.76-.148-1.11-.204-.29-.046-.594-.01-.886.056a2 2 0 1 0-2.282 1.64c.24.492.491.98.784 1.406 1.11 1.584 2.273 3.168 3.432 4.064 1.11-.863 2.214-2.412 3.414-3.968.26-.384.5-.744.69-1.174a2 2 0 0 0-.046-.72m0-6.482a2 2 0 1 0 0-2.167 2 2 0 0 0 0 2.167zm-7 0a2 2 0 1 0 0-2.167 2 2 0 0 0 0 2.167zM7 11c0-1.11-.89-2-2-2a2 2 0 1 0 0 4c1.11 0 2-.89 2-2z" />
+                        </svg>
+                        <span class="nav-label">Notificaciones</span>
+                    </a>
+
                     @if (in_array($rolActual, ['GERENTE', 'ADMINISTRADOR'], true))
                     <a href="{{ route('sucursales.index') }}" title="Sucursales" class="nav-item group mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors {{ request()->routeIs('sucursales.*') ? 'bg-brand-green/15 text-brand-green ring-1 ring-inset ring-brand-green/25' : 'text-muted hover:bg-surface-2 hover:text-ink' }}">
                         <svg class="h-5 w-5 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -486,6 +494,24 @@
                         </svg>
                         <span class="hidden sm:inline">Tema</span>
                     </button>
+                    {{-- Notificaciones (campana con conteo de no leídas) --}}
+                    <a href="{{ route('notificaciones.index') }}"
+                        id="campana-notificaciones"
+                        class="relative inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2/60 px-3 py-2 text-xs font-semibold text-muted transition-all duration-200 hover:bg-surface-2 hover:text-ink active:scale-95"
+                        title="Notificaciones" aria-label="Notificaciones">
+                        <svg class="h-4 w-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.897 14.823c.182-.332.29-.734.29-1.174 0-1.11-.89-2.004-2-2.22-.384-.074-.76-.148-1.11-.204-.29-.046-.594-.01-.886.056a2 2 0 1 0-2.282 1.64c.24.492.491.98.784 1.406 1.11 1.584 2.273 3.168 3.432 4.064 1.11-.863 2.214-2.412 3.414-3.968.26-.384.5-.744.69-1.174a2 2 0 0 0-.046-.72m0-6.482a2 2 0 1 0 0-2.167 2 2 0 0 0 0 2.167zm-7 0a2 2 0 1 0 0-2.167 2 2 0 0 0 0 2.167zM7 11c0-1.11-.89-2-2-2a2 2 0 1 0 0 4c1.11 0 2-.89 2-2z" />
+                        </svg>
+                        @php($noLeidas = session('notificaciones_no_leidas', $notificacionesNoLeidas ?? 0))
+                        @if ($noLeidas > 0)
+                        <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold ring-1 ring-line">
+                            {{ $noLeidas }}
+                        </span>
+                        @else
+                        <span class="absolute -top-1 -right-1 h-4 w-4 hidden"></span>
+                        @endif
+                        <span class="hidden sm:inline">Notificaciones</span>
+                    </a>
                     {{-- Redirección actual conservada --}}
                     <a href="{{ route('catalogo.productos.index') }}">
                         <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-brand-green/15 text-sm font-bold text-brand-green ring-1 ring-brand-green/25" title="{{ $usuarioActual?->nombre_usuario }}">

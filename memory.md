@@ -1003,3 +1003,91 @@ Modules/Comisiones/
 - **Fix query duplicada:** en `ComisionService::calcularYGuardar()` se reemplazó `JOIN pago` por `whereExists(...)` para no duplicar filas (y el total_bs) cuando una venta tiene varios pagos. `keyBy` ahora usa clave compuesta `id_usuario:id_sucursal` para no perder ventas de vendedores en varias sucursales.
 - **Diagnóstico con datos reales (2026-11-18):** hay 15 ventas pagadas en nov/2026 por Bs 492.641,18. Solo los usuarios con rol `VENDEDOR` activo generan comisión (11, 14, 7). Los usuarios 6, 10 (serdev) y 17 son GERENTES: sus ventas NO generan comisión por diseño del módulo. Esto explica reportes de "registré venta y no aparece" si se prueba con un usuario gerente.
 
+---
+
+## 2026-11-20 — Feature: Auth — recuperación de contraseña asistida, login por usuario o correo, y bloqueo por intentos fallidos
+
+### Qué se hizo
+Implementado el plan aprobado para el módulo `Modules/Auth/`:
+1. **«Olvidé mi contraseña»** (público): formulario que pide correo + celular registrados; si coinciden, crea una `solicitud_restablecimiento` pendiente y avisa a quien corresponde (sin revelar si la cuenta existe, sin emails, sin cambio directo de clave por el usuario).
+2. **Login por identificador**: acepta nombre de usuario **o** correo (campo `identificador`; ambos normalizados a minúsculas).
+3. **Rate limit / bloqueo de cuenta**: 3 intentos fallidos en < 10 min bloquean la cuenta 10 min (auto-liberación) y notifican a GERENTE (todos) + ADMINISTRADOR (misma sucursal); nunca se notifica al origen. Máx. 10 POSTs/min por IP en `/login`.
+4. **Centro de notificaciones in-app**: campana en el encabezado (con contador de no leídas), enlace en sidebar, página `/notificaciones`. También hay un enlace "Claves olvidadas" en Gestión de Usuarios.
+
+### Archivos creados
+**Migración (módulo Auth, no parche SQL):**
+- `Modules/Auth/Database/Migrations/2026_11_20_000001_recuperacion_contrasena_y_bloqueo.php` — `usuario.celular` (nullable), `usuario.bloqueado_hasta TIMESTAMPTZ`, tablas `intento_acceso`, `solicitud_restablecimiento` (índice único parcial por pendiente), `notificacion`; funciones PG `fn_registrar_intento_acceso` y `fn_desbloquear_usuario`; grants a `ewiflor_app`. `$connection = 'pgsql_migrator'`. Idempotente.
+
+**Modelos:**
+- `Modules/Auth/Models/SolicitudRestablecimiento.php` — estados PENDIENTE/ATENDIDA/RECHAZADA, `scopeVisiblesPara()` (GERENTE todas; ADMINISTRADOR solo VENDEDOR/SERVICIO_TECNICO de su sucursal).
+- `Modules/Auth/Models/Notificacion.php` — tipos SOLICITUD_CONTRASENA / BLOQUEO_CUENTA, `marcarLeida()` (escribe `now()` de la BD), `scopeDe()`.
+
+**Support:**
+- `Modules/Auth/Support/Celular.php` — `normalizar()`, `soloDigitos()`, `coincide()` con tolerancia de 8 dígitos (formato boliviano con/sin prefijo 591).
+
+**Services (4):**
+- `Modules/Auth/Services/NotificacionService.php` — reglas de destinatarios: solicitud → todos los GERENTE activos (+ ADMIN de su sucursal si es VENDEDOR/SERVICIO_TECNICO; GERENTE → otros GERENTE); bloqueo → todos los GERENTE activos + ADMIN de su sucursal.
+- `Modules/Auth/Services/IntentoAccesoService.php` — invoca `fn_registrar_intento_acceso` / `fn_desbloquear_usuario` vía `DbFunction::catch`; `registrarFallido()` avisa solo cuando `bloqueo_nuevo=true`; `registrarExitoso()` limpia ventana.
+- `Modules/Auth/Services/RecuperacionContrasenaService.php` — verifica correo + celular, `lockForUpdate()` sobre usuario, índice único parcial evita duplicados, `catch QueryException 23505`.
+- `Modules/Auth/Services/RestablecerContrasenaService.php` — genera clave temporal (hash + `debe_cambiar_contrasena=true`), limpia bloqueo, cierra solicitudes pendientes, marca notificaciones del actor como leídas.
+
+**Controladores (5):**
+- `Modules/Auth/Controllers/LoginController.php` — `identificador` + `password`; lock check antes de validar clave; errores genéricos; `throttle:10,1`.
+- `Modules/Auth/Controllers/RecuperacionContrasenaController.php` — `GET /olvide-mi-contrasena` + `POST` (`throttle:5,1`, honeypot `sitio_web`).
+- `Modules/Auth/Controllers/SolicitudRestablecimientoController.php` — `index` (visiblesPara), `atender` (usa `RestablecerContrasenaService`), `descartar` (marca leídas sus notificaciones).
+- `Modules/Auth/Controllers/NotificacionController.php` — `index`, `leer`, `leerTodas` (solo propias).
+- `Modules/Auth/Controllers/UserController.php` — `resetPassword()` delega al service; nuevo `desbloquear()` (no self, solo bloqueado; marca notificaciones BLOQUEO_CUENTA leídas); `resumen(User $actor)` agrega `bloqueados` y `solicitudes_contrasena`; filtros `bloqueados` / `sin_recuperacion`; búsqueda por celular.
+
+**Requests (2):**
+- `Modules/Auth/Requests/StoreUserRequest.php` — `correo` y `celular` requeridos, regex celular, normalización en `prepareForValidation`.
+- `Modules/Auth/Requests/UpdateUserRequest.php` — idem para actualizar.
+
+**Routes:**
+- `Modules/Auth/Routes/web.php` — rutas públicas `GET/POST /olvide-mi-contrasena` (nombre `password.olvide` / `.store`), `POST /login` (`throttle:10,1`); auth `/notificaciones` + `PATCH /notificaciones/leer-todas` **antes** de `/{notificacion}/leer`; manager `usuarios/solicitudes-contrasena` + `/atender` + `/descartar` **antes** de `/{usuario}`; `PATCH /{usuario}/desbloquear`.
+
+**Vistas (5 nuevas, 6 modificadas):**
+- `Modules/Auth/Views/recuperacion/olvide.blade.php` — formulario público (correo + celular).
+- `Modules/Auth/Views/solicitudes-contrasena/index.blade.php` — bandeja de solicitudes con tarjetas por estado, acciones Atender/Descartar.
+- `Modules/Auth/Views/notificaciones/index.blade.php` — lista de notificaciones con tipo, origen, fecha, estado leído; botón "Marcar todas como leídas".
+- `Modules/Auth/Views/partials/password-temporal.blade.php` — banner extraído (se reusa en usuarios.index y solicitudes-contrasena.index).
+- `Modules/Auth/Views/login.blade.php` — campo `identificador` (usuario o correo), enlace "¿Olvidaste tu contraseña?".
+- `Modules/Auth/Views/usuarios/_form.blade.php` — campos Correo y Celular obligatorios.
+- `Modules/Auth/Views/usuarios/index.blade.php` — columna Celular, badge "Bloqueado / X min" + acción Desbloquear, filtros checkboxes "Bloqueadas" / "Sin recuperación", tarjeta "Claves olvidadas" con contador.
+- `Modules/Auth/Views/perfil.blade.php` — muestra Celular en datos de cuenta.
+- `resources/views/layouts/app.blade.php` — campana de notificaciones en el encabezado (con badge de no leídas) + enlace sidebar "Notificaciones" (Administración).
+
+**Provider:**
+- `Modules/Auth/Providers/AuthServiceProvider.php` — `View::composer('layouts.app', ...)` comparte `$notificacionesNoLeidas`.
+
+### Archivos modificados
+- `Modules/Auth/Controllers/UserController.php` (resetPassword, desbloquear, resumen, filtros).
+- `Modules/Auth/Routes/web.php` (todas las rutas nuevas, orden estático-antes-de-dinámico).
+- `Modules/Auth/Views/*.blade.php` (ver arriba).
+- `resources/views/layouts/app.blade.php` (campana + sidebar).
+- `Modules/Auth/Providers/AuthServiceProvider.php` (view composer).
+
+### Decisiones de diseño
+- **Migración Laravel del módulo Auth** (no `database/sql/patches/A-03`), según la modificación aprobada por el usuario.
+- **PG functions como fuente de verdad** para registro de intentos y desbloqueo (atómico, seguro bajo concurrencia); invocadas vía `App\Support\DbFunction::call()`.
+- **Timezone safety**: timestamps solo vía `DB::raw('now()')` o defaults BD; lecturas con `whereRaw('bloqueado_hasta > now()')`; Carbon `isFuture()` para `estaBloqueado()`.
+- **Respuesta idéntica** exista o no la cuenta en recuperación (evita enumerar correos/celulares).
+- **Un aviso de bloqueo por episodio** (`bloqueo_nuevo` de PG); 4.º intento dentro del bloqueo no re-notifica.
+- **`usuario.celular` / `correo` requeridos a nivel app**, DB nullable para no romper filas existentes.
+
+### Verificación
+- Migración aplicada OK: `artisan migrate --database=pgsql_migrator` (325 ms).
+- Esquema verificado contra `information_schema` con rol `ewiflor_app`: columnas `celular`/`bloqueado_hasta`, 3 tablas nuevas, 2 funciones PG, grants.
+- Probe funcional (transacción + rollback, 0 filas residuales): 3 fallos → bloqueo + `bloqueo_nuevo=true`; 4.º intento → sin re-notificar; `fn_desbloquear_usuario` limpia; éxito + fallo → ventana reiniciada a 1.
+- `C:\tools\php85\php.exe vendor\laravel\pint\builds\pint --test Modules/Auth/` → PASSED.
+- `artisan route:list` → todas las rutas nuevas registradas (orden estático antes de dinámico respeta colisión de binding).
+- `artisan view:cache` → todas las vistas Blade compilan sin errores.
+- Carbon verificado: `now()->diffInSeconds($futuro, false)` es positivo para futuros → `minutosDeBloqueo()` correcto.
+- Sin tests automatizados: `phpunit.xml` fuerza SQLite en memoria; la lógica de negocio es PG-only.
+
+### Gotchas
+- Editar Blade con `edit()` en Windows: usar `\n` LF (el archivo ya era LF); evitar caracteres no ASCII en `oldString` de edit (usar scripts PHP para bloques grandes con ñ/á).
+- `pint.bat` usa el PHP del PATH (XAMPP 8.2) y falla; ejecutar con `C:\tools\php85\php.exe vendor\laravel\pint\builds\pint`.
+- PowerShell no soporta `&&`; usar `;` para encadenar.
+- El bloque de banner temporal residual se eliminó con un script PHP aparte (no con `edit`) por problemas de coincidencia exacta de caracteres no ASCII.
+
+

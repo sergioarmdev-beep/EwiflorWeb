@@ -53,6 +53,10 @@
                 <dt class="text-[11px] font-semibold uppercase tracking-wider text-muted">Correo</dt>
                 <dd class="mt-1 text-sm text-muted truncate">{{ $usuario->correo ?? '—' }}</dd>
             </div>
+            <div>
+                <dt class="text-[11px] font-semibold uppercase tracking-wider text-muted">Celular</dt>
+                <dd class="mt-1 text-sm text-muted truncate">{{ $usuario->celular ?? '—' }}</dd>
+            </div>
         </dl>
     </div>
 

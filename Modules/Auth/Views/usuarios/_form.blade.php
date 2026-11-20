@@ -26,13 +26,24 @@
 
     {{-- Correo --}}
     <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">Correo</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">Correo *</label>
         <input type="email" name="correo"
             value="{{ old('correo', $usuario->correo) }}"
             placeholder="correo@empresa.com"
             class="mt-1 w-full px-3.5 py-2.5 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 bg-surface-2 border border-line text-ink placeholder:text-muted focus:border-brand-green/50 focus:ring-brand-green/20"
-            maxlength="100">
+            maxlength="100" required>
         @error('correo') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+    </div>
+
+    {{-- Celular (se usa para «Olvidé mi contraseña») --}}
+    <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">Celular *</label>
+        <input type="tel" name="celular"
+            value="{{ old('celular', $usuario->celular) }}"
+            placeholder="+591 70000000"
+            class="mt-1 w-full px-3.5 py-2.5 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 bg-surface-2 border border-line text-ink placeholder:text-muted focus:border-brand-green/50 focus:ring-brand-green/20"
+            maxlength="20" required>
+        @error('celular') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
     </div>
 
     {{-- Rol --}}

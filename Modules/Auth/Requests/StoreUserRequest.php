@@ -4,6 +4,7 @@ namespace Modules\Auth\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Auth\Support\Celular;
 use Modules\Auth\Support\ReglasContrasena;
 
 class StoreUserRequest extends FormRequest
@@ -18,6 +19,7 @@ class StoreUserRequest extends FormRequest
         $this->merge([
             'nombre_usuario' => strtolower(trim((string) $this->nombre_usuario)),
             'correo' => $this->correo ? strtolower(trim($this->correo)) : null,
+            'celular' => trim((string) $this->celular) === '' ? null : Celular::normalizar($this->celular),
         ]);
     }
 
@@ -32,11 +34,19 @@ class StoreUserRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('usuario', 'nombre_usuario'),
             ],
+            // Correo y celular son obligatorios: sin ellos la cuenta no podría
+            // usar «Olvidé mi contraseña».
             'correo' => [
-                'nullable',
+                'required',
                 'email',
                 'max:100',
                 Rule::unique('usuario', 'correo'),
+            ],
+            'celular' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^[0-9+()\-\s]{7,20}$/',
             ],
             'password' => array_merge(ReglasContrasena::reglas(true), ['confirmed']),
             'nombre_rol' => ['required', Rule::in($this->user()->rolesAsignables())],
@@ -56,7 +66,10 @@ class StoreUserRequest extends FormRequest
     {
         return ReglasContrasena::mensajes() + [
             'nombre_usuario.unique' => 'Ese nombre de usuario ya está registrado.',
+            'correo.required' => 'El correo es obligatorio (se usa para «Olvidé mi contraseña»).',
             'correo.unique' => 'Ese correo ya está registrado.',
+            'celular.required' => 'El celular es obligatorio (se usa para «Olvidé mi contraseña»).',
+            'celular.regex' => 'Ingresa un celular válido (solo dígitos, +, espacios o guiones).',
             'nombre_rol.in' => 'El rol seleccionado no está permitido para tu cuenta.',
             'id_solicitud.exists' => 'La solicitud ya fue procesada o no existe.',
         ];
