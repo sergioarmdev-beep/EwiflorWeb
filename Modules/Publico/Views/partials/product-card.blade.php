@@ -51,11 +51,7 @@
                             <div class="product-image-placeholder" aria-hidden="true"><span class="material-symbols-rounded">inventory_2</span></div>
                             @endif
 
-                            @if($promoProducto)
-                            <span class="promo-badge">
-                                {{ $promoProducto['tipo'] === 'PCT' ? 'OFERTA −'.rtrim(rtrim(number_format((float) $promoProducto['pct'], 2, '.', ''), '0'), '.').' %' : 'OFERTA' }}
-                            </span>
-                            @endif
+                            <!-- Precios y ofertas ocultos por política comercial -->
 
                             @if($producto->imagenes->count() > 1)
                             <span class="product-photos" aria-hidden="true">{{ $producto->imagenes->count() }} fotos</span>
@@ -98,6 +94,15 @@
                                     Garantía según producto
                                     @endif
                                 </span>
+
+                                <button type="button" class="product-wishlist" data-wishlist-add aria-label="Agregar a lista de deseos">
+                                    <span class="material-symbols-rounded">favorite</span>
+                                </button>
+
+                                <a href="https://wa.me/{{ env('WA_CONTACT', '59170000000') }}?text={{ urlencode('Hola Ewiflor, me interesa el producto: ' . $producto->nombre . ' (Marca: ' . ($producto->marca?->nombre ?? '') . ', Modelo: ' . $producto->modelo . '). ¿Podrían darme más información?') }}" 
+                                   class="product-whatsapp" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp">
+                                    <span class="material-symbols-rounded">message</span>
+                                </a>
 
                                 <span class="product-more">Ver detalle <span class="material-symbols-rounded">arrow_forward</span></span>
 

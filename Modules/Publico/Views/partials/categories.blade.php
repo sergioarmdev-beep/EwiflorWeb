@@ -34,6 +34,36 @@
         letter-spacing: .04em;
         backdrop-filter: blur(6px);
     }
+
+    .category-more {
+        display: flex;
+        justify-content: center;
+        margin-top: 34px;
+    }
+
+    /* Respaldo cuando la categoría todavía no tiene fotografía:
+       degradado de marca + icono, nunca un hueco gris. */
+    .category-fallback {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background:
+            radial-gradient(120% 100% at 12% 8%, rgba(130, 183, 35, .40), transparent 62%),
+            linear-gradient(145deg, #22405F 0%, #16398A 58%, #0E2A4A 100%);
+    }
+
+    .category-fallback .material-symbols-rounded {
+        color: rgba(255, 255, 255, .82);
+        font-size: 84px;
+        opacity: .9;
+    }
+
+    .category-card--fallback .category-overlay {
+        background: linear-gradient(180deg,
+                rgba(12, 20, 28, 0) 28%,
+                rgba(12, 20, 28, .82) 100%);
+    }
 </style>
 @endpush
 
@@ -41,21 +71,21 @@
     <div class="container-main section-content">
 
         <div class="section-heading reveal">
-            <span class="section-label">Explora nuestras referencias</span>
+            <span class="section-label">Explora nuestras áreas</span>
 
             <h2 class="section-title">
-                Equipamiento para <span class="gradient-text">cada necesidad</span>
+                ¿Qué negocio quiere <span class="gradient-text">equipar?</span>
             </h2>
 
             <p class="section-description">
-                Una muestra visual de las distintas áreas de equipamiento
-                gastronómico que forman parte de nuestro catálogo.
+                Elija el área de su negocio y vea los equipos disponibles para
+                panadería, repostería, cocina y carnicería.
             </p>
         </div>
 
         @if($categorias->isEmpty())
         <div class="empty-catalog reveal">
-            <span class="material-symbols-rounded">category</span>
+            <span class="material-symbols-rounded" aria-hidden="true">category</span>
             Aún no hay categorías cargadas.
         </div>
         @else
@@ -66,15 +96,28 @@
                     ? route('publico.catalogo', ['categoria' => strtolower($cat['slug'])])
                     : null;
                 $tag = $enlace ? 'a' : 'article';
+                $iconos = [
+                    'ALIMENTARIA' => 'restaurant',
+                    'PANADERIA'   => 'bakery_dining',
+                    'REPOSTERIA'  => 'cake',
+                    'CARNICA'     => 'set_meal',
+                ];
+                $slugIcono = $iconos[$cat['slug'] ?? ''] ?? 'category';
+                $tieneImagen = ! empty($cat['imagen']);
             @endphp
-            <{{ $tag }} class="category-card reveal" @if($enlace) href="{{ $enlace }}" aria-label="Ver {{ $cat['titulo'] }} en el catálogo" @endif>
-                @if($cat['imagen'])
+            <{{ $tag }} class="category-card reveal {{ $tieneImagen ? '' : 'category-card--fallback' }}" @if($enlace) href="{{ $enlace }}" aria-label="Ver {{ $cat['titulo'] }} en el catálogo" @endif>
+                @if($tieneImagen)
                 <img
                     src="{{ $cat['imagen'] }}"
                     alt="Referencia de {{ $cat['titulo'] }}"
                     loading="lazy"
                     decoding="async"
                     onerror="this.style.display='none'">
+                @endif
+                @if(! $tieneImagen)
+                <div class="category-fallback" aria-hidden="true">
+                    <span class="material-symbols-rounded">{{ $slugIcono }}</span>
+                </div>
                 @endif
 
                 <div class="category-overlay">
@@ -89,6 +132,13 @@
             @endforeach
         </div>
         @endif
+
+        <div class="category-more reveal">
+            <a href="{{ route('publico.catalogo') }}" class="button-primary">
+                Ver todo el catálogo
+                <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+            </a>
+        </div>
 
     </div>
 </section>

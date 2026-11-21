@@ -4,10 +4,16 @@
 
 @include('publico::partials.hero')
 
+@include('publico::partials.value-props')
+
 @include('publico::partials.categories')
 
-@include('publico::partials.products-grid', ['modo' => 'inicio'])
+@include('publico::partials.featured')
 
-@include('publico::partials.cta')
+@include('publico::partials.brands')
+
+@include('publico::partials.service-integral')
+
+@include('publico::partials.cta-final')
 
 @endsection

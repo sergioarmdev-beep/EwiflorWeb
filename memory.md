@@ -1090,4 +1090,45 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - PowerShell no soporta `&&`; usar `;` para encadenar.
 - El bloque de banner temporal residual se eliminó con un script PHP aparte (no con `edit`) por problemas de coincidencia exacta de caracteres no ASCII.
 
+---
+
+## 2026-11-20 — Rediseño de portada pública (`Modules/Publico`) formato "place"
+
+### Qué se hizo
+- `Controllers/PublicoController.php`: método `inicio()` (reemplaza `catalogoPublico`), helper `idsMasVendidos()` (suma `detalle_venta.cantidad` → `variante_producto` → `producto`), normalizador de búsqueda (`Str::ascii` + `mb_strtolower`), filtro `?search=` en `catalogo()`, imports de `DetalleVenta` y `Str`.
+- `Routes/web.php`: `/` ahora apunta a `PublicoController@inicio` (nombre `catalogo.publico`).
+- `Views/publico.blade.php`: orden de secciones (hero → value-props → categories → featured → brands → service-integral → cta-final).
+- `Views/layouts/public.blade.php`: metas `page-type/site-kind/page-kind` ("place"/"other"), `scroll-padding-top: 80px`, `.section-page` ajustado (56px/40px móvil), bloque CSS completo de portada (hero, franja de respaldo, destacados, marcas, servicio, cta, footer), eliminado botón WhatsApp flotante y scripts Motion/carrusel/typewriter antiguos, entrada del hero por CSS `[data-enter] .enter` + revelado `.reveal` + IntersectionObserver, respeta `prefers-reduced-motion`.
+- `Views/partials/navbar.blade.php` (nuevo): topbar 3 islas (logo izq., búsqueda centro, Cotizar der.) + mainnav sticky convencional + menú móvil `<details>`.
+- `Views/partials/hero.blade.php` (nuevo): hero fotográfico único con `data-enter`, CTA WhatsApp, sin superposición del navbar.
+- `Views/partials/value-props.blade.php`, `featured.blade.php`, `brands.blade.php`, `service-integral.blade.php`, `cta-final.blade.php` (nuevos).
+- `Views/partials/categories.blade.php` actualizado: copy "¿Qué negocio quiere equipar?", fallback visual con degradado + icono (slug→icono: ALIMENTARIA `restaurant`, PANADERIA `bakery_dining`, REPOSTERIA `cake`, CARNICA `set_meal`), `auto-fit` de 4 columnas.
+- `Views/partials/footer.blade.php` reescrito: sucursales (View Composer), Leaflet 1.9.4 reutilizado de `sucursales::partials.leaflet-assets`, centro de respaldo Bolivia `[-16.5,-64.5]`, crédito OSM.
+- `Providers/PublicoServiceProvider.php`: View Composer `publico::partials.footer` → `$sucursalesFooter` (sucursales ACTIVO ordenadas por nombre).
+- `Views/partials/products-grid.blade.php`: `?search=` precargado, padding catálogo 56px/40px móvil.
+- `views:clear` y `views:cache` OK; `php -l` OK en controlador y provider; `route:list` OK.
+
+### Decisiones de diseño
+- **Tipo de página**: `place` / `site-kind: other` (tienda física con sucursales).
+- **Búsqueda**: simple por GET a `route('publico.catalogo')` con `?search=`, filtrada en servidor sobre todo el catálogo público.
+- **Destacados**: los más vendidos de `detalle_venta` con relleno del catálogo si no hay suficientes ventas (IDs 22, 17, 20, 19, 1, 18 en BD actual).
+- **Marcas**: array hardcodeado con rutas `public/images/marcas/*.webp`; si el archivo no existe, se muestra el nombre como wordmark (sin logos falsos).
+- **Sucursales en footer**: vía View Composer (no lógica en la vista).
+- **Header**: en flujo normal; solo `.site-mainnav` sticky. Botón flotante WhatsApp eliminado (evita animación infinita).
+- **Animaciones**: entrada del hero por CSS, revelado por `.reveal` + IntersectionObserver, `prefers-reduced-motion` respeta.
+
+### Hallazgos operativos / gotchas
+- **Desborde móvil (390px)**: el botón "Cotizar" y "Buscar" parecían cortados, pero era un artefacto de Chrome headless en Windows (ventana mínima ~484px). Con emulación de dispositivo real vía CDP (viewport 390/768/1024) no hay desbordes: `scrollWidth == clientWidth` en todos los tamaños.
+- **Script temporal de depuración**: se añadió `console.log('DBG viewport=...')` al layout y se eliminó tras confirmar el diagnóstico.
+- **Desborde real del pie del hero (1024px)**: `translateX(-50%)` en `.hero-home-foot` conflictuaba con la animación de entrada (`transform: translateY(0)`). Se reemplazó por `left:0/right:0/margin-inline:auto`.
+- **Imágenes de categoría**: las rutas de BD apuntan a `/images/catalog/categoria-*.jpg`, que no existen en `public/images` (solo `ewiflor-logo.webp` y `whatsapp-logo.svg`). Se agregó fallback con degradado de marca + icono Material, nunca un hueco gris.
+- **Modo oscuro**: funciona vía `data-theme="dark"` en `<html>`; verificado con CDP a 1440px (`theme:"dark"`, sin desbordes).
+- **Mapa Leaflet**: se renderiza correctamente (tejas `leaflet-tile` presentes); `desbordes: []` en todos los tamaños probeados. El mapa del footer queda debajo del hero en la captura porque la página mide ~5590px de alto.
+- **Vite/Tailwind dev server no corre**: los estilos van inline en el layout, la página se ve bien igualmente.
+- **Servidor de prueba**: `php artisan serve --port=8123` (PID 3564), detenido al finalizar.
+
+### Próximos pasos
+- Revisar capturas a 768/1024 con modo oscuro ya hechas (sin hallazgos). El footer y mapa están implementados y sin desbordes.
+- Cuando haya imágenes de marca en `public/images/marcas/`, se mostrarán automáticamente (ya está el check `is_file`).
+
 

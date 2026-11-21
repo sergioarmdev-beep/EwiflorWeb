@@ -13,7 +13,7 @@ $categoriaActiva = $categoriaActiva ?? null;
 @push('head')
 <style>
     .catalog-page {
-        padding-top: 150px;
+        padding-top: 56px;
     }
 
     .catalog-filters {
@@ -83,7 +83,7 @@ $categoriaActiva = $categoriaActiva ?? null;
 
     @media (max-width: 760px) {
         .catalog-page {
-            padding-top: 120px;
+            padding-top: 40px;
         }
     }
 </style>
@@ -118,6 +118,7 @@ $categoriaActiva = $categoriaActiva ?? null;
                         type="search"
                         id="product-search"
                         class="search-input"
+                        value="{{ request('search') }}"
                         placeholder="Buscar producto o marca..."
                         autocomplete="off"
                         aria-label="Buscar productos">
@@ -158,6 +159,22 @@ $categoriaActiva = $categoriaActiva ?? null;
         </div>
 
         @if($completo)
+        <!-- Paginación -->
+        @if($paginator && $paginator->total() > (isset($porPagina) ? $porPagina : 12))
+        <nav class="catalog-pagination reveal" aria-label="Paginación del catálogo">
+            <span class="pagination-info">
+                Página {{ $paginator->currentPage() }} de {{ $paginator->lastPage() }}
+            </span>
+            <div class="pagination-links">
+                @if($paginator->currentPage() > 1)
+                <a href="?{{ http_build_query(array_merge(request()->query(), ['pagina' => $paginator->currentPage() - 1])) }}" class="button-secondary pagination-link">← Anterior</a>
+                @endif
+                @if($paginator->hasMorePages())
+                <a href="?{{ http_build_query(array_merge(request()->query(), ['pagina' => $paginator->currentPage() + 1])) }}" class="button-secondary pagination-link">Siguiente →</a>
+                @endif
+            </div>
+        </nav>
+        @endif
         <div id="no-search-results" class="no-results" hidden>
             <span class="material-symbols-rounded" aria-hidden="true">search_off</span>
             <h3 style="font-weight: 800; color: var(--text); margin-bottom: 8px;">
@@ -170,8 +187,9 @@ $categoriaActiva = $categoriaActiva ?? null;
         </div>
         @else
         <div class="catalog-more reveal">
-            <a href="{{ route('publico.catalogo') }}" class="button-primary">
-                Ver catálogo completo ({{ $totalProductos }}) <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+            <a href="https://wa.me/{{ env('WA_CONTACT', '59170000000') }}" class="button-whatsapp" target="_blank" rel="noopener">
+                <img src="{{ asset('images/whatsapp-logo.svg') }}" alt="WhatsApp" width="20" height="20" style="display:inline-block; vertical-align:middle; margin-right:8px;">
+                Escribí por WhatsApp
             </a>
         </div>
         @endif
@@ -273,4 +291,123 @@ $categoriaActiva = $categoriaActiva ?? null;
     })();
 </script>
 @endpush
+
+<!-- Wishlist modal (simple, localStorage, sin conexión aún) -->
+<div id="wishlist-modal" class="wishlist-modal" aria-hidden="true">
+    <div class="wishlist-backdrop" data-wishlist-close></div>
+    <div class="wishlist-dialog" role="dialog" aria-modal="true" aria-labelledby="wishlist-title">
+        <button type="button" class="wishlist-close" data-wishlist-close aria-label="Cerrar">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+        <h3 id="wishlist-title">Lista de deseos</h3>
+        <p class="wishlist-hint">Tus productos favoritos se guardan aquí (solo en este navegador).</p>
+        <div id="wishlist-items" class="wishlist-items">
+            <!-- Se llena con JavaScript -->
+        </div>
+        <div class="wishlist-actions">
+            <button type="button" class="wishlist-clear" data-wishlist-clear>Vaciar lista</button>
+            <a href="https://wa.me/{{ env('WA_CONTACT', '59170000000') }}" class="button-whatsapp" target="_blank" rel="noopener">
+                <img src="{{ asset('images/whatsapp-logo.svg') }}" alt="WhatsApp" width="18" height="18" style="display:inline-block; vertical-align:middle; margin-right:6px;">
+                Consultar por WhatsApp
+            </a>
+        </div>
+        <p class="wishlist-empty" id="wishlist-empty" hidden>Aún no tienes productos en la lista de deseos.</p>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const STORAGE_KEY = 'ewiflor_wishlist';
+        const modal = document.getElementById('wishlist-modal');
+        const itemsContainer = document.getElementById('wishlist-items');
+        const emptyMsg = document.getElementById('wishlist-empty');
+        const openBtns = document.querySelectorAll('[data-wishlist-add]');
+        const closeBtns = document.querySelectorAll('[data-wishlist-close]');
+        const clearBtn = document.querySelector('[data-wishlist-clear]');
+
+        let wishlist = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+        function render() {
+            itemsContainer.innerHTML = '';
+            if (wishlist.length === 0) {
+                emptyMsg.hidden = false;
+                return;
+            }
+            emptyMsg.hidden = true;
+            wishlist.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'wishlist-item';
+                div.innerHTML = `
+                    <img src="${item.imagen || ''}" alt="${item.nombre}" class="wishlist-item-img" onerror="this.style.display='none'">
+                    <div class="wishlist-item-info">
+                        <div class="wishlist-item-name">${item.nombre}</div>
+                        <div class="wishlist-item-marca">${item.marca || ''}</div>
+                    </div>
+                    <button type="button" class="wishlist-remove" data-index="${idx}">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                `;
+                itemsContainer.appendChild(div);
+            });
+            itemsContainer.querySelectorAll('[data-index]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const i = parseInt(btn.dataset.index);
+                    wishlist.splice(i, 1);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
+                    render();
+                    updateBadges();
+                });
+            });
+        }
+
+        function updateBadges() {
+            document.querySelectorAll('[data-wishlist-count]').forEach(el => {
+                el.textContent = wishlist.length;
+                el.hidden = wishlist.length === 0;
+            });
+        }
+
+        function openModal() {
+            render();
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        openBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const card = btn.closest('.product-card');
+                const id = card?.dataset.productId;
+                const nombre = card?.querySelector('.product-title')?.textContent || '';
+                const marca = card?.querySelector('.product-brand')?.textContent || '';
+                const imagen = card?.querySelector('img')?.src || '';
+                if (!id || wishlist.some(i => i.id === id)) return;
+                wishlist.push({ id, nombre, marca, imagen });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
+                updateBadges();
+                openModal();
+            });
+        });
+
+        closeBtns.forEach(btn => btn.addEventListener('click', closeModal));
+        clearBtn?.addEventListener('click', () => {
+            wishlist = [];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
+            render();
+            updateBadges();
+        });
+
+        // Clic fuera del diálogo cierra
+        modal?.querySelector('.wishlist-backdrop')?.addEventListener('click', closeModal);
+        updateBadges();
+    })();
+</script>
 @endif

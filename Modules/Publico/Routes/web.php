@@ -5,7 +5,7 @@ use Modules\Publico\Controllers\PublicoController;
 
 // Ruta raíz (inicio público, sin autenticación). Se conserva el nombre
 // 'catalogo.publico' para no romper enlaces existentes.
-Route::get('/', [PublicoController::class, 'catalogoPublico'])
+Route::get('/', [PublicoController::class, 'inicio'])
     ->name('catalogo.publico');
 
 // Página completa del catálogo (búsqueda + filtro por categoría: ?categoria=panaderia).
@@ -23,3 +23,7 @@ Route::get('/soporte-tecnico', [PublicoController::class, 'servicioTecnico'])
 // Contacto con servicio técnico desde la web pública (cliente existente).
 Route::post('/contactar-servicio-tecnico', [PublicoController::class, 'contactarServicioTecnico'])
     ->name('publico.contactar.servicio.tecnico');
+
+// Página de detalle de producto público (SEO y compartición).
+Route::get('/producto/{id}', [PublicoController::class, 'productoDetalle'])
+    ->name('publico.producto.detalle');

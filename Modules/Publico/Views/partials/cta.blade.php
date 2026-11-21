@@ -13,8 +13,9 @@
                         diferentes alternativas de equipamiento gastronómico.
                     </p>
 
-                    <a href="{{ route('publico.catalogo') }}" class="button-primary">
-                        Explorar productos <span class="material-symbols-rounded">arrow_forward</span>
+                    <a href="https://wa.me/{{ env('WA_CONTACT', '59170000000') }}" class="button-whatsapp" target="_blank" rel="noopener">
+                        <img src="{{ asset('images/whatsapp-logo.svg') }}" alt="WhatsApp" width="20" height="20" style="display:inline-block; vertical-align:middle; margin-right:8px;">
+                        Escribí por WhatsApp
                     </a>
                 </div>
 

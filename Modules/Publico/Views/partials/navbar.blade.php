@@ -1,436 +1,499 @@
-<header class="navbar relative z-50" id="site-navbar">
+{{--
+    Cabecera pública en dos niveles:
+      1. Barra superior (3 islas): identidad · búsqueda de productos · cotizar por WhatsApp.
+      2. Barra de navegación convencional (sticky): Inicio, Categorías, Catálogo, Servicio, Nosotros.
+--}}
 
-    <div class="container-main navbar-inner !grid !grid-cols-[auto_1fr_auto] !items-center !gap-3">
+<header class="site-topbar">
+    <div class="container-main site-topbar-inner">
 
+        {{-- Isla izquierda: identidad --}}
+        <a class="site-brand" href="{{ route('catalogo.publico') }}" aria-label="Ewiflor Importaciones, ir al inicio">
+            <img
+                src="{{ asset('images/ewiflor-logo.webp') }}"
+                alt="Logo Ewiflor"
+                class="site-brand-logo"
+                width="60"
+                height="60"
+                fetchpriority="high">
+            <span class="site-brand-text">
+                <span class="site-brand-name">EWIFLOR</span>
+                <span class="site-brand-sub">Importaciones</span>
+            </span>
+        </a>
 
-        {{-- ISLA IZQUIERDA: LOGO --}}
-        <div class="brand-island">
+        {{-- Isla central: búsqueda en el catálogo existente --}}
+        <form class="site-search"
+            action="{{ route('publico.catalogo') }}"
+            method="GET"
+            role="search">
+            <span class="material-symbols-rounded site-search-icon" aria-hidden="true">search</span>
+            <label class="visually-hidden" for="site-search-input">Buscar productos</label>
+            <input
+                id="site-search-input"
+                type="search"
+                name="search"
+                value="{{ request('search') }}"
+                placeholder="Buscar producto o marca…"
+                autocomplete="off">
+            <button type="submit" class="site-search-submit">Buscar</button>
+        </form>
 
-            <a href="{{ route('catalogo.publico') }}" class="brand">
+        {{-- Isla derecha: cotizar por WhatsApp --}}
+        <a class="site-quote"
+            href="https://wa.me/{{ env('WA_CONTACT', '59170000000') }}?text={{ urlencode('Hola Ewiflor, quiero cotizar un equipo.') }}"
+            target="_blank"
+            rel="noopener">
+            <img src="{{ asset('images/whatsapp-logo.svg') }}" alt="" width="22" height="22" aria-hidden="true">
+            <span>Cotizar</span>
+        </a>
 
-                <span class="brand-icon">
-                    <img
-                        src="{{ asset('images/ewiflor-logo.webp') }}"
-                        alt="Logo EWIFLOR">
-                </span>
+    </div>
+</header>
 
-                <span>
-                    <span class="brand-name">EWIFLOR</span>
-                    <span class="brand-subtitle">Importaciones</span>
-                </span>
+<nav class="site-mainnav" id="site-navbar" aria-label="Navegación principal">
+    <div class="container-main site-mainnav-inner">
 
-            </a>
-
+        <div class="site-mainnav-links">
+            <a href="{{ route('catalogo.publico') }}" class="site-nav-link {{ $esInicio ? 'active' : '' }}">Inicio</a>
+            <a href="{{ $base }}#categorias" class="site-nav-link">Categorías</a>
+            <a href="{{ route('publico.catalogo') }}" class="site-nav-link {{ $enCatalogo ? 'active' : '' }}"
+                @if($enCatalogo) aria-current="page" @endif>Catálogo</a>
+            <a href="{{ $base }}#servicio" class="site-nav-link">Servicio</a>
+            <a href="{{ route('publico.nosotros') }}" class="site-nav-link {{ $enNosotros ? 'active' : '' }}"
+                @if($enNosotros) aria-current="page" @endif>Nosotros</a>
         </div>
 
-
-
-        {{-- ISLA CENTRAL: NAVEGACIÓN --}}
-        <nav class="nav-island !mx-auto" aria-label="Navegación principal">
-
-            {{-- Enlaces escritorio --}}
-            <div class="nav-links hidden items-center justify-center gap-2 md:flex">
-
-                <a href="{{ route('catalogo.publico') }}"
-                    class="nav-link {{ $esInicio ? 'active' : '' }}">
-                    Inicio
-                </a>
-
-                <a href="{{ $base }}#categorias" class="nav-link">
-                    Categorías
-                </a>
-
-                <a href="{{ route('publico.catalogo') }}"
-                    class="nav-link {{ $enCatalogo ? 'active' : '' }}"
-                    @if($enCatalogo) aria-current="page" @endif>
-                    Catálogo
-                </a>
-
-                <a href="{{ route('publico.servicio.tecnico') }}"
-                    class="nav-link {{ $enServicio ? 'active' : '' }}"
-                    @if($enServicio) aria-current="page" @endif>
-                    Servicio técnico
-                </a>
-
-                <a href="{{ route('publico.nosotros') }}"
-                    class="nav-link {{ $enNosotros ? 'active' : '' }}"
-                    @if($enNosotros) aria-current="page" @endif>
-                    Nosotros
-                </a>
-
-            </div>
-
-
-            {{-- Menú móvil --}}
-            <details class="mobile-navigation md:hidden">
-
-                <summary class="mobile-menu-button" aria-label="Abrir menú">
-                    <span class="material-symbols-rounded" aria-hidden="true">
-                        menu
-                    </span>
-                </summary>
-
-                <div class="mobile-menu-dropdown">
-
-                    <a href="{{ route('catalogo.publico') }}"
-                        class="{{ $esInicio ? 'active' : '' }}">
-                        Inicio
-                    </a>
-
-                    <a href="{{ $base }}#categorias">
-                        Categorías
-                    </a>
-
-                    <a href="{{ route('publico.catalogo') }}"
-                        class="{{ $enCatalogo ? 'active' : '' }}">
-                        Catálogo
-                    </a>
-
-                    <a href="{{ route('publico.servicio.tecnico') }}"
-                        class="{{ $enServicio ? 'active' : '' }}">
-                        Servicio técnico
-                    </a>
-
-                    <a href="{{ route('publico.nosotros') }}"
-                        class="{{ $enNosotros ? 'active' : '' }}">
-                        Nosotros
-                    </a>
-
-                    <div class="mobile-menu-divider"></div>
-
-                    <a href="{{ route('login') }}" class="mobile-login-link">
-                        Acceso empleados
-                    </a>
-
-                </div>
-
-            </details>
-
-        </nav>
-
-
-        {{-- ISLA DERECHA: ACCIONES --}}
-        <div class="login-island flex items-center justify-center gap-2">
-
+        <div class="site-mainnav-actions">
             <button
                 type="button"
                 id="theme-toggle"
-                class="theme-button"
+                class="site-icon-btn"
                 aria-label="Cambiar tema"
                 title="Cambiar tema">
-                <span id="theme-icon" class="material-symbols-rounded">
-                    dark_mode
-                </span>
+                <span id="theme-icon" class="material-symbols-rounded">dark_mode</span>
             </button>
 
-            <a href="{{ route('login') }}"
-                class="employee-link desktop-employee-link">
-                Acceso empleados
-            </a>
+            <a href="{{ route('login') }}" class="site-staff-link">Acceso empleados</a>
 
+            <details class="site-mobile-menu">
+                <summary class="site-icon-btn" aria-label="Abrir menú">
+                    <span class="material-symbols-rounded">menu</span>
+                </summary>
+
+                <div class="site-mobile-panel">
+                    <a href="{{ route('catalogo.publico') }}" class="{{ $esInicio ? 'active' : '' }}">Inicio</a>
+                    <a href="{{ $base }}#categorias">Categorías</a>
+                    <a href="{{ route('publico.catalogo') }}" class="{{ $enCatalogo ? 'active' : '' }}">Catálogo</a>
+                    <a href="{{ $base }}#servicio">Servicio</a>
+                    <a href="{{ route('publico.servicio.tecnico') }}" class="{{ $enServicio ? 'active' : '' }}">Servicio técnico</a>
+                    <a href="{{ route('publico.nosotros') }}" class="{{ $enNosotros ? 'active' : '' }}">Nosotros</a>
+                    <span class="site-mobile-divider" aria-hidden="true"></span>
+                    <a href="{{ route('login') }}" class="site-mobile-staff">Acceso empleados</a>
+                </div>
+            </details>
         </div>
 
     </div>
+</nav>
 
+<style>
+    .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+    }
 
-    {{-- ESTILOS DEL MENÚ MÓVIL --}}
-    <style>
-        .mobile-navigation {
-            position: relative;
-            flex-shrink: 0;
+    /* ---------- Barra superior ---------- */
+    .site-topbar {
+        position: relative;
+        z-index: 60;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .site-topbar-inner {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 28px;
+        padding: 12px 0;
+    }
+
+    .site-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .site-brand-logo {
+        width: 58px;
+        height: 58px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .site-brand-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+    }
+
+    .site-brand-name {
+        color: var(--text);
+        font-size: 1.18rem;
+        font-weight: 800;
+        letter-spacing: -.035em;
+    }
+
+    .site-brand-sub {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: .6rem;
+        font-weight: 600;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+    }
+
+    .site-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: min(100%, 640px);
+        justify-self: center;
+        padding: 5px 5px 5px 16px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface);
+        transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+
+    .site-search:focus-within {
+        border-color: var(--green);
+        background: var(--bg);
+        box-shadow: 0 0 0 3px rgba(42, 152, 50, .12);
+    }
+
+    .site-search-icon {
+        color: var(--muted);
+        font-size: 21px;
+        pointer-events: none;
+    }
+
+    .site-search input {
+        flex: 1;
+        min-width: 0;
+        height: 42px;
+        border: 0;
+        outline: none;
+        background: transparent;
+        color: var(--text);
+        font-size: .9rem;
+    }
+
+    .site-search input::placeholder {
+        color: var(--muted);
+    }
+
+    .site-search-submit {
+        flex-shrink: 0;
+        min-height: 42px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--green);
+        color: #fff;
+        font-size: .82rem;
+        font-weight: 700;
+        transition: background .2s, transform .2s;
+    }
+
+    .site-search-submit:hover {
+        background: #23822B;
+        transform: translateY(-1px);
+    }
+
+    .site-search-submit:active {
+        transform: scale(.97);
+    }
+
+    .site-quote {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 50px;
+        padding: 0 22px;
+        border-radius: 999px;
+        background: #25D366;
+        color: #fff;
+        font-size: .86rem;
+        font-weight: 800;
+        white-space: nowrap;
+        box-shadow: 0 8px 22px rgba(37, 211, 102, .28);
+        transition: transform .2s, box-shadow .2s, background .2s;
+    }
+
+    .site-quote:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(37, 211, 102, .38);
+    }
+
+    .site-quote:active {
+        transform: scale(.97);
+    }
+
+    /* ---------- Navegación convencional ---------- */
+    .site-mainnav {
+        position: sticky;
+        top: 0;
+        z-index: 90;
+        background: color-mix(in srgb, var(--bg) 88%, transparent);
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        transition: box-shadow .25s, background .25s;
+    }
+
+    .site-mainnav.scrolled {
+        box-shadow: 0 8px 26px rgba(0, 0, 0, .08);
+    }
+
+    .site-mainnav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        min-height: 56px;
+    }
+
+    .site-mainnav-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .site-mainnav-links::-webkit-scrollbar {
+        display: none;
+    }
+
+    .site-nav-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 14px;
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: .82rem;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: color .2s, background .2s;
+    }
+
+    .site-nav-link:hover {
+        color: var(--green);
+        background: var(--surface);
+    }
+
+    .site-nav-link.active {
+        color: var(--green);
+    }
+
+    .site-nav-link.active::after {
+        content: '';
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 6px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--green);
+    }
+
+    .site-mainnav-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .site-icon-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+        transition: background .2s, color .2s;
+    }
+
+    .site-icon-btn:hover {
+        background: var(--surface);
+        color: var(--green);
+    }
+
+    .site-icon-btn .material-symbols-rounded {
+        font-size: 21px;
+    }
+
+    .site-staff-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 16px;
+        border-radius: 999px;
+        background: var(--blue);
+        color: #fff;
+        font-size: .74rem;
+        font-weight: 700;
+        transition: background .2s, transform .2s;
+    }
+
+    .site-staff-link:hover {
+        background: var(--blue-dark);
+        transform: translateY(-1px);
+    }
+
+    /* ---------- Menú móvil ---------- */
+    .site-mobile-menu {
+        display: none;
+        position: relative;
+    }
+
+    .site-mobile-menu > summary {
+        list-style: none;
+        cursor: pointer;
+    }
+
+    .site-mobile-menu > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .site-mobile-panel {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        z-index: 120;
+        display: grid;
+        gap: 3px;
+        width: min(88vw, 320px);
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--bg);
+        box-shadow: var(--shadow);
+    }
+
+    .site-mobile-panel a {
+        display: block;
+        padding: 12px 14px;
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: .88rem;
+        font-weight: 600;
+    }
+
+    .site-mobile-panel a:hover,
+    .site-mobile-panel a.active {
+        background: var(--surface);
+        color: var(--green);
+    }
+
+    .site-mobile-divider {
+        height: 1px;
+        margin: 5px 0;
+        background: var(--border);
+    }
+
+    .site-mobile-panel .site-mobile-staff {
+        color: var(--green);
+        font-weight: 700;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1024px) {
+        .site-topbar-inner {
+            gap: 18px;
         }
 
-        .mobile-navigation>summary {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            list-style: none;
-            cursor: pointer;
+        .site-brand-logo {
+            width: 50px;
+            height: 50px;
         }
 
-        .mobile-navigation>summary::-webkit-details-marker {
+        .site-staff-link {
             display: none;
         }
+    }
 
-        .mobile-menu-dropdown {
-            position: fixed;
-            top: auto;
-            right: auto;
-            left: 50%;
-            transform: translateX(-50%);
-
-            z-index: 9999;
-
-            display: none;
-            flex-direction: column;
-            gap: 4px;
-
-            width: calc(100vw - 32px);
-            max-width: 360px;
-            max-height: 70vh;
-            overflow-y: auto;
-
-            margin-top: 12px;
-            padding: 12px;
-
-            background: var(--color-surface, #ffffff);
-            border: 1px solid var(--color-line, #e5e7eb);
-            border-radius: 16px;
-
-            box-shadow: 0 12px 35px rgb(0 0 0 / 12%);
-        }
-
-        .mobile-navigation[open] .mobile-menu-dropdown {
-            display: flex;
-        }
-
-        .mobile-menu-dropdown a {
-            display: block;
-            width: 100%;
-            padding: 12px 14px;
-
-            border-radius: 10px;
-
-            color: var(--color-ink, #1f2937);
-            font-size: 14px;
-            font-weight: 500;
-            text-align: left;
-            text-decoration: none;
-
-            transition: background-color 180ms ease;
-        }
-
-        .mobile-menu-dropdown a:hover,
-        .mobile-menu-dropdown a.active {
-            background: var(--color-surface-2, #f1f5f9);
-            color: var(--color-brand-green, #2A9832);
-        }
-
-        .mobile-menu-divider {
-            height: 1px;
-            margin: 5px 0;
-            background: var(--color-line, #e5e7eb);
-        }
-
-        .mobile-menu-dropdown .mobile-login-link {
-            color: var(--color-brand-green, #2A9832);
-            font-weight: 700;
-        }
-
-        @media (min-width: 768px) {
-            .mobile-navigation {
-                display: none !important;
-            }
-        }
-
-        @media (max-width: 767px) {
-            .navbar-inner {
-                grid-template-columns: auto 1fr auto !important;
-            }
-
-            .brand-island .brand-subtitle {
-                display: none;
-            }
-
-            .brand-island .brand-name {
-                font-size: 13px;
-            }
-
-            .login-island .desktop-employee-link {
-                display: none !important;
-            }
-
-            .nav-island {
-                justify-self: end;
-            }
-        }
-
-        /* =========================================
-   HEADER: TRES ISLAS INDEPENDIENTES
-========================================= */
-
-        .navbar-inner {
-            display: grid !important;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-            align-items: center;
-            justify-content: initial;
-            gap: 16px;
-        }
-
-        /* Isla izquierda: identidad de EWIFLOR */
-        .brand-island {
-            position: relative;
-            justify-self: start;
-            min-width: 0;
-            display: flex;
-            align-items: center;
-
-            padding: 7px 16px;
-            border: 1px solid var(--border);
-            border-radius: 999px;
-
-            background: var(--nav-bg);
-            box-shadow: var(--shadow);
-
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-
-            pointer-events: auto;
-        }
-
-        .brand-island .brand {
+    @media (max-width: 860px) {
+        .site-topbar-inner {
+            grid-template-columns: minmax(0, 1fr) auto;
             gap: 12px;
+            padding: 10px 0;
         }
 
-        .brand-island .brand-icon {
-            width: 54px;
-            height: 54px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2px;
-            background: transparent;
-        }
-
-        .brand-island .brand-icon img {
-            display: block;
+        .site-search {
+            grid-column: 1 / -1;
+            order: 3;
             width: 100%;
-            height: 100%;
             max-width: none;
-            object-fit: contain;
         }
 
-        /* Isla central: navegación */
-        .nav-island {
-            position: relative;
-            justify-self: center;
-            margin: 0;
-            max-width: 100%;
-            min-width: 0;
+        .site-brand-logo {
+            width: 44px;
+            height: 44px;
         }
 
-        /* Isla derecha: acciones */
-        .login-island {
-            position: relative;
-            right: auto;
-            justify-self: end;
-
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            pointer-events: auto;
+        .site-brand-name {
+            font-size: 1.02rem;
         }
 
-        /* =========================================
-   RESPONSIVE
-========================================= */
+        .site-quote {
+            min-height: 44px;
+            padding: 0 16px;
+            font-size: .8rem;
+        }
+    }
 
-        @media (max-width: 1050px) and (min-width: 761px) {
-            .navbar-inner {
-                gap: 8px;
-            }
-
-            .brand-island {
-                padding-inline: 10px;
-            }
-
-            .brand-island .brand {
-                gap: 7px;
-            }
-
-            .brand-island .brand-icon {
-                width: 44px;
-                height: 44px;
-            }
-
-            .nav-island {
-                gap: 6px;
-                padding-inline: 8px;
-            }
-
-            .nav-link {
-                padding-inline: 7px;
-                font-size: .68rem;
-            }
-
-            .employee-link {
-                padding-inline: 10px;
-                font-size: .68rem;
-            }
+    @media (max-width: 767px) {
+        .site-mainnav-links {
+            display: none;
         }
 
-        @media (max-width: 760px) {
-            .navbar-inner {
-                width: calc(100% - 24px);
-                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-                gap: 6px;
-            }
-
-            .brand-island {
-                justify-self: start;
-                padding: 5px 9px;
-            }
-
-            .brand-island .brand-icon {
-                width: 38px;
-                height: 38px;
-            }
-
-            .brand-island .brand {
-                gap: 7px;
-            }
-
-            .brand-island .brand-name {
-                font-size: .82rem;
-            }
-
-            .brand-island .brand-subtitle {
-                font-size: .48rem;
-            }
-
-            .nav-island {
-                justify-self: center;
-                width: auto;
-                max-width: none;
-                padding: 4px;
-            }
-
-            .login-island {
-                position: relative;
-                justify-self: end;
-                padding: 3px;
-            }
-
-            .login-island .desktop-employee-link {
-                display: none !important;
-            }
+        .site-mainnav-inner {
+            justify-content: flex-end;
         }
 
-        @media (max-width: 380px) {
-            .navbar-inner {
-                width: calc(100% - 16px);
-                gap: 4px;
-            }
-
-            .brand-island {
-                padding-inline: 6px;
-            }
-
-            .brand-island .brand-icon {
-                width: 32px;
-                height: 32px;
-            }
-
-            .brand-island .brand-name {
-                font-size: .74rem;
-            }
-
-            .brand-island .brand-subtitle {
-                font-size: .43rem;
-            }
+        .site-mobile-menu {
+            display: block;
         }
-    </style>
+    }
 
-</header>
+    @media (max-width: 430px) {
+        .site-brand-sub {
+            display: none;
+        }
+
+        .site-search {
+            padding-left: 12px;
+        }
+
+        .site-search-submit {
+            padding: 0 14px;
+        }
+    }
+</style>
