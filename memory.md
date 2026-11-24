@@ -1273,8 +1273,8 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - Los parches `A-*.sql` crean tablas, por eso se cargan como `ewiflor_owner`: de otro modo no heredan los grants de `v5-MVP.sql`.
 - `postgres` local no autenticó con la clave probada; el script de CI no se ejecutó de extremo a extremo en Windows, pero sus pasos equivalentes sí se validaron con `ewiflor_migrator` y las suites pasan.
 - `composer-setup.php` sigue en disco pero ignorado; no afecta al checkout de CI.
-- El commit `6a17e71` (OTP por correo) quedó dentro de la oleada 4 como extra; **pendiente de confirmación del usuario** sobre conservarlo o revertirlo.
-- No se abordó la extracción de las ~2.800 líneas de CSS inline del layout público: merece un cambio separado para no mezclarla con este commit.
+- El commit `6a17e71` (OTP por correo) quedó dentro de la oleada 4 como extra; el usuario confirmó **conservarlo** (ADR-007 y sus 8 tests se mantienen).
+- No se abordó la extracción de las ~2.800 líneas de CSS inline del layout público: el usuario eligió dejarla para un cambio separado, para no mezclarla con esta oleada.
 - **Sin push**. `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
 
 
