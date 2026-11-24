@@ -295,18 +295,24 @@ class SolicitudService
     }
 
     /**
-     * Busca un cliente por nombre y teléfono normalizados.
-     * Devuelve null si no existe (bloqueo por diseño).
+     * Busca un cliente por nombre, teléfono y (opcionalmente) correo normalizados.
+     * Devuelve null si no existe (bloqueo por diseño). El correo es obligatorio
+     * en la identificación pública (ADR-007) y opcional en los flujos internos.
      */
-    public function buscarCliente(string $nombre, string $telefono): ?Cliente
+    public function buscarCliente(string $nombre, string $telefono, ?string $correo = null): ?Cliente
     {
         $nombreNorm = trim(mb_strtolower($nombre));
         $telefonoNorm = preg_replace('/\D+/', '', $telefono);
 
-        return Cliente::query()
+        $query = Cliente::query()
             ->whereRaw('LOWER(TRIM(nombre)) = ?', [$nombreNorm])
-            ->whereRaw('REGEXP_REPLACE(telefono, \'\D+\', \'\', \'g\') = ?', [$telefonoNorm])
-            ->first();
+            ->whereRaw('REGEXP_REPLACE(telefono, \'\D+\', \'\', \'g\') = ?', [$telefonoNorm]);
+
+        if ($correo !== null && trim($correo) !== '') {
+            $query->whereRaw('LOWER(TRIM(correo)) = ?', [trim(mb_strtolower($correo))]);
+        }
+
+        return $query->first();
     }
 
     /**

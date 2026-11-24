@@ -1223,4 +1223,27 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - `DashboardStatsTrait` usa `new SolicitudService()` en dos puntos; si el servicio crece con dependencias, conviene inyectarlo.
 - **Sin push**. `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
 
+---
+
+## 2026-11-24 — Oleada 4: OTP por correo en la identificación pública (ADR-007)
+
+### Qué se hizo
+1. **Decisión del usuario**: canal = correo (`cliente.correo`, `MAIL_MAILER=log` en desarrollo; sin proveedor nuevo); si el cliente no tiene correo, debe indicar el registrado en el formulario. No hay acceso sin OTP.
+2. **Flujo en dos pasos**: `validar()` (ahora `IdentificarClienteRequest`, con `correo`) solo emite y envía el código; `verificarCodigo()` (`VerificarCodigoRequest`) lo canjea por la sesión. Nuevas rutas `GET/POST /servicio-tecnico/verificar` y `POST /servicio-tecnico/reenviar`, con `throttle:10,1`, `10,1` y `3,1` respectivamente. Las estáticas quedan antes de `/{solicitud}`.
+3. **Estado pendiente**: `Modules/ServicioTecnico/Support/VerificacionOtp.php` guarda en sesión datos del cliente + hash del código (6 dígitos), TTL de 10 min y 5 intentos; expirar/agotar limpia el estado. `Hash::check`, nunca código en claro en la sesión ni en los flashes. `regenerate()` antes de `SesionCliente::establecer()`. `salir()` limpia también el pendiente.
+4. **Correo y vistas**: `CodigoVerificacion` (Mailable) + `Views/publico/emails/codigo.blade.php`; nueva `verificar.blade.php` con reenvío y corrección de datos; `identificar.blade.php` pide correo y muestra errores de validación. `SolicitudService::buscarCliente()` acepta correo opcional (los flujos internos y `Modules\Publico` siguen igual).
+5. **ADR-007** creado; `.env.example` documenta que el OTP usa el mailer.
+
+### Verificación
+- `php -l` y Pint `--test` OK en los 8 archivos PHP tocados; `view:cache` OK; `route:list --path=servicio-tecnico` OK (20 rutas, sin colisiones).
+- `composer test:pg` → **OK (33 tests, 139 aserciones)**: nuevo `VerificacionOtpPublicaTest` (8 tests) cubre emisión sin sesión, acierto, error con contador de intentos, expiración, correo no coincidente, correo obligatorio, reenvío y middleware.
+- Sin cambios en SQL ni en parches; la BD de prueba solo recibió fixtures dentro de transacciones revertidas.
+
+### Decisiones y gotchas
+- El `Hash::make()` del OTP usa el driver por defecto; con `BCRYPT_ROUNDS=4` en `phpunit.pg.xml` los tests son rápidos.
+- `buscarCliente()` dejó el correo como parámetro **opcional** porque lo llaman también `SolicitudController::guardarInterna()` y `Modules\Publico\Controllers\PublicoController`; hacerlo obligatorio habría roto esos flujos.
+- En `Mail::assertSent()` con closure, capturar el código requiere `use (&$codigos, ...)`: los arrays se copian al cerrar.
+- Se corrigió el doble escape del saludo (`e($cliente->nombre)` dentro de un flash que Blade vuelve a escapar).
+- **Sin push**. `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
+
 

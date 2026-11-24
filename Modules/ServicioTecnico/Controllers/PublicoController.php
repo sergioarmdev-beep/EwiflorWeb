@@ -4,18 +4,23 @@ namespace Modules\ServicioTecnico\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Modules\Clientes\Models\Cliente;
+use Illuminate\Support\Facades\Mail;
 use Modules\Garantias\Models\SolicitudServicio;
+use Modules\ServicioTecnico\Mail\CodigoVerificacion;
+use Modules\ServicioTecnico\Requests\IdentificarClienteRequest;
 use Modules\ServicioTecnico\Requests\RegistrarSolicitudRequest;
+use Modules\ServicioTecnico\Requests\VerificarCodigoRequest;
 use Modules\ServicioTecnico\Services\ConsultaPublicaService;
 use Modules\ServicioTecnico\Services\SolicitudService;
 use Modules\ServicioTecnico\Support\SesionCliente;
+use Modules\ServicioTecnico\Support\VerificacionOtp;
 
 class PublicoController extends Controller
 {
     public function __construct(
         private ConsultaPublicaService $consulta,
         private SolicitudService $solicitudes,
+        private VerificacionOtp $otp,
     ) {}
 
     public function identificar()
@@ -23,25 +28,112 @@ class PublicoController extends Controller
         return view('serviciotecnico::publico.identificar');
     }
 
-    public function validar(Request $request)
+    /**
+     * Paso 1: valida los datos y envía el OTP. Todavía no abre la sesión.
+     */
+    public function validar(IdentificarClienteRequest $request)
     {
-        $validado = $request->validate([
-            'nombre' => ['required', 'string', 'min:2', 'max:100'],
-            'telefono' => ['required', 'string', 'min:7', 'max:20'],
-        ]);
+        $validado = $request->validated();
 
-        $cliente = $this->solicitudes->buscarCliente($validado['nombre'], $validado['telefono']);
+        $cliente = $this->solicitudes->buscarCliente(
+            $validado['nombre'],
+            $validado['telefono'],
+            $validado['correo']
+        );
 
         if ($cliente === null) {
             return back()
-                ->withInput()
-                ->with('error', 'No se encontró un cliente con ese nombre y número de celular. Asegúrate de estar registrado con compras previas.');
+                ->with('error', 'No se encontró un cliente con esos datos. Verifica tu nombre, celular y correo, o comunícate con Ewiflor.');
         }
 
-        SesionCliente::establecer($cliente->id_cliente, $cliente->nombre, $cliente->telefono);
+        $codigo = VerificacionOtp::generarCodigo();
+        $this->otp->iniciar(
+            $cliente->id_cliente,
+            $cliente->nombre,
+            $cliente->telefono,
+            $validado['correo'],
+            $codigo
+        );
 
-        return redirect()->route('serviciotecnico.publico.panel')
-            ->with('success', 'Bienvenido, '.e($cliente->nombre).'. Aquí puedes ver tus compras y solicitar servicio técnico.');
+        Mail::to($validado['correo'])->send(new CodigoVerificacion($codigo, $cliente->nombre));
+
+        return redirect()->route('serviciotecnico.publico.verificar')
+            ->with('success', 'Enviamos un código de 6 dígitos a '.$validado['correo'].'.');
+    }
+
+    public function verificar()
+    {
+        if (SesionCliente::obtener() !== null) {
+            return redirect()->route('serviciotecnico.publico.panel');
+        }
+
+        $pendiente = $this->otp->obtener();
+
+        if ($pendiente === null) {
+            return redirect()->route('serviciotecnico.publico.identificar')
+                ->with('error', 'Inicia la identificación para recibir un código de verificación.');
+        }
+
+        return view('serviciotecnico::publico.verificar', ['correo' => $pendiente['correo']]);
+    }
+
+    /**
+     * Paso 2: canjea el OTP por la sesión del cliente.
+     */
+    public function verificarCodigo(VerificarCodigoRequest $request)
+    {
+        $pendiente = $this->otp->obtener();
+
+        if ($pendiente === null) {
+            return redirect()->route('serviciotecnico.publico.identificar')
+                ->with('error', 'El código venció o ya fue usado. Vuelve a identificarte.');
+        }
+
+        $resultado = $this->otp->verificar($request->validated()['codigo']);
+
+        if ($resultado['estado'] === VerificacionOtp::ESTADO_OK) {
+            $request->session()->regenerate();
+            SesionCliente::establecer(
+                (int) $pendiente['id_cliente'],
+                $pendiente['nombre'],
+                $pendiente['telefono']
+            );
+            $this->otp->limpiar();
+
+            return redirect()->route('serviciotecnico.publico.panel')
+                ->with('success', 'Bienvenido, '.$pendiente['nombre'].'. Aquí puedes ver tus compras y solicitar servicio técnico.');
+        }
+
+        if ($resultado['estado'] === VerificacionOtp::ESTADO_INCORRECTO) {
+            return back()->with('error', 'El código no es correcto. Te quedan '.$resultado['intentos_restantes'].' intentos.');
+        }
+
+        return redirect()->route('serviciotecnico.publico.identificar')
+            ->with('error', 'El código venció o agotaste los intentos. Vuelve a identificarte para recibir uno nuevo.');
+    }
+
+    public function reenviar()
+    {
+        $pendiente = $this->otp->obtener();
+
+        if ($pendiente === null) {
+            return redirect()->route('serviciotecnico.publico.identificar')
+                ->with('error', 'Inicia la identificación para recibir un código de verificación.');
+        }
+
+        $codigo = VerificacionOtp::generarCodigo();
+        $this->otp->iniciar(
+            $pendiente['id_cliente'],
+            $pendiente['nombre'],
+            $pendiente['telefono'],
+            $pendiente['correo'],
+            $codigo
+        );
+
+        Mail::to($pendiente['correo'])->send(new CodigoVerificacion($codigo, $pendiente['nombre']));
+
+        return redirect()->route('serviciotecnico.publico.verificar')
+            ->with('success', 'Enviamos un nuevo código a '.$pendiente['correo'].'.');
     }
 
     public function panel()
@@ -117,6 +209,7 @@ class PublicoController extends Controller
     public function salir(Request $request)
     {
         SesionCliente::limpiar();
+        $this->otp->limpiar();
 
         return redirect('/')->with('success', 'Sesión de cliente cerrada.');
     }

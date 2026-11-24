@@ -13,6 +13,15 @@ Route::middleware('web')->prefix('servicio-tecnico')->name('serviciotecnico.publ
         ->middleware('throttle:10,1')
         ->name('validar');
 
+    // ADR-007: el OTP se canjea por la sesión del cliente en un segundo paso.
+    Route::get('/verificar', [PublicoController::class, 'verificar'])->name('verificar');
+    Route::post('/verificar', [PublicoController::class, 'verificarCodigo'])
+        ->middleware('throttle:10,1')
+        ->name('verificar.codigo');
+    Route::post('/reenviar', [PublicoController::class, 'reenviar'])
+        ->middleware('throttle:3,1')
+        ->name('reenviar');
+
     Route::middleware('sesion.cliente.publica')->group(function () {
         Route::get('/panel', [PublicoController::class, 'panel'])->name('panel');
         Route::get('/solicitar', [PublicoController::class, 'solicitar'])->name('solicitar');
