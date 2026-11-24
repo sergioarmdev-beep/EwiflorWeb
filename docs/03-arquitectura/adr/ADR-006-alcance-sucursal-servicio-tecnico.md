@@ -84,4 +84,4 @@ Derivar la sucursal en cada consulta sin columna nueva (join a garantía/venta/u
 - [x] Aprobación del usuario.
 - [x] Parche A-04 + migración y backfill (BD de desarrollo: 16 filas, 9 con sucursal, 7 NULL; columna, índice y FK verificados).
 - [x] Aplicación de la regla en servicios, controladores y vistas (creación, detalle, bandeja, gestión, técnicos, cierre, cancelación, garantías por vencer y `ClienteController::show`).
-- [ ] Verificación con BD de prueba (tests de integración, ADR-005).
+- [x] Verificación con BD de prueba: `AlcanceSolicitudTest` incluido en la suite PG (ADR-005), 9/9 tests OK.

@@ -1,9 +1,9 @@
 # ADR-005 — Estrategia de pruebas automatizadas sobre PostgreSQL
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado e implementado
 - **Fecha:** 2026-11-24
 - **Última revisión:** 2026-11-24
-- **Decisores:** Equipo EwiflorWeb + usuario (pendiente de aceptación)
+- **Decisores:** Equipo EwiflorWeb + usuario
 - **Módulo afectado:** `tests/`, `phpunit.xml`, `composer.json`
 - **Motor de base de datos:** PostgreSQL
 
@@ -69,5 +69,12 @@ Una vez aprobada la BD, cubrir como mínimo:
 
 - [x] Definición de la estrategia (este ADR).
 - [x] `phpunit.pg.xml`, `Tests\Integration\PostgresTestCase` y script `test:pg` preparados.
-- [ ] Crear y cargar `Ewiflor_DB_MVP_test`: **bloqueado** aunque el usuario lo aprobó. El rol migrador no tiene `CREATEDB` y ninguna contraseña disponible en `.env` permite conectar como `postgres`, `ADMIN` o `cloud`. Requiere que un administrador conceda `CREATEDB` a `ewiflor_migrator` o proporcione una credencial privilegiada. No se creó BD ni se cargó SQL; `Ewiflor_DB_MVP` quedó idéntica (16 solicitudes, 45 objetos `public` antes y después).
-- [ ] Escribir los tests de la sección 5 (depende del punto anterior).
+- [x] Crear y cargar `Ewiflor_DB_MVP_test`. El usuario autorizó usar la credencial local de `postgres`; `ewiflor_migrator` sigue sin `CREATEDB`, pero eso ya no bloquea la creación. Se cargó `v5-MVP.sql` + configuración + parches `A-01`…`A-04` y las 19 migraciones Laravel. Verificación: 37 tablas, 8 vistas, `solicitud_servicio.id_sucursal`, `idx_solicitud_sucursal`, funciones críticas y grants de `ewiflor_app`. `Ewiflor_DB_MVP` quedó idéntica (16 solicitudes antes y después).
+- [x] Escribir los tests de la sección 5: `IntentoAccesoTest`, `RegistrarVentaTest`, `ConvertirCotizacionTest` y `AlcanceSolicitudTest`. `composer test:pg` → **OK (9 tests, 45 assertions)**; rollback verificado (BD de prueba queda sin filas de negocio).
+
+### Notas de aprovisionamiento
+
+- El nombre de la BD debe ir entre comillas en `CREATE DATABASE`; sin ellas PostgreSQL lo crea en minúsculas (`ewiflor_db_mvp_test`). La tentativa fallida se eliminó antes de crear la BD definitiva; no se cargó SQL en ella.
+- `2026_11_18_000002_id_comision_auto_incremental` no puede ejecutarse sobre un esquema fresco: la migración `...crear_tabla_comisiones` ya crea `id_comision` con `nextval(...)`. Se verificó el efecto y se marcó como aplicada en la BD de prueba (no se modificó la migración).
+- Los tests crean sus propios datos dentro de la transacción; la BD de prueba solo tiene el usuario `admin` del SQL canónico.
+- `composer test:pg` debe ejecutarse con PHP 8.5: `C:\tools\php85\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar test:pg`. Con `composer.bat` del PATH se usaría XAMPP 8.2.

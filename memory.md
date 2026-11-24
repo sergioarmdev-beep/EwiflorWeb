@@ -1189,4 +1189,13 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
 - Sin commit de la oleada 2 todavía.
 
+### Seguimiento (mismo día, tras autorizar credencial local de `postgres`)
+- El usuario autorizó usar la credencial por defecto de `postgres` solo en local. Se creó **`Ewiflor_DB_MVP_test`** con nombre exacto (entre comillas; sin ellas PostgreSQL lo creó en minúsculas y la primera tentativa se descartó antes de cargar nada).
+- Cargado en orden: `v5-MVP.sql`, `v5-MVP-config.sql`, parches `A-01`…`A-04` y las 19 migraciones Laravel (`DB_MIGRATOR_DATABASE=Ewiflor_DB_MVP_test`, sin tocar `.env`).
+- Gotcha: `2026_11_18_000002_id_comision_auto_incremental` falla en esquema fresco porque `...crear_tabla_comisiones` ya crea `id_comision` con `nextval(...)`. Verificado el efecto y marcada como aplicada en la BD de prueba; no se cambió la migración.
+- Verificación: 37 tablas, 8 vistas, columna/índice/FK de `id_sucursal`, funciones críticas (incl. `convertir_cotizacion_a_venta` con `garantia_meses`), grants de `ewiflor_app`. `Ewiflor_DB_MVP` sigue con 16 solicitudes: intacta.
+- Tests nuevos: `tests/Integration/{IntentoAccesoTest,RegistrarVentaTest,ConvertirCotizacionTest,AlcanceSolicitudTest}.php`. Fixtures en `PostgresTestCase` con `insertGetId($datos, 'pk')` (las PK no se llaman `id`). `composer test:pg` → **OK (9 tests, 45 assertions)**; rollback confirmado (BD de prueba queda con 0 filas de negocio).
+- ADR-005 pasó a **Aceptado e implementado**; ADR-006 ya estaba Aceptada.
+- Ejecutar siempre con `C:\tools\php85\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar test:pg` (el `composer.bat` del PATH usa XAMPP 8.2).
+
 
