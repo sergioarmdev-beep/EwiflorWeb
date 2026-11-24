@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Clientes\Models\Cliente;
 use Modules\Clientes\Requests\StoreClienteRequest;
 use Modules\Clientes\Requests\UpdateClienteRequest;
+use Modules\ServicioTecnico\Services\SolicitudService;
 use Modules\Ventas\Models\Venta;
 
 class ClienteController extends Controller
@@ -88,7 +89,7 @@ class ClienteController extends Controller
             ->with('ok', 'Cliente registrado correctamente.');
     }
 
-    public function show(Request $request, Cliente $cliente)
+    public function show(Request $request, Cliente $cliente, SolicitudService $solicitudes)
     {
         $user = $request->user();
 
@@ -211,8 +212,30 @@ class ClienteController extends Controller
             fn ($g) => Carbon::parse($g->fecha_vencimiento)->diffInDays(now()) <= 7
         )->count();
 
-        // Solicitudes de servicio técnico del cliente
-        $solicitudesServicio = $cliente->solicitudesServicio()
+        // Solicitudes de servicio técnico del cliente (ADR-006): el listado
+        // ya revela descripción y estado, así que aplica el mismo alcance
+        // que el detalle. GERENTE ve todo; el resto, solo su sucursal, y
+        // VENDEDOR además solo las que él registró.
+        $querySolicitudes = $cliente->solicitudesServicio();
+
+        if ($user !== null) {
+            $solicitudes->aplicarAlcanceVisible(
+                $querySolicitudes,
+                $user,
+                'solicitud_servicio.id_sucursal'
+            );
+
+            if ($user->nombre_rol === 'VENDEDOR') {
+                $querySolicitudes->where(
+                    'solicitud_servicio.id_usuario_registra',
+                    $user->id_usuario
+                );
+            }
+        } else {
+            $querySolicitudes->whereRaw('1 = 0');
+        }
+
+        $solicitudesServicio = $querySolicitudes
             ->with('tecnico')
             ->orderByDesc('fecha_solicitud')
             ->limit(10)

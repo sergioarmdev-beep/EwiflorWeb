@@ -49,6 +49,10 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "test:pg": [
+            "@php artisan config:clear --ansi",
+            "@php vendor/phpunit/phpunit/phpunit -c phpunit.pg.xml"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

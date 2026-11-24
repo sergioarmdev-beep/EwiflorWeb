@@ -24,7 +24,7 @@ class SolicitudController extends Controller
     public function bandeja(Request $request)
     {
         $tecnico = $request->user();
-        $solicitudes = $this->solicitudes->pendientesParaTecnico($tecnico->id_usuario);
+        $solicitudes = $this->solicitudes->pendientesParaTecnico($tecnico);
 
         return view('serviciotecnico::solicitudes.bandeja', [
             'tecnico' => $tecnico,
@@ -79,7 +79,7 @@ class SolicitudController extends Controller
      */
     public function nueva(Request $request)
     {
-        $tecnicos = $this->solicitudes->tecnicos();
+        $tecnicos = $this->solicitudes->tecnicos($request->user());
 
         return view('serviciotecnico::solicitudes.nueva', [
             'tecnicos' => $tecnicos,
@@ -119,7 +119,7 @@ class SolicitudController extends Controller
     public function garantiasPorVencer(Request $request)
     {
         $dias = (int) $request->get('dias', 30);
-        $garantias = $this->consultaPublica->garantiasPorVencer($dias);
+        $garantias = $this->consultaPublica->garantiasPorVencer($request->user(), $dias);
 
         return view('serviciotecnico::solicitudes.garantias-por-vencer', [
             'garantias' => $garantias,
@@ -133,8 +133,8 @@ class SolicitudController extends Controller
     public function gestion(Request $request)
     {
         $filtros = $request->only(['estado', 'tecnico', 'en_garantia', 'desde', 'hasta']);
-        $solicitudes = $this->solicitudes->todas($filtros);
-        $tecnicos = $this->solicitudes->tecnicos();
+        $solicitudes = $this->solicitudes->todas($request->user(), $filtros);
+        $tecnicos = $this->solicitudes->tecnicos($request->user());
 
         return view('serviciotecnico::solicitudes.gestion', [
             'solicitudes' => $solicitudes,

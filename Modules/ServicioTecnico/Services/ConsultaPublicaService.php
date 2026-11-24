@@ -3,6 +3,7 @@
 namespace Modules\ServicioTecnico\Services;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
 
 class ConsultaPublicaService
@@ -75,14 +76,23 @@ class ConsultaPublicaService
      * Garantías vigentes que vencen dentro de los próximos $dias días.
      * Usa la vista v_garantia_vigente (ya calcula fecha_vencimiento y vigente).
      */
-    public function garantiasPorVencer(int $dias = 30): array
+    public function garantiasPorVencer(User $user, int $dias = 30): array
     {
-        return DB::table('v_garantia_vigente as gv')
+        $query = DB::table('v_garantia_vigente as gv')
             ->join('venta as v', 'v.id_venta', '=', 'gv.id_venta')
             ->join('cliente as c', 'c.id_cliente', '=', 'v.id_cliente')
             ->where('gv.vigente', true)
             ->where('gv.fecha_vencimiento', '>=', now()->startOfDay())
-            ->where('gv.fecha_vencimiento', '<=', now()->startOfDay()->addDays($dias))
+            ->where('gv.fecha_vencimiento', '<=', now()->startOfDay()->addDays($dias));
+
+        // ADR-006: GERENTE ve todas; el resto solo su sucursal (fail-closed).
+        if ($user->nombre_rol !== 'GERENTE') {
+            $user->id_sucursal === null
+                ? $query->whereRaw('1 = 0')
+                : $query->where('v.id_sucursal', (int) $user->id_sucursal);
+        }
+
+        return $query
             ->orderBy('gv.fecha_vencimiento')
             ->get([
                 'gv.id_garantia',

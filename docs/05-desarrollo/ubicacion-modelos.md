@@ -15,7 +15,7 @@ Nunca se duplica un modelo.
 | Tabla PostgreSQL         | Modelo                  | Módulo dueño | Consumido por                             |
 | ------------------------ | ----------------------- | ------------ | ----------------------------------------- |
 | `usuario`                | `User`                  | Auth         | todos                                     |
-| `sucursal`               | `Sucursal`              | Inventario\* | Auth, Ventas, Cotizaciones                |
+| `sucursal`               | `Sucursal`              | Inventario   | Auth, Ventas, Cotizaciones, Sucursales    |
 | `almacen`                | `Almacen`               | Inventario   | Ventas, Precios                           |
 | `existencia`             | `Existencia`            | Inventario   | Ventas, Precios                           |
 | `movimiento_inventario`  | `Movimiento`            | Inventario   | Ventas (cancelación)                      |
@@ -33,16 +33,24 @@ Nunca se duplica un modelo.
 | `reserva`                | `Reserva`               | Ventas       | —                                         |
 | `comprobante`            | `Comprobante`           | Ventas       | —                                         |
 | `garantia`               | `Garantia`              | Garantias    | Ventas (consulta), Solicitudes            |
-| `solicitud_servicio`     | `SolicitudServicio`     | Garantias    | —                                         |
+| `solicitud_servicio`     | `SolicitudServicio`     | Garantias    | ServicioTecnico, Clientes, Dashboard, Sistema |
 | `auditoria`              | `Auditoria`             | Sistema      | —                                         |
 | `parametro_sistema`      | `ParametroSistema`      | Sistema      | todos los que lean parámetros             |
 | `permiso`, `rol_permiso` | `Permiso`, `RolPermiso` | Auth         | —                                         |
 | `promocion`              | `Promocion`             | Promociones  | Ventas, Cotizaciones, Publico, Catalogo   |
 | `promocion_variante`     | `PromocionVariante`     | Promociones  | Catalogo (variantes.promociones)          |
 | `combo_componente`       | `ComboComponente`       | Promociones  | Catalogo (Producto::componentesCombo)     |
+| `categoria`              | `Categoria`             | Catalogo     | Publico                                   |
+| `notificacion`           | `Notificacion`          | Auth         | layout global (`layouts/app.blade.php`)   |
+| `solicitud_restablecimiento` | `SolicitudRestablecimiento` | Auth    | Auth (ADR-004)                            |
+| `comision`               | `Comision`              | Comisiones   | —                                         |
 
-\* `Sucursal` vive temporalmente en `Modules/Auth` hasta que Dev 2 cree el
-módulo Inventario. Ver sección 3.
+`intento_acceso` no tiene modelo propio: se escribe y consulta solo desde
+funciones PostgreSQL (`fn_registrar_intento_acceso`, `fn_desbloquear_usuario`).
+
+`Sucursal` vive en `Modules/Inventario/Models/Sucursal.php`. El helper
+`Modules/Sucursales\Support\AlcanceDocumentos` importa ese modelo; no existe
+un modelo `Sucursal` en `Modules/Auth`.
 
 ---
 

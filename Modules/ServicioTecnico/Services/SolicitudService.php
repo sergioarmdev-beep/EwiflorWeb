@@ -28,6 +28,7 @@ class SolicitudService
                 'estado' => 'PENDIENTE',
                 'origen' => 'PUBLICO',
                 'id_garantia' => $data['id_garantia'] ?? null,
+                'id_sucursal' => $this->sucursalParaPublica($idCliente, $data['id_garantia'] ?? null),
             ]);
 
             return $solicitud->fresh();
@@ -39,7 +40,13 @@ class SolicitudService
      */
     public function crearInterna(int $idCliente, User $registra, array $data): SolicitudServicio
     {
-        return DB::transaction(function () use ($idCliente, $registra, $data) {
+        $idSucursal = $this->sucursalDelUsuario($registra);
+
+        if ($idSucursal === null) {
+            throw new BusinessRuleException('Tu usuario no tiene sucursal asignada: no puedes registrar solicitudes.');
+        }
+
+        return DB::transaction(function () use ($idCliente, $registra, $data, $idSucursal) {
             $solicitud = SolicitudServicio::create([
                 'id_cliente' => $idCliente,
                 'id_usuario_registra' => $registra->id_usuario,
@@ -49,10 +56,91 @@ class SolicitudService
                 'estado' => 'PENDIENTE',
                 'origen' => 'INTERNO',
                 'id_garantia' => $data['id_garantia'] ?? null,
+                'id_sucursal' => $idSucursal,
             ]);
 
             return $solicitud->fresh();
         });
+    }
+
+    /**
+     * Sucursal de una solicitud pública (ADR-006): la de la venta de la
+     * garantía o, si no hay garantía, la de la última venta del cliente.
+     * Sin ventas queda NULL: solo GERENTE podrá verla (fail-closed).
+     */
+    private function sucursalParaPublica(int $idCliente, ?int $idGarantia): ?int
+    {
+        if ($idGarantia !== null) {
+            $sucursal = DB::table('garantia as g')
+                ->join('detalle_venta as dv', 'dv.id_detalle_venta', '=', 'g.id_detalle_venta')
+                ->join('venta as v', 'v.id_venta', '=', 'dv.id_venta')
+                ->where('g.id_garantia', $idGarantia)
+                ->where('v.id_cliente', $idCliente)
+                ->value('v.id_sucursal');
+
+            if ($sucursal !== null) {
+                return (int) $sucursal;
+            }
+        }
+
+        $ultima = DB::table('venta')
+            ->where('id_cliente', $idCliente)
+            ->orderByDesc('fecha_hora')
+            ->orderByDesc('id_venta')
+            ->value('id_sucursal');
+
+        return $ultima !== null ? (int) $ultima : null;
+    }
+
+    public function esGerente(User $user): bool
+    {
+        return $user->nombre_rol === 'GERENTE';
+    }
+
+    public function sucursalDelUsuario(User $user): ?int
+    {
+        return $user->id_sucursal ? (int) $user->id_sucursal : null;
+    }
+
+    public function sucursalDeSolicitud(SolicitudServicio $solicitud): ?int
+    {
+        return $solicitud->id_sucursal !== null ? (int) $solicitud->id_sucursal : null;
+    }
+
+    /**
+     * GERENTE opera en todas; el resto solo en su sucursal.
+     * Sin sucursal (en cualquiera de los dos lados) → sin acceso.
+     */
+    public function puedeGestionar(User $user, ?int $idSucursal): bool
+    {
+        if ($this->esGerente($user)) {
+            return true;
+        }
+
+        $sucursal = $this->sucursalDelUsuario($user);
+
+        return $idSucursal !== null && $sucursal !== null && $sucursal === $idSucursal;
+    }
+
+    /**
+     * Aplica el alcance por sucursal a un query de solicitudes.
+     * Sin sucursal asignada se fuerza un conjunto vacío (fail-closed).
+     */
+    public function aplicarAlcanceVisible($query, User $user, string $columna): void
+    {
+        if ($this->esGerente($user)) {
+            return;
+        }
+
+        $sucursal = $this->sucursalDelUsuario($user);
+
+        if ($sucursal === null) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where($columna, $sucursal);
     }
 
     /**
@@ -64,6 +152,11 @@ class SolicitudService
      */
     public function aceptar(SolicitudServicio $solicitud, User $tecnico): SolicitudServicio
     {
+        if ($tecnico->nombre_rol !== 'SERVICIO_TECNICO'
+            || ! $this->puedeGestionar($tecnico, $this->sucursalDeSolicitud($solicitud))) {
+            throw new BusinessRuleException('No puedes aceptar encargos de otra sucursal.');
+        }
+
         if ($solicitud->estado !== 'PENDIENTE') {
             throw new BusinessRuleException('Esta solicitud ya fue atendida.');
         }
@@ -112,6 +205,10 @@ class SolicitudService
             throw new BusinessRuleException('No se puede cerrar una solicitud en estado: '.$solicitud->estado);
         }
 
+        if (! $this->puedeGestionar($user, $this->sucursalDeSolicitud($solicitud))) {
+            throw new BusinessRuleException('No puedes cerrar solicitudes de otra sucursal.');
+        }
+
         $rol = $user->nombre_rol;
         if ($rol === 'SERVICIO_TECNICO' && $solicitud->id_tecnico !== $user->id_usuario) {
             throw new BusinessRuleException('Solo puedes cerrar solicitudes que te hayan sido asignadas.');
@@ -129,21 +226,22 @@ class SolicitudService
     }
 
     /**
-     * ¿Puede este usuario consultar el detalle de la solicitud?
+     * ¿Puede este usuario consultar el detalle de la solicitud? (ADR-006)
      *
-     * - GERENTE/ADMINISTRADOR: gestión global del módulo (coherente con
-     *   `gestion()` y `todas()`). La restricción por sucursal queda pendiente
-     *   de la ADR de alcance de ADMIN.
-     * - SERVICIO_TECNICO: solo las asignadas a él; también puede ver las
-     *   PENDIENTE sin asignar para aceptarlas desde la bandeja.
-     * - VENDEDOR: solo las que él registró.
-     * - Cualquier otro rol: sin acceso (fail-closed).
+     * GERENTE ve todo; el resto debe compartir la sucursal de la solicitud:
+     * ADMINISTRADOR ve todas las de su sucursal, VENDEDOR solo las que él
+     * registró y SERVICIO_TECNICO las asignadas a él o PENDIENTE sin asignar.
+     * Sin sucursal en el usuario o en la solicitud → sin acceso (fail-closed).
      */
     public function visiblePara(User $user, SolicitudServicio $solicitud): bool
     {
+        if (! $this->puedeGestionar($user, $this->sucursalDeSolicitud($solicitud))) {
+            return false;
+        }
+
         $rol = $user->nombre_rol;
 
-        if (in_array($rol, ['GERENTE', 'ADMINISTRADOR'], true)) {
+        if ($rol === 'GERENTE' || $rol === 'ADMINISTRADOR') {
             return true;
         }
 
@@ -183,11 +281,15 @@ class SolicitudService
      * Devuelve una colección de objetos SolicitudServicio (no arrays) para que
      * las vistas puedan acceder con notación de objeto (->).
      */
-    public function pendientesParaTecnico(int $idTecnico): Collection
+    public function pendientesParaTecnico(User $tecnico): Collection
     {
-        return SolicitudServicio::query()
+        $query = SolicitudServicio::query()
             ->whereIn('estado', ['PENDIENTE', 'PROGRAMADA'])
-            ->where(fn ($q) => $q->where('id_tecnico', $idTecnico)->orWhereNull('id_tecnico'))
+            ->where(fn ($q) => $q->where('id_tecnico', $tecnico->id_usuario)->orWhereNull('id_tecnico'));
+
+        $this->aplicarAlcanceVisible($query, $tecnico, 'id_sucursal');
+
+        return $query
             ->with('cliente')
             ->orderByDesc('fecha_solicitud')
             ->get();
@@ -196,11 +298,13 @@ class SolicitudService
     /**
      * Todas las solicitudes para la gestión de gerencia (con filtros opcionales).
      */
-    public function todas(array $filtros = [])
+    public function todas(User $user, array $filtros = [])
     {
         $query = SolicitudServicio::query()
             ->with(['cliente', 'tecnico', 'registra'])
             ->orderByDesc('fecha_solicitud');
+
+        $this->aplicarAlcanceVisible($query, $user, 'id_sucursal');
 
         if (isset($filtros['estado']) && $filtros['estado'] !== '') {
             $query->where('estado', $filtros['estado']);
@@ -210,8 +314,12 @@ class SolicitudService
             $query->where('id_tecnico', $filtros['tecnico']);
         }
 
-        if (isset($filtros['en_garantia']) && $filtros['en_garantia'] === '1') {
-            $query->whereNotNull('id_garantia');
+        if (isset($filtros['en_garantia']) && $filtros['en_garantia'] !== '') {
+            if ($filtros['en_garantia'] === '1') {
+                $query->whereNotNull('id_garantia');
+            } elseif ($filtros['en_garantia'] === '0') {
+                $query->whereNull('id_garantia');
+            }
         }
 
         if (isset($filtros['desde']) && $filtros['desde'] !== '') {
@@ -228,14 +336,21 @@ class SolicitudService
     /**
      * Técnicos activos (SERVICIO_TECNICO) para asignar en la gestión.
      */
-    public function tecnicos(): array
+    public function tecnicos(User $user): array
     {
-        return User::query()
+        $query = User::query()
             ->where('nombre_rol', 'SERVICIO_TECNICO')
             ->where('estado', 'ACTIVO')
-            ->orderBy('nombre_completo')
-            ->get()
-            ->toArray();
+            ->orderBy('nombre_completo');
+
+        if (! $this->esGerente($user)) {
+            $sucursal = $this->sucursalDelUsuario($user);
+            $sucursal === null
+                ? $query->whereRaw('1 = 0')
+                : $query->where('id_sucursal', $sucursal);
+        }
+
+        return $query->get()->toArray();
     }
 
     /**
@@ -247,6 +362,10 @@ class SolicitudService
         $rol = $user->nombre_rol;
         if (! in_array($rol, ['GERENTE', 'ADMINISTRADOR'], true)) {
             throw new BusinessRuleException('Solo el Gerente o el Administrador pueden cancelar una solicitud de servicio.');
+        }
+
+        if (! $this->puedeGestionar($user, $this->sucursalDeSolicitud($solicitud))) {
+            throw new BusinessRuleException('No puedes cancelar solicitudes de otra sucursal.');
         }
 
         DbFunction::call('cancelar_solicitud_servicio', [

@@ -1163,4 +1163,30 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - `IntentoAccesoService::registrarExitoso()` espera `string` para el identificador; en OAuth se pasa `$usuario->correo`, que existe porque el usuario se busca por el correo de Google.
 - Sin tests automatizados de negocio en PG (estrategia sin definir); verificación por scripts + Artisan.
 
+---
+
+## 2026-11-24 — Oleada 2: estrategia de tests PG y alcance por sucursal en Servicio Técnico
+
+### Qué se hizo
+1. **ADR-005 (estrategia de tests)**: dos suites (`Unit`/`Feature` con SQLite, `Integration` con PostgreSQL), BD dedicada `Ewiflor_DB_MVP_test`, rollback por test (sin `RefreshDatabase`, porque `auditoria` es inmutable), `phpunit.pg.xml`, `Tests\Integration\PostgresTestCase` y script `composer test:pg` (usa `C:\tools\php85\php.exe`). Estado: Aceptado en diseño, **implementación bloqueada**.
+2. **ADR-006 (alcance por sucursal)**: aprobada por el usuario. Parche canónico `database/sql/patches/A-04-solicitud-servicio-id-sucursal.sql` + migración `2026_11_24_000002_add_id_sucursal_solicitud_servicio.php` (`pgsql_migrator`). Añade `solicitud_servicio.id_sucursal` nullable, FK a `sucursal`, índice `idx_solicitud_sucursal` y backfill (garantía→venta → registrador → técnico).
+3. **Regla aplicada** en `SolicitudService`: GERENTE ve todo; el resto solo su sucursal (fail-closed). Ahora afecta a creación pública/interna (`sucursalParaPublica`, `sucursalDelUsuario`), `visiblePara`, `pendientesParaTecnico(User)`, `todas(User, ...)`, `tecnicos(User)`, `aceptar`, `cerrar` y `cancelar`. helpers públicos: `esGerente`, `sucursalDelUsuario`, `sucursalDeSolicitud`, `puedeGestionar`, `aplicarAlcanceVisible`.
+4. `ConsultaPublicaService::garantiasPorVencer(User, int)` filtra por sucursal (evita exponer nombre/teléfono de clientes de otras sucursales). `SolicitudController` actualizado a las nuevas firmas.
+5. Ruta `cerrar` sacada del grupo solo-técnico y abierta a `SERVICIO_TECNICO,GERENTE,ADMINISTRADOR` (antes la vista ofrecía cerrar a gerente/admin y el middleware daba 403).
+6. `ClienteController::show()` filtra `$cliente->solicitudesServicio()` con el mismo alcance; VENDEDOR además solo las que registró; sin usuario → conjunto vacío.
+7. Modelo `SolicitudServicio`: `id_sucursal` en `$fillable`, relación `sucursal()`, `motivo_cancelacion` en `$fillable` y helper `estaCancelada()`. Vista `show.blade.php`: badge y bloque de motivo para `CANCELADA`. Filtro `en_garantia=0` corregido en `todas()`.
+8. Documentación actualizada: ADR-001 (D2/D5 y tabla de parches A-01..A-03), `ubicacion-modelos.md` (Sucursal en Inventario, consumidores de `solicitud_servicio`, nuevas tablas).
+
+### Verificación
+- Migración A-04 aplicada con `--database=pgsql_migrator --path=... --force` → `65.67ms DONE`. Script temporal `verify_a04.php`: columna `integer` nullable OK, índice `idx_solicitud_sucursal` OK, FK a `sucursal` OK; 16 solicitudes, 9 con sucursal, 7 NULL (solo GERENTE).
+- `php -l` OK en 6 archivos; Pint `--test` PASSED en 8; `view:cache` OK; `route:list --path=servicio-tecnico` OK (17 rutas, sin colisiones); `composer.json` y `phpunit.pg.xml` válidos.
+
+### Decisiones y gotchas
+- Las 7 solicitudes sin sucursal quedan inaccesibles para técnicos/admin/vendedores por fail-closed; GERENTE las conserva para auditar. No se inventó sucursal para datos históricos ambiguos.
+- `SolicitudService` crece con helpers de alcance. Se hicieron públicos para reutilizarlos desde `ClienteController` (`aplicarAlcanceVisible`); conviene extraerlos a un Support propio en una siguiente iteración si sigue creciendo.
+- **BD de prueba NO creada**: el usuario aprobó `Ewiflor_DB_MVP_test`, pero el rol `ewiflor_migrator` no tiene `CREATEDB` y ninguna clave de `.env` sirve para `postgres`/`ADMIN`/`cloud`. `pg_ctl reload` falló (sin token elevado). No se cargó SQL ni se ejecutaron migraciones allí; `Ewiflor_DB_MVP` quedó idéntica (16 solicitudes, 45 objetos `public` antes/después). ADR-005 documenta el bloqueo y la salida: conceder `CREATEDB` al migrador o dar credencial privilegiada al operador.
+- Tests de integración no escritos: dependen de la BD de prueba. `Feature\ExampleTest` sigue fallando por falta de `pdo_sqlite` (preexistente).
+- `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
+- Sin commit de la oleada 2 todavía.
+
 

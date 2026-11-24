@@ -16,7 +16,8 @@ $esMia = $solicitud->id_tecnico === auth()->id();
             <span class="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold
                 @if($solicitud->estado === 'PENDIENTE') border border-amber-500/30 bg-amber-500/10 text-amber-500 @endif
                 @if($solicitud->estado === 'PROGRAMADA') border border-brand-blue/20 bg-brand-blue/10 text-brand-blue @endif
-                @if($solicitud->estado === 'CERRADA') border border-brand-green/20 bg-brand-green/10 text-brand-green @endif">
+                @if($solicitud->estado === 'CERRADA') border border-brand-green/20 bg-brand-green/10 text-brand-green @endif
+                @if($solicitud->estado === 'CANCELADA') border border-red-500/30 bg-red-500/10 text-red-500 @endif">
                 {{ $solicitud->estado }}
             </span>
         </h1>
@@ -64,6 +65,11 @@ $esMia = $solicitud->id_tecnico === auth()->id();
         @endif
         <p class="text-brand-green mt-2"><span class="font-semibold">Diagnóstico:</span> {{ $solicitud->diagnostico }}</p>
         <p class="text-brand-green mt-2 text-xs">Cerrada el {{ $solicitud->fecha_cierre?->format('d/m/Y H:i') }}</p>
+    </div>
+    @elseif ($solicitud->estaCancelada())
+    <div class="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-500">
+        <h2 class="font-bold mb-2">Solicitud cancelada</h2>
+        <p><span class="font-semibold">Motivo:</span> {{ $solicitud->motivo_cancelacion ?: 'No registrado' }}</p>
     </div>
     @elseif ($puedeCerrar)
     <div class="bg-surface rounded-xl shadow-soft overflow-hidden">

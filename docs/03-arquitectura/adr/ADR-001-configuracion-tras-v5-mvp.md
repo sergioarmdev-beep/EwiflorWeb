@@ -34,10 +34,10 @@ Se adoptan las siguientes decisiones de configuración:
 | #   | Decisión                               | Implementación                                                                                                                                                                               |
 | --- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | D1  | Rol migrador dedicado                  | `ewiflor_migrator` LOGIN `IN ROLE ewiflor_owner`. Laravel usa la conexión `pgsql_migrator` con `SET ROLE ewiflor_owner` para DDL.                                                            |
-| D2  | Autenticación Eloquent sobre `usuario` | `App\Models\User` apunta a `usuario`, usa `nombre_usuario` como username, `contrasena_hash` como password, `Hash::check` de Laravel. `fn_autenticar_usuario` queda como respaldo, no se usa. |
+| D2  | Autenticación Eloquent sobre `usuario` | `Modules\Auth\Models\User` apunta a `usuario`, usa `nombre_usuario` o `correo` como identificador, `contrasena_hash` como password, `Hash::check` de Laravel. `fn_autenticar_usuario` queda como respaldo, no se usa. |
 | D3  | Drivers `file`/`sync` para arrancar    | `SESSION_DRIVER=file`, `CACHE_STORE=file`, `QUEUE_CONNECTION=sync`. No se crean `sessions`, `cache`, `jobs`. Se migrará a drivers database solo cuando el migrador esté validado.            |
 | D4  | Sin "remember me"                      | No se añade `remember_token`; `Auth::attempt(..., true)` está prohibido.                                                                                                                     |
-| D5  | Sin password reset                     | No se añade tabla de reseteo; se documenta en el manual de usuario.                                                                                                                          |
+| D5  | Sin password reset directo             | **Supersedido por ADR-004**: no hay cambio de clave por el usuario, pero sí recuperación asistida (correo + celular → `solicitud_restablecimiento` y notificación a gerencia).                |
 | D6  | Auditoría con contexto de sesión       | Middleware `SetDatabaseUser` publica `app.id_usuario` vía `set_config(...)`. El trigger `fn_auditar_cambio()` ya es `SECURITY DEFINER` con `search_path` fijo.                               |
 | D7  | PK compuestas en modelos Eloquent      | `existencia`, `detalle_cotizacion`, `detalle_movimiento` no reciben `id` surrogate. Los modelos usarán `$primaryKey` compuesto y `$incrementing=false` cuando se implementen.                |
 | D8  | Script SQL como fuente de verdad       | El esquema se versiona en `database/sql/v5-MVP*.sql`. Laravel solo administra la tabla `migrations`. Las migraciones de negocio se posponen.                                                 |
@@ -57,6 +57,8 @@ que integre los parches, y se anotará en este ADR.
 | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | Config | 2026-10-29 | `v5-MVP-config.sql`: rol `ewiflor_migrator`, `GRANT USAGE` de 4 enums a `ewiflor_app`, `GRANT EXECUTE` de las 6 funciones de negocio, creación de tabla `migrations`, `ALTER DEFAULT PRIVILEGES` para `ewiflor_migrator`.                    | Aplicado |
 | A-01   | 2026-10-29 | `A-01-reserva-id-almacen.sql`: añade `reserva.id_almacen` (FK a `almacen`), `ck_reserva_almacen` (`RESERVA` ⟺ `id_almacen IS NOT NULL`), índice parcial `idx_reserva_almacen`, y reemplaza `registrar_reserva()` para insertar `id_almacen`. | Aplicado |
+| A-02   | 2026-11-17 | `A-02-maquinaria-repuestos-documentos.sql`: vinculación de maquinaria con repuestos y documentación de productos (Catálogo).                                                             | Aplicado |
+| A-03   | 2026-11-24 | `A-03-convertir-cotizacion-garantia-meses.sql`: restaura `garantia_meses` en el JSON de `convertir_cotizacion_a_venta()` sin perder las guardas de sucursal.                                | Aplicado |
 
 ## Correcciones operativas documentadas
 

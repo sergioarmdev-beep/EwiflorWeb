@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
+use Modules\Inventario\Models\Sucursal;
 
 class SolicitudServicio extends Model
 {
@@ -25,6 +26,7 @@ class SolicitudServicio extends Model
 
     protected $fillable = [
         'id_cliente',
+        'id_sucursal',
         'id_garantia',
         'id_usuario_registra',
         'id_tecnico',
@@ -37,6 +39,7 @@ class SolicitudServicio extends Model
         'costo_servicio_bs',
         'fecha_cierre',
         'origen',
+        'motivo_cancelacion',
     ];
 
     protected $casts = [
@@ -71,6 +74,11 @@ class SolicitudServicio extends Model
         return $this->belongsTo(User::class, 'id_usuario_registra', 'id_usuario');
     }
 
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class, 'id_sucursal', 'id_sucursal');
+    }
+
     /** Fue solicitada dentro de una garantía registrada. */
     public function estaEnGarantia(): bool
     {
@@ -90,6 +98,11 @@ class SolicitudServicio extends Model
     public function estaCerrada(): bool
     {
         return $this->estado === 'CERRADA';
+    }
+
+    public function estaCancelada(): bool
+    {
+        return $this->estado === 'CANCELADA';
     }
 
     public function scopeDisponibles(Builder $q): Builder

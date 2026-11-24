@@ -29,12 +29,18 @@ Route::middleware('web')->prefix('servicio-tecnico')->name('serviciotecnico.publ
 // ==========================================
 Route::middleware(['auth'])->prefix('servicio-tecnico')->name('serviciotecnico.')->group(function () {
 
-    // Técnico: bandeja de encargos y acciones sobre su solicitud
+    // Técnico: bandeja de encargos y aceptación
     Route::middleware('role:SERVICIO_TECNICO')->group(function () {
         Route::get('/bandeja', [SolicitudController::class, 'bandeja'])->name('bandeja');
         Route::post('/{solicitud}/aceptar', [SolicitudController::class, 'aceptar'])->name('aceptar');
-        Route::post('/{solicitud}/cerrar', [SolicitudController::class, 'cerrar'])->name('cerrar');
     });
+
+    // Cierre: técnico asignado, gerente o administrador (ADR-006).
+    // Antes estaba dentro del grupo solo-técnico y la vista ofrecía cerrar
+    // a gerente/admin, que recibían 403 del middleware.
+    Route::post('/{solicitud}/cerrar', [SolicitudController::class, 'cerrar'])
+        ->middleware('role:SERVICIO_TECNICO,GERENTE,ADMINISTRADOR')
+        ->name('cerrar');
 
     // Gerente/Administrador: cancelar solicitud con motivo
     Route::middleware('role:GERENTE,ADMINISTRADOR')->group(function () {
