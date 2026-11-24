@@ -99,13 +99,13 @@
                 <table class="min-w-full divide-y divide-line text-sm text-left">
                     <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                         <tr>
-                            <th class="py-3.5 px-5 font-semibold">SKU</th>
-                            <th class="py-3.5 px-5 font-semibold">Color</th>
-                            <th class="py-3.5 px-5 font-semibold">Almacén</th>
-                            <th class="py-3.5 px-5 font-semibold">Sucursal</th>
-                            <th class="py-3.5 px-5 text-center font-semibold">Total</th>
-                            <th class="py-3.5 px-5 text-center font-semibold">Reservado</th>
-                            <th class="py-3.5 px-5 text-center font-semibold">Disponible</th>
+                            <th scope="col" class="py-3.5 px-5 font-semibold">SKU</th>
+                            <th scope="col" class="py-3.5 px-5 font-semibold">Color</th>
+                            <th scope="col" class="py-3.5 px-5 font-semibold">Almacén</th>
+                            <th scope="col" class="py-3.5 px-5 font-semibold">Sucursal</th>
+                            <th scope="col" class="py-3.5 px-5 text-center font-semibold">Total</th>
+                            <th scope="col" class="py-3.5 px-5 text-center font-semibold">Reservado</th>
+                            <th scope="col" class="py-3.5 px-5 text-center font-semibold">Disponible</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line text-muted text-xs">

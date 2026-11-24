@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Precios\Models\TipoCambio;
 use Modules\Auth\Models\User;
+use Modules\Precios\Models\TipoCambio;
 
 class TipoCambioFactory extends Factory
 {

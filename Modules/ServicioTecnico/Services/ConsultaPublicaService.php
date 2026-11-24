@@ -78,6 +78,10 @@ class ConsultaPublicaService
      */
     public function garantiasPorVencer(User $user, int $dias = 30): array
     {
+        // Defensa en profundidad: el controlador valida 1..365, pero un
+        // llamador interno no debe poder ampliar la ventana sin límite.
+        $dias = max(1, min($dias, 365));
+
         $query = DB::table('v_garantia_vigente as gv')
             ->join('venta as v', 'v.id_venta', '=', 'gv.id_venta')
             ->join('cliente as c', 'c.id_cliente', '=', 'v.id_cliente')

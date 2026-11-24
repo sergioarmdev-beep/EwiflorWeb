@@ -285,14 +285,14 @@
             <table class="min-w-full divide-y divide-line text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-5 py-3.5 font-semibold">Fecha</th>
-                        <th class="px-5 py-3.5 font-semibold">Tipo</th>
-                        <th class="px-5 py-3.5 font-semibold text-right">Venta (Bs)</th>
-                        <th class="px-5 py-3.5 font-semibold text-right">Compra (Bs)</th>
-                        <th class="px-5 py-3.5 font-semibold">Origen</th>
-                        <th class="px-5 py-3.5 font-semibold">Registrado</th>
-                        <th class="px-5 py-3.5 font-semibold">Referencia API</th>
-                        <th class="px-5 py-3.5 font-semibold">Usuario</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Fecha</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Tipo</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold text-right">Venta (Bs)</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold text-right">Compra (Bs)</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Origen</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Registrado</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Referencia API</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Usuario</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line text-muted text-xs">

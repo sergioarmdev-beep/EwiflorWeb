@@ -22,14 +22,34 @@ Se utiliza una arquitectura modular nativa en la carpeta `Modules/`. Cada desarr
 
 ### Desarrollador 3 - Módulo Operativo
 
-- **Módulos:** `Cotizaciones`, `Reportes`, `TipoCambio`.
+- **Módulos:** `Cotizaciones`, `Precios`, `Dashboard`.
 - **Tareas (SRS):**
-  - MVP-06: Tipo de Cambio (registro manual diario).
-  - MVP-07: Cotizaciones (interfaz y controlador).
-  - MVP-09: Reportes básicos (usar las vistas SQL `v_reporte_ventas` y `v_reporte_existencias`).
-- **Archivos a crear:** `Modules/Cotizaciones/`, `Modules/Reportes/`.
+  - MVP-06: Tipo de Cambio (registro manual diario) → `Modules/Precios`.
+  - MVP-07: Cotizaciones (interfaz y controlador) → `Modules/Cotizaciones`.
+  - MVP-09: Reportes y dashboards → `Modules/Dashboard` (dashboard canónico;
+    no crear un segundo dashboard en `Sistema`).
+- **Archivos a crear:** `Modules/Cotizaciones/`, `Modules/Precios/`,
+  `Modules/Dashboard/`.
+
+### Módulos transversales
+
+`Garantias` (modelos; las filas las crea el trigger
+`fn_crear_garantias_venta`), `ServicioTecnico`, `Publico`, `Sucursales`,
+`Promociones` y `Comisiones`. No hay módulo `Reportes` ni `TipoCambio`: sus
+responsabilidades están en `Dashboard` y `Precios`. El mapa vigente de modelos
+por módulo dueño está en `docs/05-desarrollo/ubicacion-modelos.md`.
 
 ## Reglas de Integración
 
-1. Para las operaciones que afectan el stock o el dinero, **NO usen lógica de Laravel**. Deben llamar a las funciones de PostgreSQL (`registrar_venta`, `registrar_movimiento_inventario`) mediante `DB::select()`.
-2. Para los reportes, **NO hagan consultas complejas en Eloquent**. Usen las vistas SQL (`v_reporte_ventas`, etc.) mapeadas en modelos de solo lectura.
+1. Para las operaciones que afectan el stock o el dinero, **NO usen lógica de
+   Laravel**. Deben llamar a las funciones de PostgreSQL (`registrar_venta`,
+   `registrar_movimiento_inventario`, etc.) mediante
+   `App\Support\DbFunction::call()`, `::scalar()` o `::query()`, nunca con
+   `DB::select()` crudo. Un `RAISE EXCEPTION` se traduce en
+   `BusinessRuleException`.
+2. Para los reportes, se prefieren las vistas SQL mapeadas en modelos de solo
+   lectura. El alcance por sucursal se resuelve con
+   `Modules\Dashboard\Services\DashboardAlcance` (ADR-006), no duplicando
+   consultas en cada módulo.
+3. La auditoría la escriben los triggers de PostgreSQL. No crear Observers ni
+   inserciones manuales en `auditoria` desde Laravel.

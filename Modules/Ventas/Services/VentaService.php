@@ -4,14 +4,13 @@ namespace Modules\Ventas\Services;
 
 use App\Exceptions\BusinessRuleException;
 use App\Support\DbFunction;
-use App\Support\Descuento;
+use App\Support\LineasDocumento;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
 use Modules\Catalogo\Models\VarianteProducto;
 use Modules\Cotizaciones\Models\Cotizacion;
 use Modules\Inventario\Models\Almacen;
 use Modules\Precios\Services\TipoCambioService;
-use Modules\Promociones\Services\PromocionService;
 use Modules\Sucursales\Support\AlcanceDocumentos;
 use Modules\Ventas\Models\Comprobante;
 use Modules\Ventas\Models\Pago;
@@ -21,7 +20,7 @@ class VentaService
 {
     public function __construct(
         private TipoCambioService $tipoCambio,
-        private PromocionService $promociones,
+        private LineasDocumento $lineas,
     ) {}
 
     /**
@@ -103,7 +102,7 @@ class VentaService
         // NUEVO: valida stock ANTES de llamar a la función, para dar un mensaje útil por variante.
         $this->validarDisponibilidad($data['lineas'], (int) $data['id_almacen']);
 
-        $payload = $this->construirLineasJson($data['lineas'], (int) $data['id_almacen'], $actor);
+        $payload = $this->lineas->normalizar($data['lineas'], (int) $data['id_almacen'], $actor);
 
         return DB::transaction(function () use ($data, $actor, $tc, $payload, $idSucursal) {
             $rows = DbFunction::query(
@@ -183,67 +182,6 @@ class VentaService
             $actor->id_usuario,
             $motivo,
         ]);
-    }
-
-    private function construirLineasJson(array $lineas, int $idAlmacen, User $actor): array
-    {
-        // Si el producto es BAJO_PEDIDO, la línea va sin id_almacen (lo exige registrar_venta).
-        $variantes = VarianteProducto::with('producto:id_producto,modalidad')
-            ->whereIn('id_variante', array_column($lineas, 'id_variante'))
-            ->get()
-            ->keyBy('id_variante');
-
-        // El precio es autoritativo: siempre el del catálogo, nunca el del formulario.
-        $faltantes = [];
-        foreach ($lineas as $l) {
-            $v = $variantes[(int) $l['id_variante']] ?? null;
-
-            if (! $v) {
-                throw new BusinessRuleException("La variante #{$l['id_variante']} no existe.");
-            }
-            if ((float) ($v->precio_usd ?? 0) <= 0) {
-                $faltantes[] = $v->sku;
-            }
-        }
-
-        if (! empty($faltantes)) {
-            throw new BusinessRuleException(sprintf(
-                'Estas variantes no tienen precio de lista: %s. Un Gerente o Administrador debe asignarlo en Catálogo.',
-                implode(', ', array_unique($faltantes))
-            ));
-        }
-
-        // Mapa de promociones vigentes para autorizar los descuentos por rol.
-        $promociones = $this->promociones->mapaVigente($variantes->collect());
-
-        return collect($lineas)->map(function ($l) use ($idAlmacen, $variantes, $promociones, $actor) {
-            $v = $variantes[(int) $l['id_variante']];
-            $precio = round((float) $v->precio_usd, 2);
-            $cantidad = (int) $l['cantidad'];
-
-            $descuentoPct = Descuento::aPorcentaje(
-                $l['descuento_tipo'] ?? 'PCT',
-                $l['descuento_valor'] ?? ($l['descuento_pct'] ?? 0),
-                $precio,
-                $cantidad
-            );
-
-            $this->promociones->validarDescuento(
-                $actor,
-                $descuentoPct,
-                $promociones[(int) $l['id_variante']] ?? null,
-                sprintf('Línea %s', $v->sku)
-            );
-
-            return [
-                'id_variante' => (int) $l['id_variante'],
-                'cantidad' => $cantidad,
-                'precio_unitario_usd' => $precio,
-                'descuento_pct' => $descuentoPct,
-                'id_almacen' => $v->producto?->modalidad === 'BAJO_PEDIDO' ? null : $idAlmacen,
-                'garantia_meses' => (int) ($l['garantia_meses'] ?? 0),
-            ];
-        })->values()->all();
     }
 
     private function postCreacion(Venta $venta): void

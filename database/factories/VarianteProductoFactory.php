@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Catalogo\Models\VarianteProducto;
 use Modules\Catalogo\Models\Producto;
+use Modules\Catalogo\Models\VarianteProducto;
 
 class VarianteProductoFactory extends Factory
 {

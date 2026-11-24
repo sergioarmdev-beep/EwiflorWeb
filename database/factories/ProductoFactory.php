@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Catalogo\Models\Producto;
 use Modules\Catalogo\Models\Marca;
+use Modules\Catalogo\Models\Producto;
 
 class ProductoFactory extends Factory
 {
@@ -14,7 +14,7 @@ class ProductoFactory extends Factory
     {
         return [
             'codigo' => fake()->unique()->bothify('PROD-####'),
-            'nombre' => fake()->unique()->words(3, true) . ' ' . fake()->word(),
+            'nombre' => fake()->unique()->words(3, true).' '.fake()->word(),
             'descripcion' => fake()->sentence(),
             'categoria' => fake()->randomElement(Producto::CATEGORIAS),
             'id_marca' => Marca::inRandomOrder()->value('id_marca') ?? 1,

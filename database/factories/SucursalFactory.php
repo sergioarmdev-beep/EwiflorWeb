@@ -12,7 +12,7 @@ class SucursalFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => fake()->unique()->city() . ' Sucursal',
+            'nombre' => fake()->unique()->city().' Sucursal',
             'departamento' => fake()->randomElement([
                 'LA_PAZ', 'SANTA_CRUZ', 'COCHABAMBA', 'ORURO', 'POTOSI',
                 'TARIJA', 'CHUQUISACA', 'BENI', 'PANDO',

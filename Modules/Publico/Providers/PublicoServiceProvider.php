@@ -12,12 +12,12 @@ class PublicoServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadViewsFrom(
-            __DIR__ . '/../Views',
+            __DIR__.'/../Views',
             'publico'
         );
 
         Route::middleware('web')->group(
-            __DIR__ . '/../Routes/web.php'
+            __DIR__.'/../Routes/web.php'
         );
 
         // El footer público muestra las sucursales activas (y su mapa)

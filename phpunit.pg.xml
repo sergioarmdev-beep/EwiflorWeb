@@ -29,8 +29,8 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
 
         <!-- Reglas de negocio en PostgreSQL: nunca SQLite para esta suite. -->
-        <env name="DB_CONNECTION" value="pgsql"/>
-        <env name="DB_DATABASE" value="Ewiflor_DB_MVP_test"/>
-        <env name="DB_URL" value=""/>
+        <env name="DB_CONNECTION" value="pgsql_test"/>
+        <env name="DB_TEST_DATABASE" value="Ewiflor_DB_MVP_test"/>
+        <env name="DB_TEST_URL" value=""/>
     </php>
 </phpunit>

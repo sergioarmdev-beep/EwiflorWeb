@@ -44,7 +44,7 @@
             <table class="min-w-[1100px] w-full text-left text-sm">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-4">N.º</th><th class="px-4 py-4">Fecha</th><th class="px-4 py-4">Tipo</th><th class="px-4 py-4">Producto / Variante</th><th class="px-4 py-4 text-right">Cantidad</th><th class="px-4 py-4">Origen → Destino</th><th class="px-4 py-4">Motivo</th><th class="px-4 py-4">Usuario</th>
+                        <th scope="col" class="px-4 py-4">N.º</th><th scope="col" class="px-4 py-4">Fecha</th><th scope="col" class="px-4 py-4">Tipo</th><th scope="col" class="px-4 py-4">Producto / Variante</th><th scope="col" class="px-4 py-4 text-right">Cantidad</th><th scope="col" class="px-4 py-4">Origen → Destino</th><th scope="col" class="px-4 py-4">Motivo</th><th scope="col" class="px-4 py-4">Usuario</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line">

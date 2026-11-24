@@ -30,12 +30,12 @@
             <table class="min-w-full divide-y divide-line text-sm">
                 <thead class="bg-surface-2">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">N° Venta</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total USD</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total Bs</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Pagado</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Garantía</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">N° Venta</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total USD</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total Bs</th>
+                        <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Pagado</th>
+                        <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Garantía</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line">

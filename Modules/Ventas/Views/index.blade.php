@@ -130,16 +130,16 @@
         <table class="min-w-full divide-y divide-line text-sm text-left">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Factura</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Vendedor</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Sucursal</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total USD</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total Bs</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Cobrado Bs</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted"></th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Factura</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Vendedor</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Sucursal</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total USD</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total Bs</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Cobrado Bs</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

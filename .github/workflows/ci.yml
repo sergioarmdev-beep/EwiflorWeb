@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Calidad y tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: testing
+      APP_MAINTENANCE_DRIVER: file
+      CACHE_STORE: array
+      MAIL_MAILER: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      TELESCOPE_ENABLED: false
+
+      DB_CONNECTION: pgsql_test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: Ewiflor_DB_MVP_test
+      DB_USERNAME: ewiflor_app
+      DB_PASSWORD: ci-app-password
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_PORT: 5432
+      DB_TEST_DATABASE: Ewiflor_DB_MVP_test
+      DB_TEST_USERNAME: ewiflor_app
+      DB_TEST_PASSWORD: ci-app-password
+      DB_MIGRATOR_DATABASE: Ewiflor_DB_MVP_test
+      DB_MIGRATOR_USERNAME: ewiflor_migrator
+      DB_MIGRATOR_PASSWORD: ci-migrator-password
+
+      TEST_APP_PASSWORD: ci-app-password
+      TEST_MIGRATOR_PASSWORD: ci-migrator-password
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres_ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PHP 8.5 + pdo_pgsql
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, pdo_mysql, mbstring, intl, bcmath, zip, gd
+          coverage: none
+          tools: composer:v2
+
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Dependencias PHP
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Dependencias JS y build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Entorno de aplicación
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+          php artisan config:clear
+
+      - name: Base de datos de prueba desechable
+        run: bash tools/ci/prepare-test-db.sh
+
+      - name: Estilo PHP (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Tests Unit + Feature (PostgreSQL)
+        run: composer test
+
+      - name: Tests de integración (PostgreSQL)
+        run: composer test:pg
+
+      - name: Escaneo de secretos
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified

@@ -3,11 +3,11 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Ventas\Models\Venta;
 use Modules\Auth\Models\User;
 use Modules\Clientes\Models\Cliente;
-use Modules\Precios\Models\TipoCambio;
 use Modules\Inventario\Models\Sucursal;
+use Modules\Precios\Models\TipoCambio;
+use Modules\Ventas\Models\Venta;
 
 class VentaFactory extends Factory
 {

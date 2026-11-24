@@ -115,7 +115,11 @@ class SolicitudController extends Controller
      */
     public function garantiasPorVencer(Request $request)
     {
-        $dias = (int) $request->get('dias', 30);
+        $validado = $request->validate([
+            'dias' => ['sometimes', 'integer', 'min:1', 'max:365'],
+        ]);
+        $dias = (int) ($validado['dias'] ?? 30);
+
         $garantias = $this->consultaPublica->garantiasPorVencer($request->user(), $dias);
 
         return view('serviciotecnico::solicitudes.garantias-por-vencer', [

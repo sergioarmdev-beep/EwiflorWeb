@@ -3,9 +3,9 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Inventario\Models\Existencia;
-use Modules\Inventario\Models\Almacen;
 use Modules\Catalogo\Models\VarianteProducto;
+use Modules\Inventario\Models\Almacen;
+use Modules\Inventario\Models\Existencia;
 
 class ExistenciaFactory extends Factory
 {

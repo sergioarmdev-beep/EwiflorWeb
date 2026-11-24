@@ -50,11 +50,11 @@
         <table class="min-w-full divide-y divide-line text-sm text-left">
             <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                 <tr>
-                    <th class="px-5 py-3.5 font-semibold">Tipo</th>
-                    <th class="px-5 py-3.5 font-semibold">Mensaje</th>
-                    <th class="px-5 py-3.5 font-semibold">Origen</th>
-                    <th class="px-5 py-3.5 font-semibold text-center">Fecha</th>
-                    <th class="px-5 py-3.5 font-semibold text-right">Estado</th>
+                    <th scope="col" class="px-5 py-3.5 font-semibold">Tipo</th>
+                    <th scope="col" class="px-5 py-3.5 font-semibold">Mensaje</th>
+                    <th scope="col" class="px-5 py-3.5 font-semibold">Origen</th>
+                    <th scope="col" class="px-5 py-3.5 font-semibold text-center">Fecha</th>
+                    <th scope="col" class="px-5 py-3.5 font-semibold text-right">Estado</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line text-muted">

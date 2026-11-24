@@ -49,13 +49,13 @@ class ComisionService
             ->groupBy('venta.id_usuario', 'venta.id_sucursal')
             ->get()
             // Clave compuesta: un vendedor puede operar en más de una sucursal.
-            ->keyBy(fn ($r) => (int) $r->id_usuario . ':' . (int) $r->id_sucursal);
+            ->keyBy(fn ($r) => (int) $r->id_usuario.':'.(int) $r->id_sucursal);
 
         $vendedores = $this->vendedoresAlcance($actor, $idSucursalEfectivo);
 
         $guardadas = [];
         foreach ($vendedores as $vendedor) {
-            $clave = (int) $vendedor->id_usuario . ':' . (int) $vendedor->id_sucursal;
+            $clave = (int) $vendedor->id_usuario.':'.(int) $vendedor->id_sucursal;
             $venta = $ventas[$clave] ?? null;
             $cantidad = $venta ? (int) $venta->cantidad_ventas : 0;
             $totalVentas = $venta ? (float) $venta->total_ventas_bs : 0.0;
@@ -170,6 +170,7 @@ class ComisionService
             if (! AccesoSucursal::puedeOperarEn($actor, (int) $idSucursal)) {
                 throw new BusinessRuleException('No puedes operar en esa sucursal.');
             }
+
             return (int) $idSucursal;
         }
 

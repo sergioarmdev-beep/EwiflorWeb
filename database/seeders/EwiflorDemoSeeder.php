@@ -7,19 +7,19 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Modules\Auth\Models\User;
-use Modules\Inventario\Models\Sucursal;
-use Modules\Inventario\Models\Almacen;
-use Modules\Inventario\Models\Existencia;
-use Modules\Inventario\Models\Movimiento;
-use Modules\Inventario\Models\DetalleMovimiento;
 use Modules\Catalogo\Models\Marca;
 use Modules\Catalogo\Models\Producto;
 use Modules\Catalogo\Models\VarianteProducto;
-use Modules\Precios\Models\TipoCambio;
 use Modules\Clientes\Models\Cliente;
-use Modules\Ventas\Models\Venta;
+use Modules\Inventario\Models\Almacen;
+use Modules\Inventario\Models\DetalleMovimiento;
+use Modules\Inventario\Models\Existencia;
+use Modules\Inventario\Models\Movimiento;
+use Modules\Inventario\Models\Sucursal;
+use Modules\Precios\Models\TipoCambio;
 use Modules\Ventas\Models\DetalleVenta;
 use Modules\Ventas\Models\Pago;
+use Modules\Ventas\Models\Venta;
 
 /**
  * Seeder maestro de demostración.
@@ -61,7 +61,7 @@ class EwiflorDemoSeeder extends Seeder
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Usuarios                                                          */
+    /*  Usuarios */
     /* ------------------------------------------------------------------ */
 
     private function crearUsuariosDemo(): void
@@ -122,7 +122,7 @@ class EwiflorDemoSeeder extends Seeder
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Catálogo                                                          */
+    /*  Catálogo */
     /* ------------------------------------------------------------------ */
 
     private function crearCatalogo(): void
@@ -144,7 +144,7 @@ class EwiflorDemoSeeder extends Seeder
             $productos[] = Producto::updateOrCreate(
                 ['codigo' => sprintf('PROD-%03d', $i)],
                 [
-                    'nombre' => ucfirst(fake()->unique()->word()) . ' ' . fake()->word(),
+                    'nombre' => ucfirst(fake()->unique()->word()).' '.fake()->word(),
                     'descripcion' => fake()->sentence(),
                     'categoria' => $categorias[array_rand($categorias)],
                     'id_marca' => $marcas[array_rand($marcas)]->id_marca,
@@ -180,7 +180,7 @@ class EwiflorDemoSeeder extends Seeder
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Tipo de cambio                                                    */
+    /*  Tipo de cambio */
     /* ------------------------------------------------------------------ */
 
     private function crearTipoCambio(): void
@@ -216,7 +216,7 @@ class EwiflorDemoSeeder extends Seeder
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Existencia                                                        */
+    /*  Existencia */
     /* ------------------------------------------------------------------ */
 
     private function crearExistencia(): void
@@ -245,7 +245,7 @@ class EwiflorDemoSeeder extends Seeder
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Clientes                                                          */
+    /*  Clientes */
     /* ------------------------------------------------------------------ */
 
     private function crearClientes(): void
@@ -266,7 +266,7 @@ class EwiflorDemoSeeder extends Seeder
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Ventas, detalles y pagos                                          */
+    /*  Ventas, detalles y pagos */
     /* ------------------------------------------------------------------ */
 
     private function crearVentasYPagos(): void
@@ -365,7 +365,7 @@ class EwiflorDemoSeeder extends Seeder
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Movimientos de inventario                                         */
+    /*  Movimientos de inventario */
     /* ------------------------------------------------------------------ */
 
     private function crearMovimientos(): void

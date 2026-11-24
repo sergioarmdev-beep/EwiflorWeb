@@ -3,9 +3,9 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Modules\Catalogo\Models\VarianteProducto;
 use Modules\Ventas\Models\DetalleVenta;
 use Modules\Ventas\Models\Venta;
-use Modules\Catalogo\Models\VarianteProducto;
 
 class DetalleVentaFactory extends Factory
 {

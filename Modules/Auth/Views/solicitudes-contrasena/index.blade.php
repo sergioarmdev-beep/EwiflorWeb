@@ -113,13 +113,13 @@ foreach ($conteos as $estado => $c) {
             <table class="min-w-full divide-y divide-line text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-5 py-3.5 font-semibold">Usuario</th>
-                        <th class="px-5 py-3.5 font-semibold">Correo</th>
-                        <th class="px-5 py-3.5 font-semibold">Celular</th>
-                        <th class="px-5 py-3.5 font-semibold">Sucursal</th>
-                        <th class="px-5 py-3.5 font-semibold text-center">Estado</th>
-                        <th class="px-5 py-3.5 font-semibold">Creada</th>
-                        <th class="px-5 py-3.5 font-semibold text-right">Acciones</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Usuario</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Correo</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Celular</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Sucursal</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold text-center">Estado</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Creada</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line text-muted">

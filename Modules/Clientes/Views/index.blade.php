@@ -205,13 +205,13 @@ true
 
                 <thead class="bg-surface-2 text-xs uppercase tracking-wider text-muted">
                     <tr>
-                        <th class="px-4 py-4 font-semibold">Cliente</th>
-                        <th class="px-4 py-4 font-semibold">Teléfono</th>
-                        <th class="px-4 py-4 font-semibold">Correo</th>
-                        <th class="px-4 py-4 font-semibold">Tipo</th>
-                        <th class="px-4 py-4 font-semibold">Clasificación</th>
-                        <th class="px-4 py-4 font-semibold">Estado</th>
-                        <th class="px-4 py-4 text-right font-semibold">Acciones</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Cliente</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Teléfono</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Correo</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Tipo</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Clasificación</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Estado</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Acciones</th>
                     </tr>
                 </thead>
 

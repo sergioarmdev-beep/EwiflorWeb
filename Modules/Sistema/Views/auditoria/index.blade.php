@@ -62,12 +62,12 @@
         <table class="min-w-full divide-y divide-line bg-surface rounded-xl overflow-hidden shadow-soft">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Usuario</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Módulo</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Operación</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Tabla</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Registro</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Usuario</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Módulo</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Operación</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Tabla</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Registro</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

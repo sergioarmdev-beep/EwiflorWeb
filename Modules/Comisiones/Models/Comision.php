@@ -42,6 +42,7 @@ class Comision extends Model
     ];
 
     public const ESTADO_PENDIENTE = 'PENDIENTE';
+
     public const ESTADO_PAGADO = 'PAGADO';
 
     public function esPendiente(): bool

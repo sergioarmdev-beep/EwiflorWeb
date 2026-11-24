@@ -23,12 +23,14 @@ abstract class PostgresTestCase extends TestCase
     {
         parent::setUp();
 
-        DB::connection('pgsql')->beginTransaction();
+        // La conexión por defecto es pgsql_test en phpunit.pg.xml (ADR-005).
+        // Fijar 'pgsql' aquí dejaría los fixtures en la BD sin rollback.
+        DB::connection()->beginTransaction();
     }
 
     protected function tearDown(): void
     {
-        DB::connection('pgsql')->rollBack();
+        DB::connection()->rollBack();
 
         parent::tearDown();
     }

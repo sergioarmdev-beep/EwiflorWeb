@@ -23,13 +23,13 @@
         <table class="min-w-full divide-y divide-line bg-surface rounded-xl overflow-hidden shadow-soft">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Solicitud</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Falla</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Acción</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Detalle</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Solicitud</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Falla</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Acción</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Detalle</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

@@ -44,3 +44,15 @@ Thumbs.db
 .storage
 
 .docs/**/storage/
+
+# Artefactos de tooling e instaladores locales (no versionar)
+/.taste-skill/
+/.agents/
+/composer.phar
+/composer-setup.php
+/cloudflared-windows-amd64.msi
+
+# Scripts sueltos de depuración: sustituidos por comandos Artisan o eliminados
+/try_login.php
+/list_users.php
+/list_cots.php

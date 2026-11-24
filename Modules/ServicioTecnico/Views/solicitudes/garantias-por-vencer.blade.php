@@ -14,11 +14,12 @@
 
     <form method="GET" action="{{ route('serviciotecnico.garantias.por_vencer') }}" class="mb-6 flex flex-col sm:flex-row gap-4 items-end">
         <div>
-            <label class="block text-xs font-semibold text-muted mb-1">Días de anticipación</label>
-            <input type="number" name="dias" value="{{ $dias }}" min="1" max="365"
+            <label for="dias" class="block text-xs font-semibold text-muted mb-1">Días de anticipación</label>
+            <input id="dias" type="number" name="dias" value="{{ $dias }}" min="1" max="365"
+                aria-label="Días de anticipación para garantías por vencer"
                 class="w-full px-3 py-2 text-sm border border-line rounded-xl bg-surface-2 text-ink focus:border-brand-green/50 focus:ring-brand-green/20">
         </div>
-        <button type="submit" class="px-4 py-2 bg-brand-green text-white rounded-xl hover:bg-brand-green-dark text-sm font-medium">Filtrar</button>
+        <button type="submit" aria-label="Filtrar garantías por días de anticipación" class="px-4 py-2 bg-brand-green text-white rounded-xl hover:bg-brand-green-dark text-sm font-medium">Filtrar</button>
     </form>
 
     @if (session('success'))
@@ -32,13 +33,13 @@
         <table class="min-w-full divide-y divide-line bg-surface rounded-xl overflow-hidden shadow-soft">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Garantía</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Producto / SKU</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Inicio</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Vencimiento</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Días restantes</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Venta</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Garantía</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Producto / SKU</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Inicio</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Vencimiento</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Días restantes</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Venta</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

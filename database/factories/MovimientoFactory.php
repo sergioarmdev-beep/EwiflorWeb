@@ -3,9 +3,9 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Inventario\Models\Movimiento;
 use Modules\Auth\Models\User;
 use Modules\Inventario\Models\Almacen;
+use Modules\Inventario\Models\Movimiento;
 
 class MovimientoFactory extends Factory
 {

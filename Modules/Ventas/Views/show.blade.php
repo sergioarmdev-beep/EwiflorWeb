@@ -70,13 +70,13 @@ $saldo = $venta->saldoBs();
         <table class="min-w-full text-sm">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">SKU</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Producto</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Cant.</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">P. Unit. USD</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Desc. %</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Garantía (meses)</th>
-                    <th class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Subtotal USD</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">SKU</th>
+                    <th scope="col" class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Producto</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Cant.</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">P. Unit. USD</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Desc. %</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Garantía (meses)</th>
+                    <th scope="col" class="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Subtotal USD</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">
@@ -133,10 +133,10 @@ $saldo = $venta->saldoBs();
         <table class="min-w-full text-sm mb-4">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
-                    <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Forma</th>
-                    <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Referencia</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Monto Bs</th>
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Forma</th>
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted">Referencia</th>
+                    <th scope="col" class="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted">Monto Bs</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

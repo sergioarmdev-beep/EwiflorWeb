@@ -1246,4 +1246,35 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - Se corrigió el doble escape del saludo (`e($cliente->nombre)` dentro de un flash que Blade vuelve a escapar).
 - **Sin push**. `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
 
+---
+
+## 2026-11-24 — Oleada 4 (continuación): tests PG reproducibles, CI mínima, limpieza del repo y reducción de duplicación
+
+### Qué se hizo
+1. **Estrategia de tests cerrada sobre PostgreSQL**: ambas suites (`composer test` y `composer test:pg`) usan la conexión `pgsql_test` → `Ewiflor_DB_MVP_test`; SQLite quedó descartado. `phpunit.xml` / `phpunit.pg.xml` incluyen `app/` y `Modules/` en `<source>` y fijan `DB_TEST_*`. Reparados los grants del esquema `public` para `ewiflor_app` en la BD de prueba.
+2. **Rollback correcto**: `tests/Integration/PostgresTestCase.php` abre y revierte la transacción en la conexión **por defecto** (`pgsql_test`). Fijar `pgsql` aquí habría dejado fixtures en la BD sin rollback: la auditoría es inmutable, así que borrar filas después no es una opción.
+3. **Migración idempotente**: `2026_11_18_000002_id_comision_auto_incremental.php` detecta `is_identity = 'YES' OR column_default LIKE 'nextval%'` para no fallar en esquemas frescos donde `crear_tabla_comisiones` ya crea la columna con `nextval`.
+4. **CI mínima** en `.github/workflows/ci.yml`: PostgreSQL 18, PHP 8.5 con `pdo_pgsql`, `pnpm install --frozen-lockfile`, `pnpm build`, Pint `--test`, ambas suites y secret scanning con `trufflesecurity/trufflehog@main` (`--only-verified`). Aprovisionamiento desechable en `tools/ci/prepare-test-db.sh`: carga `v5-MVP.sql`, `v5-MVP-config.sql`, parches `A-01`…`A-05` (con `PGOPTIONS='-c role=ewiflor_owner'` para heredar grants) y migraciones con `pgsql_migrator`. El nombre de la BD está fijado por defecto: **nunca toca `Ewiflor_DB_MVP`**.
+5. **Limpieza del repo**: `git rm -r --cached` de 5.614 archivos de `.taste-skill/` y `.agents/` más `composer.phar`, `composer-setup.php` y `cloudflared-windows-amd64.msi`. De 6.050 a 430 archivos versionados. `try_login.php` (fuerza bruta) eliminado; `list_users.php` y `list_cots.php` sustituidos por `ewiflor:usuarios:listar` y `ewiflor:cotizaciones:listar` en `app/Console/Commands/`. Todo ignorado en `.gitignore`.
+6. **Documentación**: `instalacion-local.md` a v1.3.0 (procedimiento real Windows, roles, BD de prueba y comandos); `crear-modulo.md` dejó de estar vacío; `division-de-modulos.md` y `ubicacion-modelos.md` corregidos contra el código; ADR-005 actualizado; ADR-008 (OAuth) y ADR-009 (tooling y limpieza) nuevos.
+7. **Duplicación reducida**: el JS idéntico del editor de líneas se extrajo a `resources/views/components/lineas-documento-scripts.blade.php` (Ventas y Cotizaciones). La normalización de líneas/precios se unificó en `app/Support/LineasDocumento.php`; ambos servicios inyectan esa clase en lugar de repetir consulta de variantes, conversión de descuento y validación de promo.
+8. **Rendimiento y UX**: `PublicoController::catalogo()` pagina en base de datos (12 por página, `pagina`, `withQueryString()`), con categorías contadas por SQL y búsqueda con `LOWER(TRANSLATE(...))`; serialización compartida para inicio y catálogo. `dias` validado `1..365` en `SolicitudController` y limitado de nuevo en `ConsultaPublicaService`. `scope="col"` en 273 `<th>` de 29 vistas; `for`/`id`/`aria-label` en `garantias-por-vencer.blade.php`.
+9. **Cobertura nueva**: `tests/Feature/CatalogoPublicoTest.php` extiende `PostgresTestCase`, crea 13 productos `PAG-*` en transacción y cubre paginación, categoría y búsqueda. `pint.json` excluye artefactos y se aplicó Pint para que la compuerta de CI pase de verdad.
+
+### Verificación
+- `composer test:pg` → **OK (33 tests, 139 aserciones)**; `composer test` → **OK (5 tests, 23 aserciones)** (antes 2).
+- Rollback confirmado: `select count(*) from producto where codigo like 'PAG-%'` → **0** tras los tests.
+- Pint `--test` → PASSED; `artisan view:cache` y `view:clear` → OK; `artisan route:list` → OK; `pnpm build` → OK (62 módulos).
+- `bash -n tools/ci/prepare-test-db.sh` → OK con `C:\Program Files\Git\bin\bash.exe`.
+
+### Decisiones y gotchas
+- El dashboard canónico sigue siendo `Modules/Dashboard`; el duplicado de `Sistema` ya se eliminó en la oleada 3. `DashboardStatsTrait` se conserva: lo usan cuatro servicios.
+- Pint reformateó 19 archivos PHP preexistentes (imports, alineación de `=>`, `__DIR__.'/...'`); son cambios **solo de estilo**, necesarios para que `pint --test` no falle en CI.
+- Los parches `A-*.sql` crean tablas, por eso se cargan como `ewiflor_owner`: de otro modo no heredan los grants de `v5-MVP.sql`.
+- `postgres` local no autenticó con la clave probada; el script de CI no se ejecutó de extremo a extremo en Windows, pero sus pasos equivalentes sí se validaron con `ewiflor_migrator` y las suites pasan.
+- `composer-setup.php` sigue en disco pero ignorado; no afecta al checkout de CI.
+- El commit `6a17e71` (OTP por correo) quedó dentro de la oleada 4 como extra; **pendiente de confirmación del usuario** sobre conservarlo o revertirlo.
+- No se abordó la extracción de las ~2.800 líneas de CSS inline del layout público: merece un cambio separado para no mezclarla con este commit.
+- **Sin push**. `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
+
 

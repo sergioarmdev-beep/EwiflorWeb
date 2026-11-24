@@ -92,11 +92,11 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
             <table class="min-w-[640px] w-full text-sm text-left">
                 <thead class="bg-surface-2 text-xs uppercase tracking-wider text-muted">
                     <tr>
-                        <th class="px-4 py-3 font-semibold">Almacén</th>
-                        <th class="px-4 py-3 font-semibold">Tamaño</th>
-                        <th class="px-4 py-3 font-semibold">Estado</th>
+                        <th scope="col" class="px-4 py-3 font-semibold">Almacén</th>
+                        <th scope="col" class="px-4 py-3 font-semibold">Tamaño</th>
+                        <th scope="col" class="px-4 py-3 font-semibold">Estado</th>
                         @if ($puedeGestionar)
-                        <th class="px-4 py-3 text-right font-semibold">Acciones</th>
+                        <th scope="col" class="px-4 py-3 text-right font-semibold">Acciones</th>
                         @endif
                     </tr>
                 </thead>
@@ -175,10 +175,10 @@ $usuariosActivos = $usuarios->where('estado', 'ACTIVO');
             <table class="min-w-[560px] w-full text-sm text-left">
                 <thead class="bg-surface-2 text-xs uppercase tracking-wider text-muted">
                     <tr>
-                        <th class="px-4 py-3 font-semibold">Usuario</th>
-                        <th class="px-4 py-3 font-semibold">Usuario de acceso</th>
-                        <th class="px-4 py-3 font-semibold">Rol</th>
-                        <th class="px-4 py-3 font-semibold">Estado</th>
+                        <th scope="col" class="px-4 py-3 font-semibold">Usuario</th>
+                        <th scope="col" class="px-4 py-3 font-semibold">Usuario de acceso</th>
+                        <th scope="col" class="px-4 py-3 font-semibold">Rol</th>
+                        <th scope="col" class="px-4 py-3 font-semibold">Estado</th>
                     </tr>
                 </thead>
 

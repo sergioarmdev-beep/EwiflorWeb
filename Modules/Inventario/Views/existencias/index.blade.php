@@ -23,7 +23,7 @@
     <section class="overflow-hidden rounded-xl border border-line bg-surface shadow-soft">
         <div class="flex flex-col gap-2 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="font-semibold text-ink">Inventario por almacén</h2><p class="mt-1 text-xs text-muted">Detalle de cantidades y disponibilidad.</p></div><span class="text-xs text-muted">{{ $existencias->total() }} registros</span></div>
         <div class="overflow-x-auto"><table class="min-w-[1050px] w-full text-left text-sm">
-            <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider"><tr><th class="px-4 py-4">Sucursal / Almacén</th><th class="px-4 py-4">Producto</th><th class="px-4 py-4">SKU</th><th class="px-4 py-4 text-right">Total</th><th class="px-4 py-4 text-right">Reservado</th><th class="px-4 py-4 text-right">Disponible</th><th class="px-4 py-4 text-right">Mínimo</th><th class="px-4 py-4 text-center">Estado</th></tr></thead>
+            <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider"><tr><th scope="col" class="px-4 py-4">Sucursal / Almacén</th><th scope="col" class="px-4 py-4">Producto</th><th scope="col" class="px-4 py-4">SKU</th><th scope="col" class="px-4 py-4 text-right">Total</th><th scope="col" class="px-4 py-4 text-right">Reservado</th><th scope="col" class="px-4 py-4 text-right">Disponible</th><th scope="col" class="px-4 py-4 text-right">Mínimo</th><th scope="col" class="px-4 py-4 text-center">Estado</th></tr></thead>
             <tbody class="divide-y divide-line">
                 @forelse ($existencias as $e)
                     @php $necesitaReposicion = $e->alerta === 'REPONER'; @endphp

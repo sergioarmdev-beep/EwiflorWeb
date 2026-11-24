@@ -15,6 +15,7 @@
     <source>
         <include>
             <directory>app</directory>
+            <directory>Modules</directory>
         </include>
     </source>
     <php>
@@ -23,9 +24,10 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="DB_URL" value=""/>
+        <!-- ADR-005: SQLite no está instalado y no ejercita las reglas PG. -->
+        <env name="DB_CONNECTION" value="pgsql_test"/>
+        <env name="DB_TEST_DATABASE" value="Ewiflor_DB_MVP_test"/>
+        <env name="DB_TEST_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

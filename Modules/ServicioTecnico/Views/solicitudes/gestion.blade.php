@@ -55,17 +55,17 @@
         <table class="min-w-full divide-y divide-line bg-surface rounded-xl overflow-hidden shadow-soft">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Solicitud</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Registró</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Técnico</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Falla</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Garantía</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Costo</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Resultado</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Acciones</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Solicitud</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Cliente</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Registró</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Técnico</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Falla</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Garantía</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Costo</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Resultado</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Fecha</th>
+                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">

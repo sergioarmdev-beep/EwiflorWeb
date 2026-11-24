@@ -1,0 +1,11 @@
+{
+    "preset": "laravel",
+    "notPaths": [
+        "composer-setup.php",
+        ".taste-skill",
+        ".agents",
+        "storage/framework/views",
+        "vendor",
+        "node_modules"
+    ]
+}

@@ -6,11 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Categoria extends Model
 {
-    protected $table      = 'categoria';
+    protected $table = 'categoria';
+
     protected $primaryKey = 'slug';
-    public    $incrementing = false;
-    protected $keyType    = 'string';
-    public    $timestamps = false;
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    public $timestamps = false;
 
     protected $fillable = ['slug', 'titulo', 'descripcion', 'imagen', 'orden', 'activo'];
 

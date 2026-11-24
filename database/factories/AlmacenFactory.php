@@ -13,7 +13,7 @@ class AlmacenFactory extends Factory
     public function definition(): array
     {
         return [
-            'nombre' => fake()->unique()->company() . ' Almacén',
+            'nombre' => fake()->unique()->company().' Almacén',
             'tamano' => fake()->randomElement(['GRANDE', 'PEQUENO']),
             'id_sucursal' => Sucursal::inRandomOrder()->value('id_sucursal') ?? 1,
             'estado' => 'ACTIVO',

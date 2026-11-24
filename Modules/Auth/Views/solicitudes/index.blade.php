@@ -46,12 +46,12 @@
             <table class="min-w-full divide-y divide-line text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-5 py-3.5 font-semibold">Fecha</th>
-                        <th class="px-5 py-3.5 font-semibold">Solicitante</th>
-                        <th class="px-5 py-3.5 font-semibold">Contacto</th>
-                        <th class="px-5 py-3.5 font-semibold">Motivo</th>
-                        <th class="px-5 py-3.5 font-semibold">Estado</th>
-                        <th class="px-5 py-3.5 font-semibold text-right">Acciones</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Fecha</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Solicitante</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Contacto</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Motivo</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold">Estado</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line text-muted">

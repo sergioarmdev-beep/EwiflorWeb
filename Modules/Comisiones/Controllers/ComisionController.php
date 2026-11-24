@@ -5,7 +5,6 @@ namespace Modules\Comisiones\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Modules\Auth\Models\User;
-use Modules\Comisiones\Models\Comision;
 use Modules\Comisiones\Services\ComisionService;
 
 class ComisionController extends Controller

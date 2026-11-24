@@ -215,7 +215,7 @@
                     @endphp
                     <tr>
                         @foreach ($columnas as $col => $titulo)
-                        <th class="px-5 py-3.5 font-semibold" aria-sort="{{ $orden === $col ? ($dir === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                        <th scope="col" class="px-5 py-3.5 font-semibold" aria-sort="{{ $orden === $col ? ($dir === 'asc' ? 'ascending' : 'descending') : 'none' }}">
                             <a href="{{ $urlOrden($col) }}"
                                 class="group inline-flex items-center gap-1.5 uppercase tracking-wider transition-colors {{ $orden === $col ? 'text-brand-blue' : 'hover:text-ink' }}"
                                 title="Ordenar por {{ strtolower($titulo) }}">
@@ -232,7 +232,7 @@
                             </a>
                         </th>
                         @endforeach
-                        <th class="px-5 py-3.5 font-semibold text-right">Acciones</th>
+                        <th scope="col" class="px-5 py-3.5 font-semibold text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line text-muted">

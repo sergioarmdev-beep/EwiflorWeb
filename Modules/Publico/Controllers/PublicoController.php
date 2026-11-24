@@ -3,9 +3,10 @@
 namespace Modules\Publico\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Catalogo\Models\Categoria;
 use Modules\Catalogo\Models\Producto;
@@ -56,101 +57,49 @@ class PublicoController extends Controller
         ]));
     }
 
-    /** Página completa del catálogo, con filtro por categoría (?categoria=slug) y paginación. */
+    /** Página completa del catálogo, con filtro por categoría (?categoria=slug) y paginación en BD. */
     public function catalogo(Request $request)
     {
-        $datos = $this->datosCatalogo();
-
+        $categorias = $this->construirCategoriasDesdeBD();
         $slug = strtoupper((string) $request->query('categoria', ''));
-        $cat = $datos['categorias']->firstWhere('slug', $slug);
+        $cat = $categorias->firstWhere('slug', $slug);
 
         // Solo se preselecciona si existe y tiene productos.
         $categoriaActiva = ($cat && $cat['total'] > 0) ? $slug : null;
 
-        // Filtrar productos por categoría si hay una activa.
-        $productosFiltrados = $datos['productos'];
+        $query = Producto::publicos()->with([
+            'marca',
+            'imagenes',
+            'componentesCombo.componente',
+            'variantes' => fn ($q) => $q->where('estado', 'ACTIVO'),
+        ]);
+
         if ($categoriaActiva) {
-            $productosFiltrados = $productosFiltrados->where('categoria', $categoriaActiva);
+            $query->where('categoria', $categoriaActiva);
         }
 
-        // Búsqueda desde el navbar: filtra sobre todo el catálogo público.
         $termino = trim((string) $request->query('search', ''));
         if ($termino !== '') {
-            $aguja = $this->normalizar($termino);
-
-            $productosFiltrados = $productosFiltrados
-                ->filter(function (Producto $p) use ($aguja) {
-                    $texto = $this->normalizar(implode(' ', array_filter([
-                        $p->codigo,
-                        $p->nombre,
-                        $p->modelo,
-                        $p->categoria,
-                        $p->descripcion,
-                        $p->marca?->nombre,
-                    ])));
-
-                    return str_contains($texto, $aguja);
-                })
-                ->values();
+            $this->aplicarBusqueda($query, $termino);
         }
 
-        // Paginación (12 por página).
-        $pagina = (int) $request->query('pagina', 1);
-        $porPagina = self::PRODUCTOS_POR_PAGINA;
-        $offset = ($pagina - 1) * $porPagina;
-        $productosPaginados = $productosFiltrados->slice($offset, $porPagina)->values();
+        // Paginación en base de datos: solo se hidratan los productos de la página.
+        $paginator = $query->orderBy('nombre')
+            ->paginate(self::PRODUCTOS_POR_PAGINA, ['*'], 'pagina')
+            ->withQueryString();
 
-        $paginator = new LengthAwarePaginator(
-            $productosPaginados,
-            $productosFiltrados->count(),
-            $porPagina,
-            $pagina,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        $productos = $paginator->getCollection();
+        $serializados = $this->serializarProductos($productos);
 
-        // Recalcular promociones solo para los productos de esta página.
-        $promociones = $this->promociones->mapaVigente(
-            $productosPaginados->flatMap(fn (Producto $p) => $p->variantes)
-        );
-
-        $detalle = $productosPaginados->mapWithKeys(function (Producto $p) use ($promociones) {
-            return [$p->id_producto => [
-                'id' => $p->id_producto,
-                'nombre' => $p->nombre,
-                'marca' => $p->marca?->nombre,
-                'pais' => $p->marca?->pais_origen,
-                'modelo' => $p->modelo,
-                'categoria' => $p->categoria,
-                'tipo' => $p->tipo_producto,
-                'garantia' => (int) $p->garantia_meses,
-                'descripcion' => $p->descripcion,
-                'es_combo' => $p->esCombo(),
-                'componentes' => $p->esCombo()
-                    ? $p->componentesCombo->map(fn ($c) => ($c->componente?->nombre ?? 'Producto #'.$c->id_componente).' ×'.$c->cantidad)->implode(', ')
-                    : null,
-                'imagenes' => $p->imagenes->map(fn ($i) => [
-                    'url' => $i->url,
-                    'alt' => $i->texto_alternativo ?: $p->nombre,
-                ])->values(),
-                'variantes' => $p->variantes->map(fn ($v) => [
-                    'sku' => $v->sku,
-                    'color' => $v->color,
-                    'caracteristicas' => $v->caracteristicas,
-                    'precio' => $v->precio_usd !== null ? (float) $v->precio_usd : null,
-                    'promo' => $promociones[$v->id_variante] ?? null,
-                ])->values(),
-            ]];
-        });
-
-        return view('publico::catalogo', array_merge($datos, [
-            'productos' => $productosPaginados,
+        return view('publico::catalogo', [
+            'productos' => $productos,
             'paginator' => $paginator,
-            'totalProductos' => $productosFiltrados->count(),
-            'detalle' => $detalle,
-            'promociones' => $promociones,
-            'categorias' => $datos['categorias'],
+            'totalProductos' => $paginator->total(),
+            'detalle' => $serializados['detalle'],
+            'promociones' => $serializados['promociones'],
+            'categorias' => $categorias,
             'categoriaActiva' => $categoriaActiva,
-        ]));
+        ]);
     }
 
     /** Página "Nosotros" (solo vista). */
@@ -212,6 +161,24 @@ class PublicoController extends Controller
 
         $productos = $limite ? $todos->take($limite)->values() : $todos;
 
+        $serializados = $this->serializarProductos($productos);
+
+        return array_merge([
+            'productos' => $productos,
+            'totalProductos' => $todos->count(),
+            'categorias' => $categorias,
+            'categoriaActiva' => null,
+        ], $serializados);
+    }
+
+    /**
+     * Serializa solo los productos recibidos (página actual del catálogo o
+     * vista previa del inicio). Antes estaba duplicado en ambos flujos.
+     *
+     * @return array{detalle: Collection, promociones: array}
+     */
+    private function serializarProductos(Collection $productos): array
+    {
         $promociones = $this->promociones->mapaVigente(
             $productos->flatMap(fn (Producto $p) => $p->variantes)
         );
@@ -245,14 +212,55 @@ class PublicoController extends Controller
             ]];
         });
 
-        return [
-            'productos' => $productos,
-            'totalProductos' => $todos->count(),
-            'detalle' => $detalle,
-            'promociones' => $promociones,
-            'categorias' => $categorias,
-            'categoriaActiva' => null,
-        ];
+        return ['detalle' => $detalle, 'promociones' => $promociones];
+    }
+
+    /** Búsqueda en base de datos, con los mismos criterios que el filtro anterior en memoria. */
+    private function aplicarBusqueda(Builder $query, string $termino): void
+    {
+        $aguja = '%'.addcslashes($this->normalizar($termino), '%_\\').'%';
+        $columna = fn (string $c) => "LOWER(TRANSLATE({$c}, 'ÁÉÍÓÚÜÑáéíóúüñ', 'AEIOUUNaeiouun')) LIKE ?";
+
+        $query->where(function (Builder $q) use ($aguja, $columna) {
+            foreach (['producto.codigo', 'producto.nombre', 'producto.modelo', 'producto.categoria', 'producto.descripcion'] as $campo) {
+                $q->orWhereRaw($columna($campo), [$aguja]);
+            }
+            $q->orWhereHas('marca', fn (Builder $m) => $m->whereRaw($columna('nombre'), [$aguja]));
+        });
+    }
+
+    /** Conteos por categoría sin cargar el catálogo completo en memoria. */
+    private function construirCategoriasDesdeBD(): Collection
+    {
+        $conteos = Producto::publicos()
+            ->selectRaw('categoria, count(*) as total')
+            ->groupBy('categoria')
+            ->pluck('total', 'categoria');
+
+        $registros = Categoria::activas()->get()->keyBy('slug');
+        $slugs = $registros->isNotEmpty() ? $registros->keys()->all() : Producto::CATEGORIAS;
+
+        return collect($slugs)->map(function (string $slug) use ($conteos, $registros) {
+            $cat = $registros->get($slug);
+
+            if (! $cat?->imagen) {
+                $imagen = DB::table('producto_imagen as pi')
+                    ->join('producto as p', 'p.id_producto', '=', 'pi.id_producto')
+                    ->where('p.es_publico', true)
+                    ->where('p.estado', 'ACTIVO')
+                    ->where('p.categoria', $slug)
+                    ->orderBy('pi.orden')
+                    ->value('pi.url');
+            }
+
+            return [
+                'slug' => $slug,
+                'titulo' => $cat?->titulo ?? ucfirst(mb_strtolower($slug)),
+                'descripcion' => $cat?->descripcion ?? '',
+                'imagen' => $cat?->imagen ?: ($imagen ?? null),
+                'total' => (int) ($conteos[$slug] ?? 0),
+            ];
+        })->values();
     }
 
     /**

@@ -97,13 +97,13 @@
     <table>
         <thead>
             <tr>
-                <th>SKU</th>
-                <th>Producto</th>
-                <th class="right">Cant.</th>
-                <th class="right">P. Unit. USD</th>
-                <th class="right">Desc. %</th>
-                <th class="right">Garantía (meses)</th>
-                <th class="right">Subtotal USD</th>
+                <th scope="col">SKU</th>
+                <th scope="col">Producto</th>
+                <th scope="col" class="right">Cant.</th>
+                <th scope="col" class="right">P. Unit. USD</th>
+                <th scope="col" class="right">Desc. %</th>
+                <th scope="col" class="right">Garantía (meses)</th>
+                <th scope="col" class="right">Subtotal USD</th>
             </tr>
         </thead>
         <tbody>

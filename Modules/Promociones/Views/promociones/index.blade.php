@@ -94,12 +94,12 @@
             <table class="min-w-full divide-y divide-line text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="py-3.5 px-5 font-semibold">Promoción</th>
-                        <th class="py-3.5 px-5 font-semibold">Descuento</th>
-                        <th class="py-3.5 px-5 font-semibold">Variantes</th>
-                        <th class="py-3.5 px-5 font-semibold">Vigencia</th>
-                        <th class="py-3.5 px-5 text-center font-semibold">Estado</th>
-                        <th class="py-3.5 px-5 text-center font-semibold">Acciones</th>
+                        <th scope="col" class="py-3.5 px-5 font-semibold">Promoción</th>
+                        <th scope="col" class="py-3.5 px-5 font-semibold">Descuento</th>
+                        <th scope="col" class="py-3.5 px-5 font-semibold">Variantes</th>
+                        <th scope="col" class="py-3.5 px-5 font-semibold">Vigencia</th>
+                        <th scope="col" class="py-3.5 px-5 text-center font-semibold">Estado</th>
+                        <th scope="col" class="py-3.5 px-5 text-center font-semibold">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line text-muted text-xs">

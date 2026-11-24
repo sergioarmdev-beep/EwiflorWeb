@@ -99,6 +99,23 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        // ADR-005: conexión exclusiva de la suite de integración. Nunca apunta
+        // a Ewiflor_DB_MVP; por defecto usa la BD desechable Ewiflor_DB_MVP_test.
+        'pgsql_test' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_TEST_URL'),
+            'host' => env('DB_TEST_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_TEST_PORT', env('DB_PORT', '5432')),
+            'database' => env('DB_TEST_DATABASE', 'Ewiflor_DB_MVP_test'),
+            'username' => env('DB_TEST_USERNAME', env('DB_USERNAME', 'ewiflor_app')),
+            'password' => env('DB_TEST_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => 'prefer',
+        ],
+
         'pgsql_migrator' => [
             'driver' => 'pgsql',
             'url' => env('DB_MIGRATOR_URL'),

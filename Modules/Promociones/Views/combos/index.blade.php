@@ -84,14 +84,14 @@
             <table class="min-w-full divide-y divide-line text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="py-3.5 px-5 text-center font-semibold">Imagen</th>
-                        <th class="py-3.5 px-5 font-semibold">Código</th>
-                        <th class="py-3.5 px-5 font-semibold">Nombre</th>
-                        <th class="py-3.5 px-5 font-semibold">Incluye</th>
-                        <th class="py-3.5 px-5 text-center font-semibold">Precio</th>
-                        <th class="py-3.5 px-5 text-center font-semibold">Stock</th>
-                        <th class="py-3.5 px-5 text-center font-semibold">Estado</th>
-                        <th class="py-3.5 px-5 text-center font-semibold">Acciones</th>
+                        <th scope="col" class="py-3.5 px-5 text-center font-semibold">Imagen</th>
+                        <th scope="col" class="py-3.5 px-5 font-semibold">Código</th>
+                        <th scope="col" class="py-3.5 px-5 font-semibold">Nombre</th>
+                        <th scope="col" class="py-3.5 px-5 font-semibold">Incluye</th>
+                        <th scope="col" class="py-3.5 px-5 text-center font-semibold">Precio</th>
+                        <th scope="col" class="py-3.5 px-5 text-center font-semibold">Stock</th>
+                        <th scope="col" class="py-3.5 px-5 text-center font-semibold">Estado</th>
+                        <th scope="col" class="py-3.5 px-5 text-center font-semibold">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line text-muted text-xs">

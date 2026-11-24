@@ -4,7 +4,7 @@
 - **Fecha:** 2026-11-24
 - **Última revisión:** 2026-11-24
 - **Decisores:** Equipo EwiflorWeb + usuario
-- **Módulo afectado:** `tests/`, `phpunit.xml`, `composer.json`
+- **Módulo afectado:** `tests/`, `config/database.php`, `phpunit.xml`, `phpunit.pg.xml`, `composer.json`, `.github/workflows/ci.yml`
 - **Motor de base de datos:** PostgreSQL
 
 ## Contexto
@@ -21,14 +21,14 @@ Consecuencias observadas:
 
 ## Decisión
 
-### 1. Dos suites separadas, con perfiles distintos
+### 1. Dos suites separadas, un mismo destino PG
 
 | Suite | Configuración | Base de datos | Qué cubre |
 |-------|---------------|---------------|-----------|
-| `Unit`, `Feature` (actual) | `phpunit.xml` | SQLite en memoria | lógica PHP pura, helpers, HTTP que no toca reglas PG |
-| `Integration` (nueva) | `phpunit.pg.xml` | PostgreSQL dedicada | funciones PG, reglas transaccionales, integración módulo ↔ BD |
+| `Unit`, `Feature` | `phpunit.xml` | `pgsql_test` → `Ewiflor_DB_MVP_test` | lógica PHP pura, helpers, HTTP que no toca reglas PG |
+| `Integration` | `phpunit.pg.xml` | `pgsql_test` → `Ewiflor_DB_MVP_test` | funciones PG, reglas transaccionales, integración módulo ↔ BD |
 
-No se cambia `phpunit.xml` para «arreglar» el fallo del driver: eso solo enmascararía que la suite actual no puede ejercer el negocio.
+Se descarta SQLite: el PHP de referencia no trae `pdo_sqlite` y un driver distinto no puede ejercitar las funciones PostgreSQL. Las dos configuraciones comparten la conexión `pgsql_test`, definida en `config/database.php` con variables `DB_TEST_*` (con respaldo en `DB_*` para el entorno local). El nombre de la BD está fijado en los XML: ninguna suite puede apuntar accidentalmente a `Ewiflor_DB_MVP`. `<source>` incluye `app/` **y** `Modules/`, porque ahí vive la lógica de negocio.
 
 ### 2. Base de datos de prueba dedicada
 
@@ -46,7 +46,7 @@ No se cambia `phpunit.xml` para «arreglar» el fallo del driver: eso solo enmas
 
 ### 4. Configuración y ejecución
 
-- `phpunit.pg.xml`: hereda la estructura de `phpunit.xml`, define la suite `Integration` (`tests/Integration`) y sobrescribe solo `DB_CONNECTION=pgsql` y `DB_DATABASE=Ewiflor_DB_MVP_test`. Usuario/contraseña se toman de `.env` (no se versionan).
+- `phpunit.xml` y `phpunit.pg.xml`: definen `DB_CONNECTION=pgsql_test` y `DB_TEST_DATABASE=Ewiflor_DB_MVP_test`; el segundo limita la suite a `tests/Integration`. Usuario/contraseña se toman de `.env`/`DB_TEST_*` (no se versionan). `composer test` y `composer test:pg` usan la misma BD.
 - Script Composer `test:pg`: limpia caché de configuración y ejecuta `vendor/phpunit/phpunit/phpunit -c phpunit.pg.xml` con el PHP de `C:\tools\php85` (evita el problema del PATH con XAMPP 8.2, igual que Pint).
 - Los tests PG se escriben en español y siguen el patrón `[OK]/[FAIL]` de los scripts temporales usados hasta ahora, pero con aserciones PHPUnit reales.
 
@@ -71,6 +71,7 @@ Una vez aprobada la BD, cubrir como mínimo:
 - [x] `phpunit.pg.xml`, `Tests\Integration\PostgresTestCase` y script `test:pg` preparados.
 - [x] Crear y cargar `Ewiflor_DB_MVP_test`. El usuario autorizó usar la credencial local de `postgres`; `ewiflor_migrator` sigue sin `CREATEDB`, pero eso ya no bloquea la creación. Se cargó `v5-MVP.sql` + configuración + parches `A-01`…`A-04` y las 19 migraciones Laravel. Verificación: 37 tablas, 8 vistas, `solicitud_servicio.id_sucursal`, `idx_solicitud_sucursal`, funciones críticas y grants de `ewiflor_app`. `Ewiflor_DB_MVP` quedó idéntica (16 solicitudes antes y después).
 - [x] Escribir los tests de la sección 5: `IntentoAccesoTest`, `RegistrarVentaTest`, `ConvertirCotizacionTest` y `AlcanceSolicitudTest`. `composer test:pg` → **OK (9 tests, 45 assertions)**; rollback verificado (BD de prueba queda sin filas de negocio).
+- [x] Oleada 4: conexión `pgsql_test`, ambas suites sobre `Ewiflor_DB_MVP_test`, `<source>` con `Modules/`, suite PG en **33 tests / 139 aserciones** y CI con aprovisionamiento desechable (`.github/workflows/ci.yml`, `tools/ci/prepare-test-db.sh`).
 
 ### Notas de aprovisionamiento
 

@@ -447,13 +447,13 @@ true
             <table class="min-w-[900px] w-full text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-4 font-semibold">N.º</th>
-                        <th class="px-4 py-4 font-semibold">Fecha</th>
-                        <th class="px-4 py-4 font-semibold">Estado</th>
-                        <th class="px-4 py-4 font-semibold">Vigencia</th>
-                        <th class="px-4 py-4 text-right font-semibold">Total USD</th>
-                        <th class="px-4 py-4 text-right font-semibold">Total Bs</th>
-                        <th class="px-4 py-4 text-right font-semibold">Acción</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">N.º</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Fecha</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Estado</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Vigencia</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Total USD</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Total Bs</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Acción</th>
                     </tr>
                 </thead>
 
@@ -579,13 +579,13 @@ true
             <table class="min-w-[950px] w-full text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-4 font-semibold">N.º</th>
-                        <th class="px-4 py-4 font-semibold">Fecha</th>
-                        <th class="px-4 py-4 font-semibold">Estado</th>
-                        <th class="px-4 py-4 text-right font-semibold">Total Bs</th>
-                        <th class="px-4 py-4 text-right font-semibold">Pagado Bs</th>
-                        <th class="px-4 py-4 text-right font-semibold">Saldo Bs</th>
-                        <th class="px-4 py-4 text-right font-semibold">Acción</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">N.º</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Fecha</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Estado</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Total Bs</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Pagado Bs</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Saldo Bs</th>
+                        <th scope="col" class="px-4 py-4 text-right font-semibold">Acción</th>
                     </tr>
                 </thead>
 
@@ -707,13 +707,13 @@ true
             <table class="min-w-[950px] w-full text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-4 font-semibold">Garantía</th>
-                        <th class="px-4 py-4 font-semibold">Producto / SKU</th>
-                        <th class="px-4 py-4 font-semibold">Fecha inicio</th>
-                        <th class="px-4 py-4 font-semibold">Vencimiento</th>
-                        <th class="px-4 py-4 font-semibold text-center">Días restantes</th>
-                        <th class="px-4 py-4 font-semibold">Venta</th>
-                        <th class="px-4 py-4 font-semibold">Estado</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Garantía</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Producto / SKU</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Fecha inicio</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Vencimiento</th>
+                        <th scope="col" class="px-4 py-4 font-semibold text-center">Días restantes</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Venta</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Estado</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line">
@@ -826,13 +826,13 @@ true
             <table class="min-w-[950px] w-full text-sm text-left">
                 <thead class="bg-surface-2 text-muted text-xs uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-4 font-semibold">Solicitud</th>
-                        <th class="px-4 py-4 font-semibold">Fecha</th>
-                        <th class="px-4 py-4 font-semibold">Falla</th>
-                        <th class="px-4 py-4 font-semibold text-center">Estado</th>
-                        <th class="px-4 py-4 font-semibold">Técnico</th>
-                        <th class="px-4 py-4 font-semibold">Resultado</th>
-                        <th class="px-4 py-4 font-semibold text-right">Acción</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Solicitud</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Fecha</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Falla</th>
+                        <th scope="col" class="px-4 py-4 font-semibold text-center">Estado</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Técnico</th>
+                        <th scope="col" class="px-4 py-4 font-semibold">Resultado</th>
+                        <th scope="col" class="px-4 py-4 font-semibold text-right">Acción</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line">

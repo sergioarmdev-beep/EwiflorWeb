@@ -41,13 +41,13 @@ $esGerencia = $esGerencia ?? false;
             <table class="min-w-full text-xs text-left">
                 <thead class="bg-surface-2 text-[10px] uppercase tracking-wider text-muted">
                     <tr>
-                        <th class="px-4 py-3 font-bold">Fecha</th>
-                        <th class="px-4 py-3 font-bold">Cliente</th>
+                        <th scope="col" class="px-4 py-3 font-bold">Fecha</th>
+                        <th scope="col" class="px-4 py-3 font-bold">Cliente</th>
                         @if($esGerencia)
-                        <th class="px-4 py-3 font-bold">Vendedor</th>
+                        <th scope="col" class="px-4 py-3 font-bold">Vendedor</th>
                         @endif
-                        <th class="px-4 py-3 text-right font-bold">Total</th>
-                        <th class="px-4 py-3 text-right font-bold">Pagado</th>
+                        <th scope="col" class="px-4 py-3 text-right font-bold">Total</th>
+                        <th scope="col" class="px-4 py-3 text-right font-bold">Pagado</th>
                     </tr>
                 </thead>
 

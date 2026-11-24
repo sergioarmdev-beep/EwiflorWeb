@@ -158,15 +158,15 @@
         <table class="min-w-full divide-y divide-line">
             <thead class="bg-surface-2">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Vendedor</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Sucursal</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Año / Mes</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted"># Ventas</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total ventas (Bs)</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">% Comisión</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Monto comisión (Bs)</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Acciones</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Vendedor</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Sucursal</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Año / Mes</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted"># Ventas</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Total ventas (Bs)</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">% Comisión</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Monto comisión (Bs)</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Estado</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-line">
