@@ -129,6 +129,41 @@ class SolicitudService
     }
 
     /**
+     * ¿Puede este usuario consultar el detalle de la solicitud?
+     *
+     * - GERENTE/ADMINISTRADOR: gestión global del módulo (coherente con
+     *   `gestion()` y `todas()`). La restricción por sucursal queda pendiente
+     *   de la ADR de alcance de ADMIN.
+     * - SERVICIO_TECNICO: solo las asignadas a él; también puede ver las
+     *   PENDIENTE sin asignar para aceptarlas desde la bandeja.
+     * - VENDEDOR: solo las que él registró.
+     * - Cualquier otro rol: sin acceso (fail-closed).
+     */
+    public function visiblePara(User $user, SolicitudServicio $solicitud): bool
+    {
+        $rol = $user->nombre_rol;
+
+        if (in_array($rol, ['GERENTE', 'ADMINISTRADOR'], true)) {
+            return true;
+        }
+
+        if ($rol === 'SERVICIO_TECNICO') {
+            if ($solicitud->id_tecnico !== null) {
+                return (int) $solicitud->id_tecnico === (int) $user->id_usuario;
+            }
+
+            return $solicitud->estado === 'PENDIENTE';
+        }
+
+        if ($rol === 'VENDEDOR') {
+            return $solicitud->id_usuario_registra !== null
+                && (int) $solicitud->id_usuario_registra === (int) $user->id_usuario;
+        }
+
+        return false;
+    }
+
+    /**
      * Busca un cliente por nombre y teléfono normalizados.
      * Devuelve null si no existe (bloqueo por diseño).
      */

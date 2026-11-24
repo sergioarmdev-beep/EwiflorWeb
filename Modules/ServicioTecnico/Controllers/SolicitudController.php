@@ -146,8 +146,11 @@ class SolicitudController extends Controller
     /**
      * Detalle de una solicitud (vendedor, técnico, gerente, admin).
      */
-    public function show(SolicitudServicio $solicitud)
+    public function show(Request $request, SolicitudServicio $solicitud)
     {
+        // 404 en vez de 403 para no revelar la existencia de encargos ajenos.
+        abort_unless($this->solicitudes->visiblePara($request->user(), $solicitud), 404);
+
         $solicitud->load(['cliente', 'garantia', 'tecnico', 'registra']);
 
         return view('serviciotecnico::solicitudes.show', [

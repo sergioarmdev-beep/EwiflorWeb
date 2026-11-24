@@ -1131,4 +1131,36 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - Revisar capturas a 768/1024 con modo oscuro ya hechas (sin hallazgos). El footer y mapa están implementados y sin desbordes.
 - Cuando haya imágenes de marca en `public/images/marcas/`, se mostrarán automáticamente (ya está el check `is_file`).
 
+---
+
+## 2026-11-24 — Oleada 1 (P0): seguridad pública, OAuth, IDOR y regresión `garantia_meses`
+
+### Qué se hizo (7 puntos aprobados)
+1. **XSS stored en modal público**: `Modules/Publico/Views/layouts/public.blade.php` agrega `JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT` al `json_encode($detalle)`, para que texto editable desde el admin no cierre el `<script id="product-data">`.
+2. **XSS en popup Leaflet del footer**: `Modules/Publico/Views/partials/footer.blade.php` añade `escapeHtml()` (vía `textContent` + `innerHTML`) para nombre y dirección de sucursales antes de concatenarlos al HTML del popup.
+3. **OAuth de Google**: `Modules/Auth/Controllers/GoogleAuthController.php` valida `return_to` con `returnToSeguro()` (solo rutas relativas internas; rechaza `//host`, `/\host`, barras invertidas, absolutas y caracteres de control), respeta `estaBloqueado()` y llama a `IntentoAccesoService::registrarExitoso()` para limpiar la ventana de fallos. `Modules/Auth/Routes/web.php`: `throttle:10,1` en redirect y callback.
+4. **IDOR en detalle de solicitudes**: `SolicitudService::visiblePara()` (GERENTE/ADMIN → todo; TÉCNICO → asignadas o PENDIENTE sin asignar; VENDEDOR → las que registró; resto fail-closed) + `abort_unless(..., 404)` en `SolicitudController::show(Request, ...)`.
+5. **Regresión `garantia_meses`**: la migración de alcance por sucursal (18/11) redefinió `convertir_cotizacion_a_venta()` y perdió la clave. Parche canónico `database/sql/patches/A-03-convertir-cotizacion-garantia-meses.sql` + migración `Modules/Ventas/Database/Migrations/2026_11_24_000001_restorar_garantia_meses_conversion.php` (`down()` restaura la versión sin el campo). Conserva las guardas de sucursal. **Aplicada en BD**.
+6. **Flooding del contacto público**: `throttle:5,1` en `POST /contactar-servicio-tecnico` y `SesionCliente::establecer()` antes de redirigir al panel (antes la redireccióncaía en middleware `sesion.cliente.publica` sin identidad).
+7. **Secretos/.env.example**: `APP_DEBUG=false`, `GOOGLE_CLIENT_*` vacíos con aviso de rotación y `WA_CONTACT=`.
+
+### Decisiones
+- `visiblePara()` da a GERENTE/ADMINISTRADOR acceso global porque `gestion()`/`todas()` ya lo son; la ADR de alcance por sucursal en Servicio Técnico queda para la oleada 2.
+- 404 (no 403) en el detalle para no revelar existencia de solicitudes ajenas.
+- No se rotó `GOOGLE_CLIENT_SECRET` real: requiere acción externa en Google; `.env` se dejó intacto para no romper el dev local.
+- No se iniciaron las oleadas 2-4.
+
+### Verificación
+- Scripts temporales en `%TEMP%\opencode\`: `verify_p0.php` → `OK: convertir_cotizacion_a_venta propaga garantia_meses`; `verify_p0_security.php` → 16/16 `[OK]` (`returnToSeguro` + `visiblePara`).
+- `php -l` OK en 7 archivos; Pint `--test` → PASSED; `view:cache` OK; `route:list` OK para OAuth, contacto y `serviciotecnico.show`.
+- Migración aplicada con `--database=pgsql_migrator --path=... --force` → `138.49ms DONE`.
+- `artisan test` → `ExampleTest` unitario PASA; `Feature\ExampleTest` falla por `could not find driver (sqlite)` — **preexistente**: `C:\tools\php85\php.exe -m` solo tiene `pdo_pgsql`, y `phpunit.xml` fuerza SQLite en memoria. No es regresión de esta oleada.
+
+### Gotchas
+- Pint reformateó `PublicoController.php` completo (deuda de estilo previa: imports, `fn ()`, alineación de arrays). El diff de ese archivo es más grande que el cambio funcional (3 líneas nuevas).
+- `resources/views/layouts/app.blade.php` tenía un cambio local preexistente (título `Dashboard` → `Panel de control`); **no tocar**, no pertenece a esta oleada.
+- `.env.example` sigue sin salto de línea final (como antes).
+- `IntentoAccesoService::registrarExitoso()` espera `string` para el identificador; en OAuth se pasa `$usuario->correo`, que existe porque el usuario se busca por el correo de Google.
+- Sin tests automatizados de negocio en PG (estrategia sin definir); verificación por scripts + Artisan.
+
 

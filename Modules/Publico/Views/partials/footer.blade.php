@@ -116,12 +116,21 @@
             iconAnchor: [7, 7]
         });
 
+        // El nombre y la dirección vienen de la BD (editables desde Sucursales):
+        // hay que escaparlos antes de concatenarlos al HTML del popup.
+        function escapeHtml(str) {
+            var div = document.createElement('div');
+            div.textContent = str === null || str === undefined ? '' : String(str);
+            return div.innerHTML;
+        }
+
         var limites = [];
 
         puntos.forEach(function (p) {
             L.marker([p.lat, p.lng], { icon: icono })
                 .addTo(mapa)
-                .bindPopup('<strong>' + p.nombre + '</strong>' + (p.direccion ? '<br>' + p.direccion : ''));
+                .bindPopup('<strong>' + escapeHtml(p.nombre) + '</strong>' +
+                    (p.direccion ? '<br>' + escapeHtml(p.direccion) : ''));
             limites.push([p.lat, p.lng]);
         });
 

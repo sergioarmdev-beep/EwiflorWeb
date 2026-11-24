@@ -7,10 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use Modules\Catalogo\Models\Producto;
 use Modules\Catalogo\Models\Categoria;
+use Modules\Catalogo\Models\Producto;
 use Modules\Promociones\Services\PromocionService;
 use Modules\ServicioTecnico\Services\SolicitudService;
+use Modules\ServicioTecnico\Support\SesionCliente;
 use Modules\Ventas\Models\DetalleVenta;
 
 class PublicoController extends Controller
@@ -61,7 +62,7 @@ class PublicoController extends Controller
         $datos = $this->datosCatalogo();
 
         $slug = strtoupper((string) $request->query('categoria', ''));
-        $cat  = $datos['categorias']->firstWhere('slug', $slug);
+        $cat = $datos['categorias']->firstWhere('slug', $slug);
 
         // Solo se preselecciona si existe y tiene productos.
         $categoriaActiva = ($cat && $cat['total'] > 0) ? $slug : null;
@@ -109,7 +110,7 @@ class PublicoController extends Controller
 
         // Recalcular promociones solo para los productos de esta página.
         $promociones = $this->promociones->mapaVigente(
-            $productosPaginados->flatMap(fn(Producto $p) => $p->variantes)
+            $productosPaginados->flatMap(fn (Producto $p) => $p->variantes)
         );
 
         $detalle = $productosPaginados->mapWithKeys(function (Producto $p) use ($promociones) {
@@ -125,13 +126,13 @@ class PublicoController extends Controller
                 'descripcion' => $p->descripcion,
                 'es_combo' => $p->esCombo(),
                 'componentes' => $p->esCombo()
-                    ? $p->componentesCombo->map(fn($c) => ($c->componente?->nombre ?? 'Producto #' . $c->id_componente) . ' ×' . $c->cantidad)->implode(', ')
+                    ? $p->componentesCombo->map(fn ($c) => ($c->componente?->nombre ?? 'Producto #'.$c->id_componente).' ×'.$c->cantidad)->implode(', ')
                     : null,
-                'imagenes' => $p->imagenes->map(fn($i) => [
+                'imagenes' => $p->imagenes->map(fn ($i) => [
                     'url' => $i->url,
                     'alt' => $i->texto_alternativo ?: $p->nombre,
                 ])->values(),
-                'variantes' => $p->variantes->map(fn($v) => [
+                'variantes' => $p->variantes->map(fn ($v) => [
                     'sku' => $v->sku,
                     'color' => $v->color,
                     'caracteristicas' => $v->caracteristicas,
@@ -142,12 +143,12 @@ class PublicoController extends Controller
         });
 
         return view('publico::catalogo', array_merge($datos, [
-            'productos'       => $productosPaginados,
-            'paginator'       => $paginator,
-            'totalProductos'  => $productosFiltrados->count(),
-            'detalle'         => $detalle,
-            'promociones'     => $promociones,
-            'categorias'      => $datos['categorias'],
+            'productos' => $productosPaginados,
+            'paginator' => $paginator,
+            'totalProductos' => $productosFiltrados->count(),
+            'detalle' => $detalle,
+            'promociones' => $promociones,
+            'categorias' => $datos['categorias'],
             'categoriaActiva' => $categoriaActiva,
         ]));
     }
@@ -202,7 +203,7 @@ class PublicoController extends Controller
                 'marca',
                 'imagenes',
                 'componentesCombo.componente',
-                'variantes' => fn($q) => $q->where('estado', 'ACTIVO'),
+                'variantes' => fn ($q) => $q->where('estado', 'ACTIVO'),
             ])
             ->orderBy('nombre')
             ->get();
@@ -212,7 +213,7 @@ class PublicoController extends Controller
         $productos = $limite ? $todos->take($limite)->values() : $todos;
 
         $promociones = $this->promociones->mapaVigente(
-            $productos->flatMap(fn(Producto $p) => $p->variantes)
+            $productos->flatMap(fn (Producto $p) => $p->variantes)
         );
 
         $detalle = $productos->mapWithKeys(function (Producto $p) use ($promociones) {
@@ -228,13 +229,13 @@ class PublicoController extends Controller
                 'descripcion' => $p->descripcion,
                 'es_combo' => $p->esCombo(),
                 'componentes' => $p->esCombo()
-                    ? $p->componentesCombo->map(fn($c) => ($c->componente?->nombre ?? 'Producto #' . $c->id_componente) . ' ×' . $c->cantidad)->implode(', ')
+                    ? $p->componentesCombo->map(fn ($c) => ($c->componente?->nombre ?? 'Producto #'.$c->id_componente).' ×'.$c->cantidad)->implode(', ')
                     : null,
-                'imagenes' => $p->imagenes->map(fn($i) => [
+                'imagenes' => $p->imagenes->map(fn ($i) => [
                     'url' => $i->url,
                     'alt' => $i->texto_alternativo ?: $p->nombre,
                 ])->values(),
-                'variantes' => $p->variantes->map(fn($v) => [
+                'variantes' => $p->variantes->map(fn ($v) => [
                     'sku' => $v->sku,
                     'color' => $v->color,
                     'caracteristicas' => $v->caracteristicas,
@@ -245,11 +246,11 @@ class PublicoController extends Controller
         });
 
         return [
-            'productos'       => $productos,
-            'totalProductos'  => $todos->count(),
-            'detalle'         => $detalle,
-            'promociones'     => $promociones,
-            'categorias'      => $categorias,
+            'productos' => $productos,
+            'totalProductos' => $todos->count(),
+            'detalle' => $detalle,
+            'promociones' => $promociones,
+            'categorias' => $categorias,
             'categoriaActiva' => null,
         ];
     }
@@ -271,21 +272,20 @@ class PublicoController extends Controller
 
         return collect($slugs)->map(function (string $slug) use ($agrupados, $registros) {
             $grupo = $agrupados->get($slug, collect());
-            $cat   = $registros->get($slug);
+            $cat = $registros->get($slug);
 
             // Imagen de respaldo: primer producto de la categoría con imagen.
-            $conImagen = $grupo->first(fn($p) => $p->imagenes->isNotEmpty());
+            $conImagen = $grupo->first(fn ($p) => $p->imagenes->isNotEmpty());
 
             return [
-                'slug'        => $slug,
-                'titulo'      => $cat?->titulo      ?? ucfirst(mb_strtolower($slug)),
+                'slug' => $slug,
+                'titulo' => $cat?->titulo ?? ucfirst(mb_strtolower($slug)),
                 'descripcion' => $cat?->descripcion ?? '',
-                'imagen'      => $cat?->imagen ?: $conImagen?->imagenes->first()?->url,
-                'total'       => $grupo->count(),
+                'imagen' => $cat?->imagen ?: $conImagen?->imagenes->first()?->url,
+                'total' => $grupo->count(),
             ];
         })->values();
     }
-
 
     public function contactarServicioTecnico(Request $request)
     {
@@ -308,6 +308,15 @@ class PublicoController extends Controller
             'id_garantia' => null,
         ]);
 
+        // El panel público exige sesión de cliente: el formulario ya validó
+        // nombre + celular, así que la establecemos aquí y no redirigimos a
+        // una ruta protegida sin identidad.
+        SesionCliente::establecer(
+            $cliente->id_cliente,
+            $cliente->nombre,
+            $cliente->telefono,
+        );
+
         return redirect()
             ->route('serviciotecnico.publico.panel')
             ->with('success', 'Tu solicitud de contacto ha sido registrada. Un técnico la revisará pronto.');
@@ -320,7 +329,7 @@ class PublicoController extends Controller
             ->with([
                 'marca',
                 'imagenes',
-                'variantes' => fn($q) => $q->where('estado', 'ACTIVO'),
+                'variantes' => fn ($q) => $q->where('estado', 'ACTIVO'),
             ])
             ->findOrFail($id);
 

@@ -22,6 +22,7 @@ Route::get('/soporte-tecnico', [PublicoController::class, 'servicioTecnico'])
 
 // Contacto con servicio técnico desde la web pública (cliente existente).
 Route::post('/contactar-servicio-tecnico', [PublicoController::class, 'contactarServicioTecnico'])
+    ->middleware('throttle:5,1')
     ->name('publico.contactar.servicio.tecnico');
 
 // Página de detalle de producto público (SEO y compartición).

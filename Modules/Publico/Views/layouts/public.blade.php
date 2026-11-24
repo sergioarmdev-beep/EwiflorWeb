@@ -2874,9 +2874,10 @@
     @include('publico::partials.footer')
     @include('publico::partials.product-modal')
 
-    {{-- Datos del modal como JSON válido (sin flags que rompan la estructura). --}}
+    {{-- Datos del modal como JSON válido. Los flags HEX evitan que contenido
+         editable desde el admin cierre este bloque <script> (XSS stored). --}}
     <script id="product-data" type="application/json">
-        {!! json_encode($detalle ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+        {!! json_encode($detalle ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
     </script>
 
     <script>

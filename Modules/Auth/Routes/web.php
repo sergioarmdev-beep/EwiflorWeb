@@ -19,8 +19,11 @@ Route::middleware('web')->group(function () {
         Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
 
         // OAuth de Google: solo login de cuentas existentes, nunca crea cuentas.
-        Route::get('/login/google', [GoogleAuthController::class, 'redirectToGoogle'])->name('login.google');
+        Route::get('/login/google', [GoogleAuthController::class, 'redirectToGoogle'])
+            ->middleware('throttle:10,1')
+            ->name('login.google');
         Route::get('/login/google/callback', [GoogleAuthController::class, 'handleCallback'])
+            ->middleware('throttle:10,1')
             ->name('login.google.callback');
 
         // «Olvidé mi contraseña»: correo + celular registrados. Máx. 5 por minuto.

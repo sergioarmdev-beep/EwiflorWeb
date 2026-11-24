@@ -5,19 +5,25 @@ namespace Modules\Auth\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Modules\Auth\Models\User;
+use Modules\Auth\Services\IntentoAccesoService;
 
 class GoogleAuthController extends Controller
 {
+    public function __construct(private IntentoAccesoService $intentos) {}
+
     /**
      * Inicia el flujo de OAuth con Google.
      * Guarda la URL de retorno (si existe) en la sesión para redirigir tras el login.
      */
     public function redirectToGoogle(Request $request)
     {
-        if ($request->has('return_to') && $request->input('return_to') !== '') {
-            $request->session()->put('google_oauth_return_to', $request->input('return_to'));
+        $returnTo = $this->returnToSeguro($request->input('return_to'));
+
+        if ($returnTo !== null) {
+            $request->session()->put('google_oauth_return_to', $returnTo);
         }
 
         return Socialite::driver('google')->redirect();
@@ -69,6 +75,14 @@ class GoogleAuthController extends Controller
                 ->withInput();
         }
 
+        // El login por Google no debe saltarse el bloqueo por intentos fallidos
+        // que sí respeta LoginController.
+        if ($usuario->estaBloqueado()) {
+            return back()
+                ->withErrors(['google' => 'Tu cuenta está temporalmente bloqueada. Inténtalo más tarde.'])
+                ->withInput();
+        }
+
         $googleId = (string) $googleUser->getId();
         $avatarUrl = $googleUser->getAvatar() ?: null;
 
@@ -106,12 +120,36 @@ class GoogleAuthController extends Controller
     {
         Auth::login($usuario, true);
 
+        // Un acceso correcto por OAuth también limpia la ventana de fallos.
+        $this->intentos->registrarExitoso($usuario, $usuario->correo, $request->ip());
+
         $request->session()->regenerate();
 
-        $returnTo = $request->session()->pull('google_oauth_return_to');
+        $returnTo = $this->returnToSeguro($request->session()->pull('google_oauth_return_to'));
 
         return $returnTo
             ? redirect($returnTo)
             : redirect()->intended('/dashboard');
+    }
+
+    /**
+     * Solo se aceptan rutas internas relativas. Se rechazan URL absolutas,
+     * protocol-relative (//evil.com), barras invertidas y caracteres de control.
+     */
+    private function returnToSeguro(mixed $valor): ?string
+    {
+        if (! is_string($valor) || $valor === '' || ! Str::startsWith($valor, '/')) {
+            return null;
+        }
+
+        if (Str::startsWith($valor, ['//', '/\\']) || str_contains($valor, '\\')) {
+            return null;
+        }
+
+        if (preg_match('/[\x00-\x1F\x7F]/', $valor) || parse_url($valor, PHP_URL_HOST) !== null) {
+            return null;
+        }
+
+        return $valor;
     }
 }
