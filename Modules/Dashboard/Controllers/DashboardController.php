@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Log;
 use Modules\Auth\Models\User;
 use Modules\Dashboard\Services\AdministradorDashboardService;
 use Modules\Dashboard\Services\GerenteDashboardService;
-use Modules\Inventario\Models\Sucursal;
 use Modules\Dashboard\Services\SoporteDashboardService;
 use Modules\Dashboard\Services\VendedorDashboardService;
+use Modules\Inventario\Models\Sucursal;
 
 class DashboardController extends Controller
 {
@@ -77,7 +77,7 @@ class DashboardController extends Controller
                 $idSucursalSeleccionada = $idSucursalConsulta;
             }
 
-            $puedeConsultar = ! ($rol === 'ADMINISTRADOR' && !$idSucursalConsulta);
+            $puedeConsultar = ! ($rol === 'ADMINISTRADOR' && ! $idSucursalConsulta);
 
             if ($puedeConsultar) {
                 try {
@@ -190,7 +190,7 @@ class DashboardController extends Controller
             $m = now()->subMonths($i);
             $meses[] = [
                 'valor' => $m->format('Y-m'),
-                'etiqueta' => $nombres[(int) $m->month] . ' ' . $m->year,
+                'etiqueta' => $nombres[(int) $m->month].' '.$m->year,
             ];
         }
 

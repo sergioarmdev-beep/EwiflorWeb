@@ -2,7 +2,7 @@
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-29
-- **Última revisión:** 2026-10-29 (incorporados parche A-01 y lecciones de puesta en marcha)
+- **Última revisión:** 2026-11-24 (incorporados parches A-01 a A-05)
 - **Decisores:** Equipo EwiflorWeb
 - **Contexto:** El esquema PostgreSQL se simplificó al script `v5-MVP`,
   eliminando tablas, reemplazando la tabla `rol` por un enum `nombre_rol`,
@@ -59,6 +59,8 @@ que integre los parches, y se anotará en este ADR.
 | A-01   | 2026-10-29 | `A-01-reserva-id-almacen.sql`: añade `reserva.id_almacen` (FK a `almacen`), `ck_reserva_almacen` (`RESERVA` ⟺ `id_almacen IS NOT NULL`), índice parcial `idx_reserva_almacen`, y reemplaza `registrar_reserva()` para insertar `id_almacen`. | Aplicado |
 | A-02   | 2026-11-17 | `A-02-maquinaria-repuestos-documentos.sql`: vinculación de maquinaria con repuestos y documentación de productos (Catálogo).                                                             | Aplicado |
 | A-03   | 2026-11-24 | `A-03-convertir-cotizacion-garantia-meses.sql`: restaura `garantia_meses` en el JSON de `convertir_cotizacion_a_venta()` sin perder las guardas de sucursal.                                | Aplicado |
+| A-04   | 2026-11-24 | `A-04-solicitud-servicio-id-sucursal.sql`: añade `solicitud_servicio.id_sucursal`, FK a `sucursal`, índice y backfill desde garantía/registrador/técnico (ADR-006).                        | Aplicado |
+| A-05   | 2026-11-24 | `A-05-solicitud-servicio-cancelada.sql`: consolida el estado `CANCELADA`, `motivo_cancelacion`, `cancelar_solicitud_servicio()` y la transición terminal en la fuente canónica.           | Aplicado |
 
 ## Correcciones operativas documentadas
 

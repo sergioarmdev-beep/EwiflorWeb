@@ -5,12 +5,16 @@ namespace Modules\Dashboard\Services;
 use Illuminate\Support\Facades\DB;
 use Modules\Auth\Models\User;
 use Modules\Precios\Services\TipoCambioService;
+use Modules\ServicioTecnico\Services\ConsultaPublicaService;
 
 class SoporteDashboardService
 {
     use DashboardStatsTrait;
 
-    public function __construct(private TipoCambioService $tipoCambio) {}
+    public function __construct(
+        private TipoCambioService $tipoCambio,
+        private ConsultaPublicaService $consultaPublica,
+    ) {}
 
     public function para(User $user): array
     {
@@ -70,15 +74,20 @@ class SoporteDashboardService
 
         // --- Seguimiento operativo ---
         $data['alertas_sistema'] = [];
-        $data['solicitudes_servicio_pendientes'] = DB::table('solicitud_servicio')
+
+        $pendientes = DB::table('solicitud_servicio')
             ->where('estado', 'PENDIENTE')
-            ->whereNull('id_tecnico')
-            ->count();
+            ->whereNull('id_tecnico');
+        $this->aplicarAlcanceSolicitudes($pendientes, $user);
+        $data['solicitudes_servicio_pendientes'] = $pendientes->count();
+
         $data['ultimas_solicitudes_servicio'] = [];
-        $data['solicitudes_atrasadas'] = DB::table('solicitud_servicio')
+
+        $atrasadas = DB::table('solicitud_servicio')
             ->whereIn('estado', ['PENDIENTE', 'PROGRAMADA'])
-            ->whereDate('fecha_solicitud', '<', now()->subDays(3)->toDateString())
-            ->count();
+            ->whereDate('fecha_solicitud', '<', now()->subDays(3)->toDateString());
+        $this->aplicarAlcanceSolicitudes($atrasadas, $user);
+        $data['solicitudes_atrasadas'] = $atrasadas->count();
         $data['operaciones_pendientes'] = [
             'cotizaciones_vigentes' => 0,
             'ventas_en_proceso' => 0,
@@ -86,15 +95,13 @@ class SoporteDashboardService
         ];
 
         // --- Métricas específicas de soporte técnico ---
-        $data['garantias_por_vencer'] = DB::table('v_garantia_vigente')
-            ->where('vigente', true)
-            ->whereDate('fecha_vencimiento', '>=', now()->toDateString())
-            ->whereDate('fecha_vencimiento', '<=', now()->addDays(30)->toDateString())
-            ->count();
+        // ConsultaPublicaService ya aplica ADR-006 (fail-closed sin sucursal).
+        $data['garantias_por_vencer'] = count($this->consultaPublica->garantiasPorVencer($user, 30));
 
-        $data['ultimas_solicitudes'] = DB::table('solicitud_servicio as s')
-            ->join('cliente as c', 'c.id_cliente', '=', 's.id_cliente')
-            ->where(fn ($q) => $q->where('s.id_tecnico', $user->id_usuario)->orWhereNull('s.id_tecnico'))
+        $ultimas = DB::table('solicitud_servicio as s')
+            ->join('cliente as c', 'c.id_cliente', '=', 's.id_cliente');
+        $this->aplicarAlcanceSolicitudes($ultimas, $user, 's');
+        $data['ultimas_solicitudes'] = $ultimas
             ->orderByDesc('s.fecha_solicitud')
             ->limit(6)
             ->get([
@@ -106,10 +113,12 @@ class SoporteDashboardService
             ])
             ->toArray();
 
-        $data['solicitud_activa'] = DB::table('solicitud_servicio as s')
+        $activa = DB::table('solicitud_servicio as s')
             ->join('cliente as c', 'c.id_cliente', '=', 's.id_cliente')
             ->where('s.estado', 'PROGRAMADA')
-            ->where('s.id_tecnico', $user->id_usuario)
+            ->where('s.id_tecnico', $user->id_usuario);
+        $this->aplicarAlcanceSolicitudes($activa, $user, 's');
+        $data['solicitud_activa'] = $activa
             ->orderByDesc('s.fecha_solicitud')
             ->limit(1)
             ->get([

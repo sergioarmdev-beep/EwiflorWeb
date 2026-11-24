@@ -16,6 +16,9 @@ use Tests\TestCase;
  */
 abstract class PostgresTestCase extends TestCase
 {
+    /** Evita colisiones de UNIQUE(fecha, tipo, fecha_registro) entre fixtures. */
+    private static int $secuenciaTipoCambio = 0;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -84,6 +87,18 @@ abstract class PostgresTestCase extends TestCase
         ], 'id_cliente');
     }
 
+    /** Crea una solicitud de servicio con valores por defecto válidos. */
+    protected function crearSolicitud(int $idCliente, array $datos = []): int
+    {
+        return DB::table('solicitud_servicio')->insertGetId(array_merge([
+            'id_cliente' => $idCliente,
+            'descripcion_falla' => 'Falla de prueba',
+            'fecha_solicitud' => now(),
+            'estado' => 'PENDIENTE',
+            'origen' => 'INTERNO',
+        ], $datos), 'id_solicitud');
+    }
+
     protected function crearTipoCambio(int $idUsuario): int
     {
         return DB::table('tipo_cambio')->insertGetId([
@@ -92,6 +107,7 @@ abstract class PostgresTestCase extends TestCase
             'valor' => 40,
             'origen' => 'MANUAL',
             'id_usuario' => $idUsuario,
+            'fecha_registro' => now()->addSeconds(++self::$secuenciaTipoCambio),
         ], 'id_tipo_cambio');
     }
 

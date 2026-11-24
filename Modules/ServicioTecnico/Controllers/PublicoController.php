@@ -41,7 +41,7 @@ class PublicoController extends Controller
         SesionCliente::establecer($cliente->id_cliente, $cliente->nombre, $cliente->telefono);
 
         return redirect()->route('serviciotecnico.publico.panel')
-            ->with('success', 'Bienvenido, ' . e($cliente->nombre) . '. Aquí puedes ver tus compras y solicitar servicio técnico.');
+            ->with('success', 'Bienvenido, '.e($cliente->nombre).'. Aquí puedes ver tus compras y solicitar servicio técnico.');
     }
 
     public function panel()
@@ -100,9 +100,10 @@ class PublicoController extends Controller
             return redirect()->route('serviciotecnico.publico.identificar');
         }
 
-        // Solo el dueño del cliente puede ver su solicitud.
-        if ($solicitud->id_cliente !== $cliente['id_cliente']) {
-            abort(403);
+        // Solo el dueño del cliente puede ver su solicitud. 404 para no revelar
+        // la existencia de encargos ajenos (coherente con el detalle interno).
+        if ((int) $solicitud->id_cliente !== $cliente['id_cliente']) {
+            abort(404);
         }
 
         $solicitud->load(['tecnico', 'garantia']);

@@ -75,7 +75,15 @@ Derivar la sucursal en cada consulta sin columna nueva (join a garantía/venta/u
 - Cambio de esquema con backfill no destructivo (UPDATE, sin borrados; la auditoría es inmutable).
 - Requiere aprobación antes de ejecutar la migración en la BD de desarrollo.
 - Las solicitudes huérfanas (sin sucursal derivable) dejan de ser visibles para técnicos y administradores; GERENTE conserva acceso para auditarlas.
-- Los dashboards quedan fuera de este ADR (se tratan en la oleada 3) salvo que el filtro de sucursal ya exista en el servicio que los alimenta.
+- Los dashboards se incorporaron en la oleada 3: `DashboardAlcance` decide entre visión global (GERENTE), sucursal concreta y fail-closed; `DashboardStatsTrait` reutiliza `SolicitudService::aplicarAlcanceVisible()` para no duplicar la regla.
+
+### 5. Consolidación de `CANCELADA` (parche A-05)
+
+La migración que añadió `CANCELADA` no estaba en la fuente canónica. El parche
+`A-05-solicitud-servicio-cancelada.sql` y su migración `2026_11_24_000003` la
+incorporan: CHECK de estados, `motivo_cancelacion`, `cancelar_solicitud_servicio()`
+y la transición terminal que impide reactivar canceladas. También elimina CHECKs
+de enumeración duplicados y restaura el CHECK que exige cierre/resultado.
 
 ## Estado de implementación
 
@@ -85,3 +93,5 @@ Derivar la sucursal en cada consulta sin columna nueva (join a garantía/venta/u
 - [x] Parche A-04 + migración y backfill (BD de desarrollo: 16 filas, 9 con sucursal, 7 NULL; columna, índice y FK verificados).
 - [x] Aplicación de la regla en servicios, controladores y vistas (creación, detalle, bandeja, gestión, técnicos, cierre, cancelación, garantías por vencer y `ClienteController::show`).
 - [x] Verificación con BD de prueba: `AlcanceSolicitudTest` incluido en la suite PG (ADR-005), 9/9 tests OK.
+- [x] Oleada 3: dashboards por rol/sucursal (`DashboardAlcance` + `DashboardStatsTrait`), saneamiento de Servicio Técnico (validación centralizada, garantías del cliente, `fecha_visita`) y parche A-05.
+- [x] Suite PG ampliada con `DashboardAlcanceTest`, `CancelarSolicitudTest` y `GarantiaPertenenciaTest`: **25 tests, 97 aserciones OK**.

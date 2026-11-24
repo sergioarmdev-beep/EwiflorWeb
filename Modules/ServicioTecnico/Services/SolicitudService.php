@@ -18,7 +18,10 @@ class SolicitudService
      */
     public function crearPublica(int $idCliente, array $data): SolicitudServicio
     {
-        return DB::transaction(function () use ($idCliente, $data) {
+        $idGarantia = $data['id_garantia'] ?? null;
+        $this->validarGarantia($idCliente, $idGarantia, null);
+
+        return DB::transaction(function () use ($idCliente, $data, $idGarantia) {
             $solicitud = SolicitudServicio::create([
                 'id_cliente' => $idCliente,
                 'id_usuario_registra' => null,
@@ -27,8 +30,8 @@ class SolicitudService
                 'fecha_solicitud' => now(),
                 'estado' => 'PENDIENTE',
                 'origen' => 'PUBLICO',
-                'id_garantia' => $data['id_garantia'] ?? null,
-                'id_sucursal' => $this->sucursalParaPublica($idCliente, $data['id_garantia'] ?? null),
+                'id_garantia' => $idGarantia,
+                'id_sucursal' => $this->sucursalParaPublica($idCliente, $idGarantia),
             ]);
 
             return $solicitud->fresh();
@@ -46,7 +49,10 @@ class SolicitudService
             throw new BusinessRuleException('Tu usuario no tiene sucursal asignada: no puedes registrar solicitudes.');
         }
 
-        return DB::transaction(function () use ($idCliente, $registra, $data, $idSucursal) {
+        $idGarantia = $data['id_garantia'] ?? null;
+        $this->validarGarantia($idCliente, $idGarantia, $idSucursal);
+
+        return DB::transaction(function () use ($idCliente, $registra, $data, $idSucursal, $idGarantia) {
             $solicitud = SolicitudServicio::create([
                 'id_cliente' => $idCliente,
                 'id_usuario_registra' => $registra->id_usuario,
@@ -55,7 +61,7 @@ class SolicitudService
                 'fecha_solicitud' => now(),
                 'estado' => 'PENDIENTE',
                 'origen' => 'INTERNO',
-                'id_garantia' => $data['id_garantia'] ?? null,
+                'id_garantia' => $idGarantia,
                 'id_sucursal' => $idSucursal,
             ]);
 
@@ -90,6 +96,32 @@ class SolicitudService
             ->value('id_sucursal');
 
         return $ultima !== null ? (int) $ultima : null;
+    }
+
+    /**
+     * Una garantía solo puede adjuntarse a la solicitud del cliente que la compró
+     * y, en creación interna, a una solicitud de su misma sucursal (ADR-006).
+     */
+    private function validarGarantia(int $idCliente, ?int $idGarantia, ?int $idSucursal): void
+    {
+        if ($idGarantia === null) {
+            return;
+        }
+
+        $garantia = DB::table('garantia as g')
+            ->join('detalle_venta as dv', 'dv.id_detalle_venta', '=', 'g.id_detalle_venta')
+            ->join('venta as v', 'v.id_venta', '=', 'dv.id_venta')
+            ->where('g.id_garantia', $idGarantia)
+            ->select('v.id_cliente', 'v.id_sucursal')
+            ->first();
+
+        if ($garantia === null || (int) $garantia->id_cliente !== $idCliente) {
+            throw new BusinessRuleException('La garantía seleccionada no pertenece al cliente indicado.');
+        }
+
+        if ($idSucursal !== null && (int) $garantia->id_sucursal !== $idSucursal) {
+            throw new BusinessRuleException('La garantía seleccionada pertenece a otra sucursal.');
+        }
     }
 
     public function esGerente(User $user): bool
@@ -177,6 +209,7 @@ class SolicitudService
             ->update([
                 'id_tecnico' => $tecnico->id_usuario,
                 'estado' => 'PROGRAMADA',
+                'fecha_visita' => now(),
             ]);
 
         if ($actualizados === 0) {

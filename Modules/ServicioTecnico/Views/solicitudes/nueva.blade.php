@@ -39,14 +39,10 @@
                     placeholder="Ej: El equipo no enciende..." required></textarea>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-muted mb-1">Garantía (opcional)</label>
-                <select name="id_garantia"
-                    class="w-full px-3 py-2 text-sm border border-line rounded-xl bg-surface-2 text-ink focus:border-brand-green/50 focus:ring-brand-green/20">
-                    <option value="">Sin garantía (servicio pagado)</option>
-                </select>
-                <p class="text-xs text-muted mt-1">Déjalo vacío si el cliente no tiene garantía vigente.</p>
-            </div>
+            <p class="text-xs text-muted rounded-xl border border-line bg-surface-2 px-3 py-2">
+                Para vincular una garantía, el cliente debe solicitar el servicio desde su panel público,
+                donde solo se muestran las garantías de sus propias compras.
+            </p>
 
             <div class="flex justify-end pt-4">
                 <a href="{{ route('dashboard') }}" class="px-4 py-2 text-sm border border-line rounded-xl text-ink hover:bg-surface-2">Cancelar</a>

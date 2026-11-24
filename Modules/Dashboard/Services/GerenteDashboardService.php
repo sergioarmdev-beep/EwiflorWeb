@@ -48,10 +48,10 @@ class GerenteDashboardService
         $data['ultimas_cotizaciones'] = $this->ultimasCotizaciones();
 
         // --- Seguimiento operativo ---
-        $data['alertas_sistema'] = $this->alertasSistema();
-        $data['solicitudes_servicio_pendientes'] = $this->solicitudesServicioPendientes();
-        $data['ultimas_solicitudes_servicio'] = $this->ultimasSolicitudesServicio();
-        $data['solicitudes_atrasadas'] = $this->solicitudesAtrasadas();
+        $data['alertas_sistema'] = $this->alertasSistema($user);
+        $data['solicitudes_servicio_pendientes'] = $this->solicitudesServicioPendientes($user);
+        $data['ultimas_solicitudes_servicio'] = $this->ultimasSolicitudesServicio($user);
+        $data['solicitudes_atrasadas'] = $this->solicitudesAtrasadas($user);
         $data['operaciones_pendientes'] = $this->operacionesPendientes();
 
         return $data;

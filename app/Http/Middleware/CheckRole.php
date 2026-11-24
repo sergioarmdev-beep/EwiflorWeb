@@ -18,7 +18,7 @@ class CheckRole
 
         $userRole = Auth::user()->nombre_rol;
 
-        if (! in_array($userRole, $roles)) {
+        if (! in_array($userRole, $roles, true)) {
 
             abort(403, 'No tienes los permisos necesarios para acceder a esta sección.');
         }

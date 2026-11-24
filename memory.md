@@ -1198,4 +1198,29 @@ Implementado el plan aprobado para el módulo `Modules/Auth/`:
 - ADR-005 pasó a **Aceptado e implementado**; ADR-006 ya estaba Aceptada.
 - Ejecutar siempre con `C:\tools\php85\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar test:pg` (el `composer.bat` del PATH usa XAMPP 8.2).
 
+---
+
+## 2026-11-24 — Oleada 3: dashboards con alcance, saneamiento de Servicio Técnico y `CANCELADA` canónica
+
+### Qué se hizo
+1. **Dashboards por sucursal (ADR-006)**: nuevo `Modules/Dashboard/Services/DashboardAlcance.php` (`global()` / `sucursal()` / `sinSucursal()`, con `desdeUsuario()` y `aplicar()` fail-closed). `DashboardStatsTrait` recibió `almacenesVisibles()`, `aplicarAlcance()` y `aplicarAlcanceSolicitudes()` (reutiliza `SolicitudService::aplicarAlcanceVisible()`). GERENTE conserva la visión global; ADMINISTRADOR queda fijado a su sucursal; VENDEDOR, solo lo propio dentro de su sucursal; SERVICIO_TECNICO, solo su sucursal y sus encargos.
+2. **Servicios de dashboard actualizados**: `Gerente`, `Administrador`, `Vendedor` y `Soporte`. `SoporteDashboardService` ahora usa `ConsultaPublicaService::garantiasPorVencer()` (que ya filtra por sucursal) en vez de un `count()` global.
+3. **Código duplicado eliminado**: `git rm` de `Modules/Sistema/{Controllers/DashboardController.php,Services/DashboardStatsService.php,Views/dashboard.blade.php}`; no tenían rutas activas.
+4. **Saneamiento de Servicio Técnico**: `RegistrarSolicitudRequest` autoriza por ruta/rol y centraliza nombre/celular en creación interna; `guardarInterna()` usa `validated()`. `SolicitudService::validarGarantia()` comprueba que la garantía pertenezca al cliente y a la sucursal; `aceptar()` escribe `fecha_visita`. Errores de infraestructura se loguean y se muestran genéricos vía `fallar()` (las `BusinessRuleException` se muestran tal cual). `PublicoController::detalle()` devuelve 404 en vez de 403; `CheckRole` compara con `in_array(..., true)`. `nueva.blade.php` ya no ofrece un `<select id_garantia>` vacío y engañoso.
+5. **`CANCELADA` en la fuente canónica**: parche `database/sql/patches/A-05-solicitud-servicio-cancelada.sql` + migración idempotente `2026_11_24_000003_solicitud_servicio_cancelada_canonical.php` (lee el parche desde un único sitio). Aplicado en `Ewiflor_DB_MVP` y `Ewiflor_DB_MVP_test`. No se tocó `v5-MVP.sql`.
+6. **Tests nuevos**: `DashboardAlcanceTest`, `CancelarSolicitudTest`, `GarantiaPertenenciaTest`. Helper `crearSolicitud()` en `PostgresTestCase`.
+
+### Verificación
+- `php -l` y Pint `--test` OK en todos los archivos PHP tocados.
+- `composer test:pg` → **OK (25 tests, 97 aserciones)**.
+- A-05 verificada en ambas BD: `cancelar_solicitud_servicio`, `fn_solicitud_transicion` y exactamente dos CHECK de estado (`ck_solicitud_servicio_estado` + `solicitud_servicio_check`).
+- ADR-001 (tabla de parches A-04/A-05) y ADR-006 (estado de implementación) actualizados.
+
+### Decisiones y gotchas
+- `DashboardAlcance` evita repetir la regla en cada helper; los dashboards de solicitudes reutilizan el servicio de Servicio Técnico para no divergir de `visiblePara()`.
+- El helper `crearTipoCambio()` de `PostgresTestCase` ahora asigna `fecha_registro` con un contador: Windows tiene resolución de reloj gruesa y dos inserciones seguidas chocaban con `UNIQUE(fecha, tipo, fecha_registro)`.
+- **PostgreSQL 18 renderiza los CHECK con `= ANY ((ARRAY[...]))`**, no con `IN`. El primer A-05 no detectó el constraint y falló con «ya existe». La detección usa `LIKE '%(estado)%ARRAY%'` y elimina todos los CHECK de enumeración (la BD de prueba tenía dos y había perdido el de `CERRADA`, que el parche restaura).
+- `DashboardStatsTrait` usa `new SolicitudService()` en dos puntos; si el servicio crece con dependencias, conviene inyectarlo.
+- **Sin push**. `resources/views/layouts/app.blade.php` sigue con el cambio local preexistente: **excluir del commit**.
+
 

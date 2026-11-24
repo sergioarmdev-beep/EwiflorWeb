@@ -2,9 +2,11 @@
 
 namespace Modules\Dashboard\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
+use Modules\Auth\Models\User;
+use Modules\ServicioTecnico\Services\SolicitudService;
 
 trait DashboardStatsTrait
 {
@@ -21,21 +23,75 @@ trait DashboardStatsTrait
         }
     }
 
+    /** Nombres de almacenes visibles; null = todos, [] = fail-closed. */
+    private function almacenesVisibles(?DashboardAlcance $alcance): ?array
+    {
+        if ($alcance === null || $alcance->global) {
+            return null;
+        }
+
+        if ($alcance->idSucursal === null) {
+            return [];
+        }
+
+        return DB::table('almacen')
+            ->where('id_sucursal', $alcance->idSucursal)
+            ->pluck('nombre')
+            ->all();
+    }
+
+    private function aplicarAlcance($query, ?DashboardAlcance $alcance, string $columna): void
+    {
+        if ($alcance !== null) {
+            $alcance->aplicar($query, $columna);
+        }
+    }
+
+    /**
+     * Aplica a un query de solicitudes la misma regla que SolicitudService::visiblePara:
+     * sucursal (ADR-006) + rol (técnico: asignadas o pendientes sin asignar;
+     * vendedor: solo las que registró).
+     */
+    private function aplicarAlcanceSolicitudes($query, User $user, string $alias = ''): void
+    {
+        $prefijo = $alias === '' ? '' : $alias.'.';
+
+        (new SolicitudService)->aplicarAlcanceVisible($query, $user, $prefijo.'id_sucursal');
+
+        if ($user->nombre_rol === 'SERVICIO_TECNICO') {
+            $query->where(function ($q) use ($prefijo, $user) {
+                $q->where($prefijo.'id_tecnico', $user->id_usuario)
+                    ->orWhere(function ($q2) use ($prefijo) {
+                        $q2->whereNull($prefijo.'id_tecnico')
+                            ->where($prefijo.'estado', 'PENDIENTE');
+                    });
+            });
+        } elseif ($user->nombre_rol === 'VENDEDOR') {
+            $query->where($prefijo.'id_usuario_registra', $user->id_usuario);
+        }
+    }
+
     protected function totalProductos(): int
     {
         return DB::table('producto')->where('estado', 'ACTIVO')->count();
     }
 
-    protected function totalExistenciasBajoMinimo(): int
+    protected function totalExistenciasBajoMinimo(?DashboardAlcance $alcance = null): int
     {
+        $almacenes = $this->almacenesVisibles($alcance);
+
         return DB::table('v_reporte_existencias')
+            ->when($almacenes !== null, fn ($q) => $q->whereIn('almacen', $almacenes))
             ->where('alerta', 'REPONER')
             ->count();
     }
 
-    protected function productosBajoMinimo(int $limite = 6): array
+    protected function productosBajoMinimo(int $limite = 6, ?DashboardAlcance $alcance = null): array
     {
+        $almacenes = $this->almacenesVisibles($alcance);
+
         return DB::table('v_reporte_existencias')
+            ->when($almacenes !== null, fn ($q) => $q->whereIn('almacen', $almacenes))
             ->where('alerta', 'REPONER')
             ->orderBy('disponible')
             ->limit($limite)
@@ -50,17 +106,23 @@ trait DashboardStatsTrait
             ->toArray();
     }
 
-    protected function resumenVentas(?int $idVendedor = null): array
+    protected function resumenVentas(?int $idVendedor = null, ?DashboardAlcance $alcance = null): array
     {
         $inicioHoy = now()->startOfDay();
         $finHoy = now()->endOfDay();
         $inicioMes = now()->startOfMonth();
         $finMes = now()->endOfMonth();
 
-        $ventasBase = fn () => DB::table('v_reporte_ventas as rv')
-            ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
-            ->where('rv.estado', 'REGISTRADA')
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $ventasBase = function () use ($idVendedor, $alcance) {
+            $q = DB::table('v_reporte_ventas as rv')
+                ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
+                ->where('rv.estado', 'REGISTRADA')
+                ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+
+            $this->aplicarAlcance($q, $alcance, 'v.id_sucursal');
+
+            return $q;
+        };
 
         $ventasHoy = $ventasBase()
             ->whereBetween('v.fecha_hora', [$inicioHoy, $finHoy]);
@@ -68,12 +130,13 @@ trait DashboardStatsTrait
         $ventasMes = $ventasBase()
             ->whereBetween('v.fecha_hora', [$inicioMes, $finMes]);
 
-        $pagosMes = DB::table('pago as p')
+        $pagos = DB::table('pago as p')
             ->join('venta as v', 'v.id_venta', '=', 'p.id_venta')
             ->where('v.estado', 'REGISTRADA')
             ->whereBetween('p.fecha_hora', [$inicioMes, $finMes])
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor))
-            ->sum('p.monto_bs');
+            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $this->aplicarAlcance($pagos, $alcance, 'v.id_sucursal');
+        $pagosMes = $pagos->sum('p.monto_bs');
 
         $saldoPendiente = $ventasBase()
             ->selectRaw('COALESCE(SUM(GREATEST(COALESCE(rv.total_bs, 0) - COALESCE(rv.pagado_bs, 0), 0)), 0) as saldo')
@@ -84,7 +147,9 @@ trait DashboardStatsTrait
             ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
             ->where('rv.estado', 'REGISTRADA')
             ->where('v.fecha_hora', '>=', now()->subMonths(11)->startOfMonth())
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor))
+            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $this->aplicarAlcance($ventasPorMes, $alcance, 'v.id_sucursal');
+        $ventasPorMes = $ventasPorMes
             ->selectRaw("to_char(v.fecha_hora, 'YYYY-MM') as mes, SUM(rv.total_bs) as total")
             ->groupBy('mes')
             ->orderBy('mes')
@@ -102,13 +167,15 @@ trait DashboardStatsTrait
         ];
     }
 
-    protected function ultimasVentas(?int $idVendedor = null, int $limite = 6): array
+    protected function ultimasVentas(?int $idVendedor = null, int $limite = 6, ?DashboardAlcance $alcance = null): array
     {
-        return DB::table('v_reporte_ventas as rv')
+        $q = DB::table('v_reporte_ventas as rv')
             ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
             ->where('rv.estado', 'REGISTRADA')
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor))
-            ->orderByDesc('v.fecha_hora')
+            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $this->aplicarAlcance($q, $alcance, 'v.id_sucursal');
+
+        return $q->orderByDesc('v.fecha_hora')
             ->limit($limite)
             ->get([
                 'rv.id_venta',
@@ -121,13 +188,20 @@ trait DashboardStatsTrait
             ->toArray();
     }
 
-    protected function ultimosMovimientos(int $limite = 6): array
+    protected function ultimosMovimientos(int $limite = 6, ?DashboardAlcance $alcance = null): array
     {
-        return DB::table('movimiento_inventario as m')
+        $almacenes = $this->almacenesVisibles($alcance);
+        $q = DB::table('movimiento_inventario as m')
             ->join('usuario as u', 'u.id_usuario', '=', 'm.id_usuario')
             ->leftJoin('almacen as ao', 'ao.id_almacen', '=', 'm.id_almacen_origen')
-            ->leftJoin('almacen as ad', 'ad.id_almacen', '=', 'm.id_almacen_destino')
-            ->orderByDesc('m.fecha_hora')
+            ->leftJoin('almacen as ad', 'ad.id_almacen', '=', 'm.id_almacen_destino');
+
+        if ($almacenes !== null) {
+            $q->where(fn ($sub) => $sub->whereIn('ao.nombre', $almacenes)
+                ->orWhereIn('ad.nombre', $almacenes));
+        }
+
+        return $q->orderByDesc('m.fecha_hora')
             ->limit($limite)
             ->get([
                 'm.id_movimiento',
@@ -141,22 +215,26 @@ trait DashboardStatsTrait
             ->toArray();
     }
 
-    protected function cotizacionesPendientes(?int $idVendedor = null): int
+    protected function cotizacionesPendientes(?int $idVendedor = null, ?DashboardAlcance $alcance = null): int
     {
-        return DB::table('cotizacion as c')
+        $q = DB::table('cotizacion as c')
             ->join('v_cotizacion_estado as ce', 'ce.id_cotizacion', '=', 'c.id_cotizacion')
             ->where('ce.condicion_temporal', 'VIGENTE')
-            ->when($idVendedor !== null, fn ($q) => $q->where('c.id_usuario', $idVendedor))
-            ->count();
+            ->when($idVendedor !== null, fn ($q) => $q->where('c.id_usuario', $idVendedor));
+        $this->aplicarAlcance($q, $alcance, 'c.id_sucursal');
+
+        return $q->count();
     }
 
-    protected function ultimasCotizaciones(?int $idVendedor = null, int $limite = 5): array
+    protected function ultimasCotizaciones(?int $idVendedor = null, int $limite = 5, ?DashboardAlcance $alcance = null): array
     {
-        return DB::table('cotizacion as c')
+        $q = DB::table('cotizacion as c')
             ->join('v_cotizacion_estado as ce', 'ce.id_cotizacion', '=', 'c.id_cotizacion')
             ->join('cliente as cl', 'cl.id_cliente', '=', 'c.id_cliente')
-            ->when($idVendedor !== null, fn ($q) => $q->where('c.id_usuario', $idVendedor))
-            ->orderByDesc('c.fecha_emision')
+            ->when($idVendedor !== null, fn ($q) => $q->where('c.id_usuario', $idVendedor));
+        $this->aplicarAlcance($q, $alcance, 'c.id_sucursal');
+
+        return $q->orderByDesc('c.fecha_emision')
             ->limit($limite)
             ->get([
                 'c.id_cotizacion',
@@ -168,12 +246,14 @@ trait DashboardStatsTrait
             ->toArray();
     }
 
-    protected function alertasSistema(): array
+    protected function alertasSistema(User $user): array
     {
         $alertas = [];
 
-        $usuariosActivos = DB::table('usuario')->where('estado', 'ACTIVO')->count();
-        if ($usuariosActivos < 2) {
+        $usuariosActivos = DB::table('usuario')->where('estado', 'ACTIVO');
+        (new SolicitudService)->aplicarAlcanceVisible($usuariosActivos, $user, 'id_sucursal');
+
+        if ($usuariosActivos->count() < 2) {
             $alertas[] = [
                 'tipo' => 'usuarios',
                 'titulo' => 'Equipo con pocos usuarios activos',
@@ -210,10 +290,11 @@ trait DashboardStatsTrait
         }
 
         try {
-            $pendientesServicio = DB::table('solicitud_servicio')
+            $pendientes = DB::table('solicitud_servicio')
                 ->where('estado', 'PENDIENTE')
-                ->whereNull('id_tecnico')
-                ->count();
+                ->whereNull('id_tecnico');
+            $this->aplicarAlcanceSolicitudes($pendientes, $user);
+            $pendientesServicio = $pendientes->count();
 
             if ($pendientesServicio > 0) {
                 $alertas[] = [
@@ -233,7 +314,7 @@ trait DashboardStatsTrait
         return $alertas;
     }
 
-    protected function productosSinVender(int $dias = 30, int $limite = 6): array
+    protected function productosSinVender(int $dias = 30, int $limite = 6, ?DashboardAlcance $alcance = null): array
     {
         $limiteFecha = now()->subDays($dias)->toDateString();
 
@@ -241,12 +322,13 @@ trait DashboardStatsTrait
             ->join('producto as p', 'p.id_producto', '=', 'vp.id_producto')
             ->where('vp.estado', 'ACTIVO')
             ->where('p.estado', 'ACTIVO')
-            ->whereNotExists(function ($query) use ($limiteFecha) {
-                $query->select(DB::raw(1))
+            ->whereNotExists(function ($query) use ($limiteFecha, $alcance) {
+                $sub = $query->select(DB::raw(1))
                     ->from('detalle_venta as dv')
                     ->join('venta as v', 'v.id_venta', '=', 'dv.id_venta')
                     ->whereColumn('dv.id_variante', 'vp.id_variante')
                     ->where('v.fecha_hora', '>=', $limiteFecha);
+                $this->aplicarAlcance($sub, $alcance, 'v.id_sucursal');
             })
             ->select('vp.sku', 'p.nombre as producto', 'p.tipo_producto')
             ->distinct()
@@ -255,16 +337,17 @@ trait DashboardStatsTrait
             ->toArray();
     }
 
-    protected function topVendedores(int $limite = 5): array
+    protected function topVendedores(int $limite = 5, ?DashboardAlcance $alcance = null): array
     {
         $inicioMes = now()->startOfMonth();
-
-        return DB::table('v_reporte_ventas as rv')
+        $q = DB::table('v_reporte_ventas as rv')
             ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
             ->join('usuario as u', 'u.id_usuario', '=', 'v.id_usuario')
             ->where('rv.estado', 'REGISTRADA')
-            ->whereBetween('v.fecha_hora', [$inicioMes, now()->endOfMonth()])
-            ->select('u.nombre_completo as vendedor', 'u.nombre_rol')
+            ->whereBetween('v.fecha_hora', [$inicioMes, now()->endOfMonth()]);
+        $this->aplicarAlcance($q, $alcance, 'v.id_sucursal');
+
+        return $q->select('u.nombre_completo as vendedor', 'u.nombre_rol')
             ->selectRaw('COUNT(*) as cantidad_ventas, SUM(rv.total_bs) as total_bs')
             ->groupBy('u.id_usuario', 'u.nombre_completo', 'u.nombre_rol')
             ->orderByDesc('total_bs')
@@ -298,18 +381,23 @@ trait DashboardStatsTrait
      * ------------------------------------------------------------------ */
 
     /** Ventas del período actual (mes) vs período anterior (mes previo). */
-    protected function ventasPeriodoComparativo(?int $idVendedor = null): array
+    protected function ventasPeriodoComparativo(?int $idVendedor = null, ?DashboardAlcance $alcance = null): array
     {
         $inicioMes = now()->startOfMonth();
         $finMes = now()->endOfMonth();
         $inicioMesAnterior = now()->subMonth()->startOfMonth();
         $finMesAnterior = now()->subMonth()->endOfMonth();
 
-        $base = fn ($ini, $fin) => DB::table('v_reporte_ventas as rv')
-            ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
-            ->where('rv.estado', 'REGISTRADA')
-            ->whereBetween('v.fecha_hora', [$ini, $fin])
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $base = function ($ini, $fin) use ($idVendedor, $alcance) {
+            $q = DB::table('v_reporte_ventas as rv')
+                ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
+                ->where('rv.estado', 'REGISTRADA')
+                ->whereBetween('v.fecha_hora', [$ini, $fin])
+                ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+            $this->aplicarAlcance($q, $alcance, 'v.id_sucursal');
+
+            return $q;
+        };
 
         $actual = $base($inicioMes, $finMes);
         $anterior = $base($inicioMesAnterior, $finMesAnterior);
@@ -334,31 +422,34 @@ trait DashboardStatsTrait
     }
 
     /** Valor total del inventario (existencia disponible × precio de lista). */
-    protected function valorInventario(): float
+    protected function valorInventario(?DashboardAlcance $alcance = null): float
     {
-        $resultado = DB::table('existencia as e')
+        $q = DB::table('existencia as e')
+            ->join('almacen as a', 'a.id_almacen', '=', 'e.id_almacen')
             ->join('variante_producto as vp', 'vp.id_variante', '=', 'e.id_variante')
             ->where('vp.estado', 'ACTIVO')
-            ->whereNotNull('vp.precio_usd')
-            ->selectRaw('COALESCE(SUM((e.cantidad_total - e.cantidad_reservada) * vp.precio_usd), 0) as total')
+            ->whereNotNull('vp.precio_usd');
+        $this->aplicarAlcance($q, $alcance, 'a.id_sucursal');
+
+        $resultado = $q->selectRaw('COALESCE(SUM((e.cantidad_total - e.cantidad_reservada) * vp.precio_usd), 0) as total')
             ->value('total');
 
         return (float) $resultado;
     }
 
     /** Ticket promedio (monto promedio por venta del mes). */
-    protected function ticketPromedio(?int $idVendedor = null): float
+    protected function ticketPromedio(?int $idVendedor = null, ?DashboardAlcance $alcance = null): float
     {
         $inicioMes = now()->startOfMonth();
         $finMes = now()->endOfMonth();
-
-        $stats = DB::table('v_reporte_ventas as rv')
+        $q = DB::table('v_reporte_ventas as rv')
             ->join('venta as v', 'v.id_venta', '=', 'rv.id_venta')
             ->where('rv.estado', 'REGISTRADA')
             ->whereBetween('v.fecha_hora', [$inicioMes, $finMes])
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor))
-            ->selectRaw('COUNT(*) as cantidad, SUM(rv.total_bs) as total')
-            ->first();
+            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $this->aplicarAlcance($q, $alcance, 'v.id_sucursal');
+
+        $stats = $q->selectRaw('COUNT(*) as cantidad, SUM(rv.total_bs) as total')->first();
 
         if (! $stats || (int) $stats->cantidad === 0) {
             return 0.0;
@@ -368,21 +459,24 @@ trait DashboardStatsTrait
     }
 
     /** Conversión de cotizaciones: % de cotizaciones emitidas que se convirtieron en venta. */
-    protected function conversionCotizaciones(?int $idVendedor = null): array
+    protected function conversionCotizaciones(?int $idVendedor = null, ?DashboardAlcance $alcance = null): array
     {
         $inicioMes = now()->startOfMonth();
+        $finMes = now()->endOfMonth();
 
         $emitidas = DB::table('cotizacion as c')
             ->join('v_cotizacion_estado as ce', 'ce.id_cotizacion', '=', 'c.id_cotizacion')
-            ->whereBetween('c.fecha_emision', [$inicioMes, now()->endOfMonth()])
-            ->when($idVendedor !== null, fn ($q) => $q->where('c.id_usuario', $idVendedor))
-            ->count();
+            ->whereBetween('c.fecha_emision', [$inicioMes, $finMes])
+            ->when($idVendedor !== null, fn ($q) => $q->where('c.id_usuario', $idVendedor));
+        $this->aplicarAlcance($emitidas, $alcance, 'c.id_sucursal');
+        $emitidas = $emitidas->count();
 
         $convertidas = DB::table('venta as v')
             ->whereNotNull('v.id_cotizacion')
-            ->whereBetween('v.fecha_hora', [$inicioMes, now()->endOfMonth()])
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor))
-            ->count();
+            ->whereBetween('v.fecha_hora', [$inicioMes, $finMes])
+            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $this->aplicarAlcance($convertidas, $alcance, 'v.id_sucursal');
+        $convertidas = $convertidas->count();
 
         $pct = $emitidas > 0 ? round(($convertidas / $emitidas) * 100, 2) : 0;
 
@@ -394,18 +488,19 @@ trait DashboardStatsTrait
     }
 
     /** Productos más vendidos del mes (por cantidad). */
-    protected function productosMasVendidos(?int $idVendedor = null, int $limite = 6): array
+    protected function productosMasVendidos(?int $idVendedor = null, int $limite = 6, ?DashboardAlcance $alcance = null): array
     {
         $inicioMes = now()->startOfMonth();
-
-        return DB::table('detalle_venta as dv')
+        $q = DB::table('detalle_venta as dv')
             ->join('venta as v', 'v.id_venta', '=', 'dv.id_venta')
             ->join('variante_producto as vp', 'vp.id_variante', '=', 'dv.id_variante')
             ->join('producto as p', 'p.id_producto', '=', 'vp.id_producto')
             ->where('v.estado', 'REGISTRADA')
             ->whereBetween('v.fecha_hora', [$inicioMes, now()->endOfMonth()])
-            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor))
-            ->select('p.nombre as producto', 'vp.sku')
+            ->when($idVendedor !== null, fn ($q) => $q->where('v.id_usuario', $idVendedor));
+        $this->aplicarAlcance($q, $alcance, 'v.id_sucursal');
+
+        return $q->select('p.nombre as producto', 'vp.sku')
             ->selectRaw('SUM(dv.cantidad) as cantidad, SUM(dv.cantidad * dv.precio_unitario_usd) as total_usd')
             ->groupBy('p.id_producto', 'p.nombre', 'vp.sku')
             ->orderByDesc('cantidad')
@@ -415,15 +510,17 @@ trait DashboardStatsTrait
     }
 
     /** Existencias por almacén (stock disponible). */
-    protected function existenciasPorAlmacen(int $limite = 8): array
+    protected function existenciasPorAlmacen(int $limite = 8, ?DashboardAlcance $alcance = null): array
     {
-        return DB::table('existencia as e')
+        $q = DB::table('existencia as e')
             ->join('almacen as a', 'a.id_almacen', '=', 'e.id_almacen')
             ->join('variante_producto as vp', 'vp.id_variante', '=', 'e.id_variante')
             ->join('producto as p', 'p.id_producto', '=', 'vp.id_producto')
             ->where('vp.estado', 'ACTIVO')
-            ->where('p.estado', 'ACTIVO')
-            ->select('a.nombre as almacen')
+            ->where('p.estado', 'ACTIVO');
+        $this->aplicarAlcance($q, $alcance, 'a.id_sucursal');
+
+        return $q->select('a.nombre as almacen')
             ->selectRaw('COALESCE(SUM(e.cantidad_total - e.cantidad_reservada), 0) as disponible')
             ->groupBy('a.id_almacen', 'a.nombre')
             ->orderByDesc('disponible')
@@ -433,27 +530,29 @@ trait DashboardStatsTrait
     }
 
     /** Solicitudes de servicio atrasadas (PENDIENTE/PROGRAMADA con más de X días). */
-    protected function solicitudesAtrasadas(int $dias = 3): int
+    protected function solicitudesAtrasadas(User $user, int $dias = 3): int
     {
         $limite = now()->subDays($dias)->toDateString();
-
-        return DB::table('solicitud_servicio')
+        $q = DB::table('solicitud_servicio')
             ->whereIn('estado', ['PENDIENTE', 'PROGRAMADA'])
-            ->whereDate('fecha_solicitud', '<', $limite)
-            ->count();
+            ->whereDate('fecha_solicitud', '<', $limite);
+        $this->aplicarAlcanceSolicitudes($q, $user);
+
+        return $q->count();
     }
 
     /** Operaciones pendientes (ventas sin finalizar / cotizaciones vigentes sin convertir). */
-    protected function operacionesPendientes(): array
+    protected function operacionesPendientes(?DashboardAlcance $alcance = null): array
     {
-        $cotizacionesVigentes = DB::table('cotizacion as c')
+        $cotizaciones = DB::table('cotizacion as c')
             ->join('v_cotizacion_estado as ce', 'ce.id_cotizacion', '=', 'c.id_cotizacion')
-            ->where('ce.condicion_temporal', 'VIGENTE')
-            ->count();
+            ->where('ce.condicion_temporal', 'VIGENTE');
+        $this->aplicarAlcance($cotizaciones, $alcance, 'c.id_sucursal');
+        $cotizacionesVigentes = $cotizaciones->count();
 
-        $ventasEnProceso = DB::table('venta')
-            ->where('estado', 'EN_PROCESO')
-            ->count();
+        $ventas = DB::table('venta')->where('estado', 'EN_PROCESO');
+        $this->aplicarAlcance($ventas, $alcance, 'id_sucursal');
+        $ventasEnProceso = $ventas->count();
 
         return [
             'cotizaciones_vigentes' => $cotizacionesVigentes,
@@ -462,20 +561,24 @@ trait DashboardStatsTrait
         ];
     }
 
-    protected function solicitudesServicioPendientes(): int
+    protected function solicitudesServicioPendientes(User $user): int
     {
-        return DB::table('solicitud_servicio')
+        $q = DB::table('solicitud_servicio')
             ->where('estado', 'PENDIENTE')
-            ->whereNull('id_tecnico')
-            ->count();
+            ->whereNull('id_tecnico');
+        $this->aplicarAlcanceSolicitudes($q, $user);
+
+        return $q->count();
     }
 
-    protected function ultimasSolicitudesServicio(int $limite = 6): array
+    protected function ultimasSolicitudesServicio(User $user, int $limite = 6): array
     {
-        return DB::table('solicitud_servicio as s')
+        $q = DB::table('solicitud_servicio as s')
             ->join('cliente as c', 'c.id_cliente', '=', 's.id_cliente')
-            ->leftJoin('usuario as u', 'u.id_usuario', '=', 's.id_tecnico')
-            ->orderByDesc('s.fecha_solicitud')
+            ->leftJoin('usuario as u', 'u.id_usuario', '=', 's.id_tecnico');
+        $this->aplicarAlcanceSolicitudes($q, $user, 's');
+
+        return $q->orderByDesc('s.fecha_solicitud')
             ->limit($limite)
             ->get([
                 's.id_solicitud',
@@ -499,21 +602,21 @@ trait DashboardStatsTrait
     protected function calcularVentasLineasComparativo(string $mes1, string $mes2, ?int $idSucursal = null): array
     {
         $rango = function (string $mes): array {
-            $inicio = Carbon::parse($mes . '-01')->startOfMonth();
-            $fin = Carbon::parse($mes . '-01')->endOfMonth();
+            $inicio = Carbon::parse($mes.'-01')->startOfMonth();
+            $fin = Carbon::parse($mes.'-01')->endOfMonth();
 
             return [$inicio, $fin];
         };
 
         $etiqueta = function (string $mes): string {
-            $m = Carbon::parse($mes . '-01');
+            $m = Carbon::parse($mes.'-01');
             $nombres = [
                 1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
                 5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
                 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
             ];
 
-            return $nombres[(int) $m->month] . ' ' . $m->year;
+            return $nombres[(int) $m->month].' '.$m->year;
         };
 
         $consulta = function (Carbon $inicio, Carbon $fin) use ($idSucursal) {
@@ -526,7 +629,7 @@ trait DashboardStatsTrait
                 $q->where('v.id_sucursal', $idSucursal);
             }
 
-            return $q->selectRaw("EXTRACT(DAY FROM v.fecha_hora) AS dia, SUM(rv.total_bs) AS total")
+            return $q->selectRaw('EXTRACT(DAY FROM v.fecha_hora) AS dia, SUM(rv.total_bs) AS total')
                 ->groupBy('dia')
                 ->orderBy('dia')
                 ->get();
@@ -534,7 +637,7 @@ trait DashboardStatsTrait
 
         $builder = function (string $mes) use ($rango, $consulta, $etiqueta): array {
             [$inicio, $fin] = $rango($mes);
-            $diasEnMes = (int) Carbon::parse($mes . '-01')->daysInMonth;
+            $diasEnMes = (int) Carbon::parse($mes.'-01')->daysInMonth;
             $filas = $consulta($inicio, $fin);
 
             $porDia = [];

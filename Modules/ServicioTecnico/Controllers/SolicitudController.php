@@ -2,8 +2,10 @@
 
 namespace Modules\ServicioTecnico\Controllers;
 
+use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Modules\Garantias\Models\SolicitudServicio;
 use Modules\ServicioTecnico\Requests\CancelarSolicitudRequest;
 use Modules\ServicioTecnico\Requests\CerrarSolicitudRequest;
@@ -42,7 +44,7 @@ class SolicitudController extends Controller
 
             return back()->with('success', "Encargo #{$solicitud->id_solicitud} aceptado. Ahora es tu responsabilidad.");
         } catch (\Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return $this->fallar('No se pudo aceptar el encargo. Inténtalo de nuevo más tarde.', $e);
         }
     }
 
@@ -56,7 +58,7 @@ class SolicitudController extends Controller
 
             return back()->with('success', "Solicitud #{$solicitud->id_solicitud} cerrada correctamente.");
         } catch (\Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return $this->fallar('No se pudo cerrar la solicitud. Inténtalo de nuevo más tarde.', $e);
         }
     }
 
@@ -70,7 +72,7 @@ class SolicitudController extends Controller
 
             return back()->with('success', "Solicitud #{$solicitud->id_solicitud} cancelada correctamente.");
         } catch (\Throwable $e) {
-            return back()->withInput()->with('error', $e->getMessage());
+            return $this->fallar('No se pudo cancelar la solicitud. Inténtalo de nuevo más tarde.', $e, true);
         }
     }
 
@@ -91,12 +93,7 @@ class SolicitudController extends Controller
      */
     public function guardarInterna(RegistrarSolicitudRequest $request)
     {
-        $validado = $request->validate([
-            'nombre_cliente' => ['required', 'string', 'min:2', 'max:100'],
-            'telefono_cliente' => ['required', 'string', 'min:7', 'max:20'],
-            'descripcion_falla' => ['required', 'string', 'min:5', 'max:1000'],
-            'id_garantia' => ['nullable', 'integer', 'exists:garantia,id_garantia'],
-        ]);
+        $validado = $request->validated();
 
         $cliente = $this->solicitudes->buscarCliente($validado['nombre_cliente'], $validado['telefono_cliente']);
 
@@ -156,5 +153,31 @@ class SolicitudController extends Controller
         return view('serviciotecnico::solicitudes.show', [
             'solicitud' => $solicitud,
         ]);
+    }
+
+    /**
+     * Las reglas de negocio (P0001) se muestran tal cual; los errores de
+     * infraestructura se loguean y se sustituyen por un mensaje genérico.
+     */
+    private function fallar(string $mensajeGenerico, \Throwable $e, bool $conInput = false)
+    {
+        if ($e instanceof BusinessRuleException) {
+            $redirect = back();
+
+            return $conInput
+                ? $redirect->withInput()->with('error', $e->getMessage())
+                : $redirect->with('error', $e->getMessage());
+        }
+
+        Log::error('Fallo al procesar una acción de servicio técnico', [
+            'usuario' => auth()->id(),
+            'exception' => $e,
+        ]);
+
+        $redirect = back();
+
+        return $conInput
+            ? $redirect->withInput()->with('error', $mensajeGenerico)
+            : $redirect->with('error', $mensajeGenerico);
     }
 }
